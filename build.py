@@ -28,7 +28,7 @@ rep("const sold = id => orders.reduce((s, o) => s + usedBy(o, id), 0);",
 s = re.sub(r'<p class="demo-note" id="demo-note">.*?</p>', '<p class="demo-note" id="demo-note" hidden><b id="sync-note"></b></p>', s, count=1, flags=re.S)
 rep('<nav class="mode three" aria-label="Ba link của quán">', '<nav class="mode three" id="nav" aria-label="Ba link của quán" hidden>')
 rep('<a class="tab" href="#chu-mon" id="t-mon">Món hôm nay</a>',
-    '<a class="tab" href="#chu-mon" id="t-mon">Món hôm nay</a>\n    <button type="button" class="tab" id="logout" style="margin-left:auto">Thoát</button>')
+    '<a class="tab" href="#chu-mon" id="t-mon">Món hôm nay</a>\n    <button type="button" class="tab" id="chpin" style="margin-left:auto">Đổi mã</button>\n    <button type="button" class="tab" id="logout">Thoát</button>')
 rep('<a class="btn-ghost" href="#chu" id="see-owner" style="text-decoration:none">Xem bên chủ quán (demo)</a>', '')
 rep('<h1>Đơn cần giao</h1>', '<div class="order-head"><h1>Đơn cần giao</h1><button type="button" class="tab" id="logout2">Thoát</button></div>')
 
@@ -116,6 +116,13 @@ $("login-form").addEventListener("submit", async e => {
 });
 const logout = () => { pin = ""; role = null; orders = []; try { localStorage.removeItem(KEY); } catch (_) {} location.hash = ""; route(); };
 $("logout").onclick = logout; $("logout2").onclick = logout;
+$("chpin").onclick = () => {
+  ["khach", "chu", "ship"].forEach(id => show(id, false)); $("cartbar").hidden = true; $("owner-tabs").hidden = true;
+  $("login").hidden = false; $("login").dataset.setup = "1";
+  $("login-title").textContent = "Đổi mã PIN";
+  $("login-sub").textContent = "Nhập mã mới cho chủ quán và cho shipper (6 chữ số trở lên, hai mã khác nhau). Máy shipper sẽ phải nhập lại mã mới.";
+  $("pin1-l").textContent = "Mã PIN chủ quán mới"; $("pin2-w").hidden = false;
+};
 route();''')
 rep('''window.addEventListener("storage", e => { if (e.key === KEY && !db) { load(); render(); } });
 setInterval(() => { if (mode !== "khach") render(); else updateBadge(); }, 30000);''', '''setInterval(() => { if (mode !== "khach") render(); }, 30000);''')

@@ -279,7 +279,8 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
   <div class="subtabs" id="owner-tabs" hidden>
     <a class="tab" href="#chu" id="t-don">Đơn hàng</a>
     <a class="tab" href="#chu-mon" id="t-mon">Món hôm nay</a>
-    <button type="button" class="tab" id="logout" style="margin-left:auto">Thoát</button>
+    <button type="button" class="tab" id="chpin" style="margin-left:auto">Đổi mã</button>
+    <button type="button" class="tab" id="logout">Thoát</button>
   </div>
 
   <!-- ============ ĐĂNG NHẬP ============ -->
@@ -1165,6 +1166,13 @@ $("login-form").addEventListener("submit", async e => {
 });
 const logout = () => { pin = ""; role = null; orders = []; try { localStorage.removeItem(KEY); } catch (_) {} location.hash = ""; route(); };
 $("logout").onclick = logout; $("logout2").onclick = logout;
+$("chpin").onclick = () => {
+  ["khach", "chu", "ship"].forEach(id => show(id, false)); $("cartbar").hidden = true; $("owner-tabs").hidden = true;
+  $("login").hidden = false; $("login").dataset.setup = "1";
+  $("login-title").textContent = "Đổi mã PIN";
+  $("login-sub").textContent = "Nhập mã mới cho chủ quán và cho shipper (6 chữ số trở lên, hai mã khác nhau). Máy shipper sẽ phải nhập lại mã mới.";
+  $("pin1-l").textContent = "Mã PIN chủ quán mới"; $("pin2-w").hidden = false;
+};
 route();
 window.addEventListener("hashchange", route);
 setInterval(() => { if (mode !== "khach") render(); }, 30000);
