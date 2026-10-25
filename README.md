@@ -5,7 +5,7 @@ Ba trang trên cùng một link:
 - `/#chu` – chủ quán: đơn hàng, tiền, bật/tắt món, số suất (mã PIN chủ quán)
 - `/#shipper` – shipper: đơn xếp theo giờ, đơn gấp lên đầu (mã PIN shipper)
 
-Chạy trên Cloudflare Pages + D1 (binding `DB`, xem `wrangler.toml`, bảng trong `schema.sql`).
+Chạy trên Cloudflare Workers (trang tĩnh trong `public/`, API trong `worker.js` + `functions/api/`) và D1 (binding `DB`, xem `wrangler.toml`, bảng trong `schema.sql`). Deploy: `npx wrangler deploy`.
 Lần đầu mở `/#chu` sẽ hỏi tạo 2 mã PIN.
 
 Sửa giao diện trong `src/app.html` rồi chạy `python3 build.py` để tạo `public/index.html`.
