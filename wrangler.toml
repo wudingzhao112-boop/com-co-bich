@@ -1,0 +1,8 @@
+name = "com-co-bich"
+pages_build_output_dir = "public"
+compatibility_date = "2026-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "com-co-bich"
+database_id = "ea793aa1-645b-4785-9e6e-a0096e912a11"
