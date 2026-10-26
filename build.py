@@ -154,7 +154,7 @@ rep("""    <div class="s-money">${cash ? `<span class="collect">Thu tiền mặt
 
 # Khởi động
 rep('''load(); fillTimes(); route();''', '''fillTimes();
-try { const k = JSON.parse(localStorage.getItem("cobich-khach") || "null"); if (k) { $("f-name").value = k.name; $("f-phone").value = k.phone; $("f-addr").value = k.addr; } } catch (_) {}
+try { const k = JSON.parse(localStorage.getItem("cobich-khach") || "null"); if (k) { $("f-name").value = k.name; $("f-phone").value = k.phone; } } catch (_) {}
 function showLogin(r) {
   ["khach", "chu", "ship"].forEach(id => show(id, false)); $("cartbar").hidden = $("bnav").hidden = true; document.body.classList.remove("has-nav"); $("owner-tabs").hidden = true;
   $("login").hidden = false;

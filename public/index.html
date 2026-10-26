@@ -1782,7 +1782,7 @@ $("f-phone").addEventListener("input", () => { if ($("pay-bank").checked) update
 $("again").onclick = () => { $("form").reset(); syncTime(); $("qr-box").hidden = true; goHome(); };
 
 fillTimes();
-try { const k = JSON.parse(localStorage.getItem("cobich-khach") || "null"); if (k) { $("f-name").value = k.name; $("f-phone").value = k.phone; $("f-addr").value = k.addr; } } catch (_) {}
+try { const k = JSON.parse(localStorage.getItem("cobich-khach") || "null"); if (k) { $("f-name").value = k.name; $("f-phone").value = k.phone; } } catch (_) {}
 function showLogin(r) {
   ["khach", "chu", "ship"].forEach(id => show(id, false)); $("cartbar").hidden = $("bnav").hidden = true; document.body.classList.remove("has-nav"); $("owner-tabs").hidden = true;
   $("login").hidden = false;
@@ -2228,18 +2228,24 @@ function renderCancel() {
   box.hidden = false;
   if (!cancelTimer) cancelTimer = setInterval(renderCancel, 1000);
 }
-document.addEventListener("click", async e => {
-  if (e.target.id !== "cancel-go") return;
-  const L = lastOrderGet(); if (!L) return;
-  if (!confirm(`Huỷ đơn #${L.no}?`)) return;
+async function cancelOrder(id, key, no) {
+  if (!confirm(`Huỷ đơn #${no}?`)) return;
   try {
-    await api(`orders/${L.id}/cancel`, { method: "POST", body: JSON.stringify({ key: L.key }) });
-    cancelMsg = `Đã huỷ đơn #${L.no}. Quán đã nhận được.`;
+    await api(`orders/${id}/cancel`, { method: "POST", body: JSON.stringify({ key }) });
+    cancelMsg = `Đã huỷ đơn #${no}. Quán đã nhận được.`;
   } catch (ex) { cancelMsg = esc(ex.message); }
-  try { localStorage.removeItem(LAST); } catch (_) {}
+  const L = lastOrderGet();
+  if (L && L.id === id) try { localStorage.removeItem(LAST); } catch (_) {}
   clearInterval(cancelTimer); cancelTimer = null; renderCancel();
   setTimeout(() => { cancelMsg = ""; renderCancel(); }, 8000);
   pollMenu();
+  if (!$("view-don").hidden) renderDon();
+}
+document.addEventListener("click", e => {
+  if (e.target.id === "cancel-go") { const L = lastOrderGet(); if (L) cancelOrder(L.id, L.key, L.no); return; }
+  const b = e.target.closest("[data-cancel]"); if (!b) return;
+  let my = []; try { my = JSON.parse(localStorage.getItem("cobich-my") || "[]"); } catch (_) {}
+  const it = my.find(x => x.id === b.dataset.cancel); if (it) cancelOrder(it.id, it.key, b.dataset.no);
 });
 renderCancel();
 
@@ -2247,6 +2253,8 @@ renderCancel();
 const TRACK = [["moi", "Quán đã nhận"], ["xong", "Đã soạn xong"], ["nau", "Shipper đang giao"], ["giao", "Đã giao"]];
 const TRACK_NOW = { moi: "Quán đã nhận đơn, đang soạn cơm", xong: "Đã soạn xong, chờ shipper lấy", nau: "Shipper đang mang cơm đến bạn", giao: "Đã giao xong. Chúc ngon miệng!", huy: "Đơn đã huỷ" };
 let donTimer = null;
+const canCancel = (o, my) => ["moi", "xong"].includes(o.st) && Date.now() - o.at < 5 * 60e3 && my.some(x => x.id === o.id);
+const cancelLeft = o => { const s2 = Math.max(0, Math.ceil((5 * 60e3 - (Date.now() - o.at)) / 1000)); return `${Math.floor(s2 / 60)}:${String(s2 % 60).padStart(2, "0")}`; };
 async function renderDon() {
   const box = $("don-body");
   let my = []; try { my = JSON.parse(localStorage.getItem("cobich-my") || "[]"); } catch (_) {}
@@ -2258,11 +2266,12 @@ async function renderDon() {
       return `<div class="track${o.st === "huy" ? " huy" : ""}"><div class="hd"><span>Đơn #${o.no} · ${o.day === vnDate() ? "hôm nay" : dmy(o.day)}</span><span>${fmt(o.total || 0)}</span></div>
         <span class="sub" style="margin:0">${o.sets} suất${o.drinks ? ` · ${o.drinks} nước` : ""} · nhận ${/^\d/.test(o.time) ? "lúc " + esc(o.time) : "sớm nhất"}</span>
         ${o.st === "huy" ? "" : `<div class="steps">${TRACK.map(([, l], i) => `<span class="${i <= ix ? "on" : ""}">${l}</span>`).join("")}</div>`}
-        <span class="now">${TRACK_NOW[o.st] || ""}</span></div>`;
+        <span class="now">${TRACK_NOW[o.st] || ""}</span>
+        ${canCancel(o, my) ? `<button type="button" class="btn-ghost" data-cancel="${o.id}" data-no="${o.no}" style="color:var(--danger);border-color:var(--danger);font-weight:700">Huỷ đơn (còn ${cancelLeft(o)})</button>` : ""}</div>`;
     }).join("") : `<p class="sub" style="margin:0">Bạn chưa có đơn nào. Bấm “+ Chọn món” để đặt cơm nhé.</p>`;
   } catch (e) { box.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
   clearTimeout(donTimer);
-  if (!$("view-don").hidden) donTimer = setTimeout(renderDon, 15000);
+  if (!$("view-don").hidden) donTimer = setTimeout(renderDon, box.querySelector("[data-cancel]") ? 5000 : 15000);
 }
 
 $("chpin").onclick = () => {
