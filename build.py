@@ -27,8 +27,8 @@ rep("const sold = id => orders.reduce((s, o) => s + usedBy(o, id), 0);",
 # Ghi chú demo -> dòng báo kết nối; thanh 3 link chỉ chủ quán thấy
 s = re.sub(r'<p class="demo-note" id="demo-note">.*?</p>', '<p class="demo-note" id="demo-note" hidden><b id="sync-note"></b></p>', s, count=1, flags=re.S)
 rep('<nav class="mode three" aria-label="Ba link của quán">', '<nav class="mode three" id="nav" aria-label="Ba link của quán" hidden>')
-rep('<a class="tab" href="#chu-mon" id="t-mon">Món hôm nay</a>',
-    '<a class="tab" href="#chu-mon" id="t-mon">Món hôm nay</a>\n    <button type="button" class="tab" id="chpin" style="margin-left:auto">Đổi mã</button>\n    <button type="button" class="tab" id="logout">Thoát</button>')
+rep('<a class="tab" href="#chu-sp" id="t-sp">Sửa sản phẩm</a>',
+    '<a class="tab" href="#chu-sp" id="t-sp">Sửa sản phẩm</a>\n    <button type="button" class="tab" id="chpin" style="margin-left:auto">Đổi mã</button>\n    <button type="button" class="tab" id="logout">Thoát</button>')
 rep('<a class="btn-ghost" href="#chu" id="see-owner" style="text-decoration:none">Xem bên chủ quán (demo)</a>', '')
 rep('<h1>Đơn cần giao</h1>', '<div class="order-head"><h1>Đơn cần giao</h1><button type="button" class="tab" id="logout2">Thoát</button></div>')
 
@@ -86,11 +86,11 @@ rep('const m = { id, cat, name, ...', 'const m = { id, cat, name, added: true, .
 rep('MENU.splice(MENU.indexOf(byId[id]), 1); delete byId[id]; delete stock[id];', 'removed.add(id); MENU.splice(MENU.indexOf(byId[id]), 1); delete byId[id]; delete stock[id];')
 rep('''  if (db) { const ids = orders.map(o => o.id); (async () => { for (const id of ids) await db.doc("orders/" + id).delete().catch(syncErr); })(); }
   orders = []; cart.sets = []; cart.extras = {}; build = new Set();''', '''  cart.sets = []; cart.extras = {}; build = new Set();''')
-rep('“Sang ngày mới” tắt hết món đang bán và xoá đơn của hôm trước.', '“Sang ngày mới” tắt hết món đang bán. Sổ đơn tự sang trang mới mỗi ngày.')
+rep("“Sang ngày mới” tắt hết món đang bán. Kho", "“Sang ngày mới” tắt hết món đang bán, sổ đơn tự sang trang mới mỗi ngày. Kho")
 
 
 # Thành viên tích điểm bằng số điện thoại
-rep('.price-tag b { font-family: var(--font-display); font-size: 22px; }', """.price-tag b { font-family: var(--font-display); font-size: 22px; }
+rep('.price-tag b { font-family: var(--font-display); font-size: 22px; white-space: nowrap; }', """.price-tag b { font-family: var(--font-display); font-size: 22px; white-space: nowrap; }
 .member { border: 1.5px solid var(--yolk); background: var(--yolk-soft); border-radius: 12px; padding: 14px; }
 .member h3 { margin: 0; }
 .mem-top { display: flex; justify-content: space-between; gap: 8px; background: var(--yolk-soft); border-radius: 10px; padding: 8px 12px; font-size: 14px; }

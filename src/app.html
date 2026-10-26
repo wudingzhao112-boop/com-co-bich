@@ -170,7 +170,8 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 .mode.three { grid-template-columns: repeat(3, 1fr); }
 .mode a { font-weight: 600; text-decoration: none; text-align: center; border-radius: 9px; padding: 8px 4px; color: var(--muted); font-size: 14px; white-space: nowrap; }
 .mode a[aria-current="page"] { background: var(--surface); color: var(--fg); }
-.subtabs { display: flex; gap: 8px; }
+.subtabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.subtabs .tab { padding: 6px 12px; font-size: 14px; white-space: nowrap; }
 .subtabs a { text-decoration: none; }
 .flag { font-size: 12px; font-weight: 700; border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
 .flag.tre { background: var(--danger, #dc2626); color: #fff; }
@@ -236,12 +237,19 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 .dots { display: flex; gap: 5px; }
 .dots i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--leaf); }
 .dots i.on { background: var(--leaf); }
+.tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tier { font: inherit; display: grid; gap: 2px; justify-items: center; padding: 10px 6px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--fg); cursor: pointer; }
+.tier b { font-family: var(--font-display); font-size: 24px; line-height: 1.1; }
+.tier small { color: var(--muted); font-size: 13px; }
+.tier[aria-pressed="true"] { border-color: var(--leaf); background: var(--leaf); color: var(--leaf-ink); }
+.tier[aria-pressed="true"] small { color: var(--leaf-ink); }
+.tiers.need { outline: 2px dashed var(--chili); outline-offset: 4px; border-radius: 12px; }
 .set-line { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
 .set-line:last-child { border-bottom: 0; }
 .set-line .picks { font-size: 13px; color: var(--muted); grid-column: 1; }
 .set-line .amt { grid-column: 2; grid-row: 1 / span 2; text-align: right; font-variant-numeric: tabular-nums; display: grid; gap: 4px; justify-items: end; }
 .price-tag { display: inline-flex; align-items: baseline; gap: 6px; background: var(--yolk); color: #3b2a00; border-radius: 10px; padding: 4px 12px; font-weight: 600; width: fit-content; }
-.price-tag b { font-family: var(--font-display); font-size: 22px; }
+.price-tag b { font-family: var(--font-display); font-size: 22px; white-space: nowrap; }
 .setup-row { background: var(--surface); display: flex; gap: 8px; align-items: center; padding: 8px 12px; }
 .setup-row span { flex: 1; min-width: 0; }
 .thumb { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; margin-bottom: 4px; }
@@ -267,6 +275,16 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 .cat-name { display: grid; min-width: 0; flex: 1; }
 .cat-name small { color: var(--muted); font-size: 12px; }
 .num { width: 58px; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); text-align: right; }
+#today-list .setup-row { gap: 6px; padding: 8px 10px; }
+#today-list .num { width: 46px; }
+#today-list .btn-sm { padding: 4px 7px; }
+.thumb-sm::after { font-size: 10px; padding: 1px 0; }
+.ogroups { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.ogroup { display: grid; gap: 2px; justify-items: center; padding: 8px 2px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--fg); font: inherit; cursor: pointer; }
+.ogroup b { font-size: 20px; line-height: 1.1; }
+.ogroup small { font-size: 11px; color: var(--muted); text-align: center; }
+.ogroup.gap b { color: var(--chili); }
+.ogroup[aria-pressed="true"] { border-color: var(--leaf); background: var(--yolk-soft); }
 </style>
 
 <div class="wrap">
@@ -279,11 +297,12 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
   <div class="subtabs" id="owner-tabs" hidden>
     <a class="tab" href="#chu" id="t-don">Đơn hàng</a>
     <a class="tab" href="#chu-mon" id="t-mon">Món hôm nay</a>
+    <a class="tab" href="#chu-sp" id="t-sp">Sửa sản phẩm</a>
   </div>
 
   <!-- ============ KHÁCH ============ -->
   <div id="khach" style="display:grid;gap:20px">
-    <header>
+    <header id="khach-head">
       <div class="brand"><img src="data:image/jpeg;base64,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" alt="Logo Cô Bích Quán" width="76" height="76"><div><h1>Cô Bích Quán</h1><p class="sub" style="font-weight:600;color:var(--leaf)">Cơm suất · Cơm bình dân</p></div></div>
       <p class="sub">Cơm nấu sẵn mỗi ngày một thực đơn. Chọn món, quán giao tận nơi.</p>
       <div class="hours"><span>206 Duyên Hà, Cốc Lếu, Lào Cai</span><span>035 456 3552</span></div>
@@ -300,6 +319,7 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
           <h2 id="build-title">Chọn món cho suất</h2>
           <div class="dots cust-only" id="dots" aria-hidden="true"></div>
         </div>
+        <div class="tiers cust-only" id="tiers" role="group" aria-label="Chọn loại suất"></div>
         <p class="sub cust-only" id="pick-hint" style="font-size:13px"></p>
         <div id="dishes" style="display:grid;gap:10px"></div>
         <div class="picked-bar cust-only" style="border-top:1px dashed var(--line);padding-top:12px">
@@ -373,20 +393,26 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
       </div>
     </section>
     <div id="edit-tools" hidden style="display:grid;gap:16px">
-    <section class="panel">
-      <h3>Kho món: bật món hôm nay bán</h3>
-      <p class="sub" style="font-size:13px">Tất cả món của quán nằm trong kho, mỗi món một ảnh. Mỗi sáng bấm công tắc để bật món hôm nay bán, rồi nhập số phần. Bấm vào ảnh để thay ảnh món. Món nào bán hết, trang khách tự báo “Hết”.</p>
-      <div class="today-list">
-        <div class="setup-row"><span><b>Giá 1 suất</b></span><input class="num" type="number" inputmode="numeric" min="0" id="cfg-price"><small class="sub">k</small></div>
-        <div class="setup-row"><span><b>Số món được chọn</b></span><input class="num" type="number" inputmode="numeric" min="1" id="cfg-picks"><small class="sub">món</small></div>
-      </div>
+    <section class="panel" id="mon-tools">
+      <h3>Giá các loại suất</h3>
+      <p class="sub" style="font-size:13px;margin:0">Khách bấm chọn loại suất trước rồi mới chọn món. Sửa giá (nghìn đồng) và số món của từng loại.</p>
+      <div id="cfg-tiers" style="display:grid;gap:8px"></div>
+      <div class="field"><label for="ann">Tin nhắn báo món (gửi Zalo, Facebook)</label><textarea id="ann" rows="10"></textarea></div>
+      <div class="actions"><button type="button" class="btn-main" id="copy-ann">Sao chép tin nhắn</button>
+        <button type="button" class="btn-ghost" id="new-day">Sang ngày mới</button></div>
+      <p class="toast" id="toast-ann" aria-live="polite"></p>
+      <p class="sub" style="font-size:12px;margin:0">“Sang ngày mới” tắt hết món đang bán. Kho món và ảnh vẫn giữ nguyên. Muốn bật thêm món, đổi ảnh: vào tab “Sửa sản phẩm”.</p>
+    </section>
+    <section class="panel" id="sp-tools">
+      <h3>Sửa sản phẩm: ảnh và bật/tắt món</h3>
+      <p class="sub" style="font-size:13px;margin:0">Tất cả món của quán nằm ở đây. Bấm “Đổi ảnh” để thay ảnh món. Bấm công tắc để bật món hôm nay bán (bật lên thì nhập số phần). Món tắt thì khách không thấy.</p>
       <div class="catalog-bar">
-        <input id="q" type="search" placeholder="Tìm món trong kho…" aria-label="Tìm món">
+        <input id="q" type="search" placeholder="Tìm món…" aria-label="Tìm món">
         <div class="filters" id="cat-filter"></div>
       </div>
       <div class="today-list" id="today-list"></div>
       <form id="add-form" class="panel" style="padding:12px;gap:10px;background:var(--bg)" novalidate>
-        <b>Thêm món mới vào kho</b>
+        <b>Thêm món mới</b>
         <div class="field"><label for="a-name">Tên món</label><input id="a-name" placeholder="VD: Mực xào cần tỏi"></div>
         <div class="field"><label for="a-img">Ảnh món</label><input id="a-img" type="file" accept="image/*"></div>
         <div class="row2" style="grid-template-columns:1fr 1fr 1fr">
@@ -395,13 +421,8 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
           <div class="field" id="a-price-wrap" hidden><label for="a-price">Giá (k)</label><input id="a-price" type="number" inputmode="numeric" min="0" placeholder="10"></div>
         </div>
         <p class="err" id="a-err" hidden></p>
-        <div class="actions"><button type="submit" class="btn-main">Thêm món</button>
-          <button type="button" class="btn-ghost" id="new-day">Sang ngày mới</button></div>
-        <p class="sub" style="font-size:12px;margin:0">“Sang ngày mới” tắt hết món đang bán và xoá đơn của hôm trước. Kho món và ảnh vẫn giữ nguyên.</p>
+        <div class="actions"><button type="submit" class="btn-main">Thêm món</button></div>
       </form>
-      <div class="field"><label for="ann">Tin nhắn báo món (gửi Zalo, Facebook)</label><textarea id="ann" rows="10"></textarea></div>
-      <div class="actions"><button type="button" class="btn-main" id="copy-ann">Sao chép tin nhắn</button></div>
-      <p class="toast" id="toast-ann" aria-live="polite"></p>
     </section>
     </div>
   </div>
@@ -427,7 +448,7 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
       <ul class="prep" id="prep"></ul>
     </section>
     <section class="panel">
-      <div class="order-head"><h3>Danh sách đơn</h3><div class="filters" id="filters"></div></div>
+      <h3>Danh sách đơn</h3><div class="ogroups" id="filters"></div>
       <div class="orders" id="orders"></div>
     </section>
 
@@ -454,7 +475,10 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 
 <script>
 const EXTRA = "Đồ uống & gọi thêm";
-const SET = { price: 40000, picks: 5 };
+// Các loại suất: khách chọn loại trước rồi mới chọn món. SET = loại đang chọn.
+const TIERS = [{ price: 35000, picks: 3 }, { price: 40000, picks: 4 }, { price: 50000, picks: 5 }];
+let tierIx = -1;
+const SET = { price: 0, picks: 0 };
 const MENU = [
   { id: "ga", cat: "Món mặn", name: "Gà rang", hot: true },
   { id: "suon", cat: "Món mặn", name: "Thịt rang cháy cạnh", hot: true },
@@ -599,7 +623,7 @@ function renderCatalog() {
         const on = stock[m.id] > 0;
         return `<div class="setup-row">
           <label class="thumb-sm" title="Đổi ảnh">${thumb(m)}<input type="file" accept="image/*" data-img="${m.id}" id="img-${m.id}" hidden></label>
-          <span class="cat-name"><b style="font-weight:500">${esc(m.name)}</b><small>${on ? `Hôm nay bán · đã đặt ${sold(m.id)}` : "Hôm nay không bán"}</small></span>
+          <span class="cat-name"><b style="font-weight:500">${esc(m.name)}</b><small>${on ? `Đang hiện · đã đặt ${sold(m.id)}` : "Đang ẩn"}</small></span>
           ${on && c === EXTRA ? `<input class="num" type="number" inputmode="numeric" min="0" id="pr-${m.id}" data-price="${m.id}" value="${m.price / 1000}" aria-label="Giá ${esc(m.name)} (nghìn)">` : ""}
           ${on ? `<input class="num" type="number" inputmode="numeric" min="0" id="td-${m.id}" data-today="${m.id}" value="${stock[m.id]}" aria-label="Số phần ${esc(m.name)}" title="Số phần">` : ""}
           <button type="button" class="switch" data-toggle="${m.id}" aria-pressed="${on}" aria-label="Bán ${esc(m.name)} hôm nay"></button>
@@ -734,18 +758,21 @@ function usedBy(o, id) {
 }
 const sold = id => orders.reduce((s, o) => s + usedBy(o, id), 0);
 const left = id => Math.max(0, (stock[id] || 0) - sold(id) - usedBy(cart, id));
-const orderTotal = o => o.sets.reduce((s, x) => s + x.qty * SET.price, 0) + Object.entries(o.extras).reduce((s, [id, q]) => s + q * byId[id].price, 0);
+const setPrice = x => x.price || TIERS.find(t => t.picks === x.picks.length)?.price || 0;
+const orderTotal = o => o.sets.reduce((s, x) => s + x.qty * setPrice(x), 0) + Object.entries(o.extras).reduce((s, [id, q]) => s + q * byId[id].price, 0);
 const setCount = o => o.sets.reduce((s, x) => s + x.qty, 0);
 const picksText = p => p.map(id => byId[id]?.name ?? "?").join(", ");
 
 /* ---------- Khách ---------- */
 function renderBuilder() {
-  $("set-price-k").textContent = k(SET.price);
-  $("set-rule").textContent = `1 suất, chọn ${SET.picks} món`;
+  $("set-price-k").textContent = "Từ " + k(Math.min(...TIERS.map(t => t.price)));
+  $("set-rule").textContent = TIERS.map(t => `${k(t.price)}: ${t.picks} món`).join(" · ");
+  $("tiers").innerHTML = TIERS.map((t, i) => `<button type="button" class="tier" data-tier="${i}" aria-pressed="${i === tierIx}"><b>${k(t.price)}</b><small>${t.picks} món</small></button>`).join("");
+  $("tiers").classList.toggle("need", tierIx < 0 && !editMode);
   $("dots").innerHTML = Array.from({ length: SET.picks }, (_, i) => `<i class="${i < build.size ? "on" : ""}"></i>`).join("");
   const need = SET.picks - build.size;
-  $("build-title").textContent = `Chọn món (${build.size}/${SET.picks})`;
-  $("pick-hint").textContent = need > 0 ? `Chọn thêm ${need} món nữa. Suất kèm cơm trắng.` : `Đủ ${SET.picks} món. Bấm “Thêm vào giỏ”.`;
+  $("build-title").textContent = tierIx < 0 ? "Bước 1: chọn loại suất" : `Suất ${k(SET.price)}: chọn món (${build.size}/${SET.picks})`;
+  $("pick-hint").textContent = tierIx < 0 ? "Bấm chọn suất 35k, 40k hoặc 50k ở trên rồi mới chọn món." : need > 0 ? `Chọn thêm ${need} món nữa. Suất kèm cơm trắng.` : `Đủ ${SET.picks} món. Bấm “Thêm vào giỏ”.`;
   $("view-menu").classList.toggle("editing", editMode);
   if (editMode) {
     syncToday();
@@ -760,7 +787,7 @@ function renderBuilder() {
           <div class="live-mid"><small class="sub" style="white-space:nowrap">Bán ${s}</small>
           ${on ? `<label class="left-in">Còn <input class="num" type="number" inputmode="numeric" min="0" id="left-${m.id}" data-left="${m.id}" value="${rem}" aria-label="Số suất còn lại ${esc(m.name)}"></label>` : `<b style="color:var(--chili);font-size:13px">Đã tắt</b>`}</div></div>`;
       }).join("")}</div>`;
-    }).join("") || `<p class="sub">Hôm nay chưa bật món nào. Bật món ở phần Kho món bên dưới.</p>`;
+    }).join("") || `<p class="sub">Hôm nay chưa bật món nào. Vào tab <a href="#chu-sp">Sửa sản phẩm</a> để bật món.</p>`;
     return;
   }
   const groups = cats().filter(c => c !== EXTRA);
@@ -769,19 +796,18 @@ function renderBuilder() {
     if (!list.length) return "";
     return `<div class="group-label">${c.toUpperCase()}</div><div class="dish-grid">${list.map(m => {
       const on = build.has(m.id), rem = left(m.id);
-      const out = !on && (rem < buildQty || build.size >= SET.picks);
+      const out = !on && (tierIx < 0 || rem < buildQty || build.size >= SET.picks);
       const info = rem === 0 && !on ? "Hết" : rem <= 5 ? `<span style="color:var(--chili)">còn ${rem}</span>` : `còn ${rem}`;
       return `<button type="button" class="dish" data-pick="${m.id}" aria-pressed="${on}" ${out ? "disabled" : ""}><span class="thumb">${thumb(m)}</span><b>${esc(m.name)}</b><small>${m.hot ? "Bán chạy · " : ""}${info}</small></button>`;
     }).join("")}</div>`;
   }).join("") || `<p class="sub">Quán chưa đăng món hôm nay.</p>`;
   $("bq").textContent = buildQty;
-  $("add-set").disabled = build.size === 0;
-  $("add-set").textContent = build.size ? `Thêm ${buildQty} suất · ${fmt(buildQty * SET.price)}` : "Thêm vào giỏ";
+  $("add-set").disabled = tierIx < 0 || build.size !== SET.picks;
+  $("add-set").textContent = tierIx >= 0 && build.size === SET.picks ? `Thêm ${buildQty} suất · ${fmt(buildQty * SET.price)}` : "Thêm vào giỏ";
 }
 function syncToday() { for (const m of MENU) if (stock[m.id] > 0) todaySet.add(m.id); }
 function renderEdit() {
-  $("cfg-price").value = SET.price / 1000;
-  $("cfg-picks").value = SET.picks;
+  $("cfg-tiers").innerHTML = TIERS.map((t, i) => `<div class="setup-row"><span><b>Suất ${i + 1}</b></span><input class="num" type="number" inputmode="numeric" min="0" data-tprice="${i}" value="${t.price / 1000}" aria-label="Giá suất ${i + 1}"><small class="sub">k,</small><input class="num" type="number" inputmode="numeric" min="1" data-tpicks="${i}" value="${t.picks}" aria-label="Số món suất ${i + 1}"><small class="sub">món</small></div>`).join("");
   renderCatalog();
   const cur = $("a-cat").value;
   const allCats = [...new Set(["Món mặn", "Rau", "Canh", ...cats()])].sort((a, b) => (a === EXTRA) - (b === EXTRA));
@@ -810,8 +836,8 @@ function renderExtras() {
   }).join("");
 }
 function cartLinesHTML(editable) {
-  const sets = cart.sets.map((s, i) => `<div class="set-line"><b>Suất ${i + 1}${s.qty > 1 ? ` × ${s.qty}` : ""}</b><div class="picks">${esc(picksText(s.picks))}</div>
-    <div class="amt"><span>${fmt(s.qty * SET.price)}</span>${editable ? `<button type="button" class="btn-sm" data-rmset="${i}">Bỏ</button>` : ""}</div></div>`);
+  const sets = cart.sets.map((s, i) => `<div class="set-line"><b>Suất ${k(setPrice(s))}${s.qty > 1 ? ` × ${s.qty}` : ""}</b><div class="picks">${esc(picksText(s.picks))}</div>
+    <div class="amt"><span>${fmt(s.qty * setPrice(s))}</span>${editable ? `<button type="button" class="btn-sm" data-rmset="${i}">Bỏ</button>` : ""}</div></div>`);
   const ex = Object.entries(cart.extras).filter(([, q]) => q).map(([id, q]) => `<div class="set-line"><b>${q} × ${esc(byId[id].name)}</b><div class="picks"></div><div class="amt"><span>${fmt(q * byId[id].price)}</span></div></div>`);
   return sets.concat(ex).join("");
 }
@@ -833,8 +859,9 @@ function fillTimes() {
   $("f-time").innerHTML = ["Càng sớm càng tốt", ...(later.length ? later : slots)].map(o => `<option>${o}</option>`).join("");
 }
 function showKhach(view) {
-  $("view-menu").hidden = view !== "menu";
-  $("view-menu").style.display = view === "menu" ? "grid" : "none";
+  const vm = view === "menu" && ownerPage !== "sp";
+  $("view-menu").hidden = !vm;
+  $("view-menu").style.display = vm ? "grid" : "none";
   $("view-checkout").hidden = view !== "checkout";
   $("view-done").hidden = view !== "done";
   $("cartbar").hidden = view !== "menu" || editMode;
@@ -842,6 +869,13 @@ function showKhach(view) {
 }
 
 /* ---------- Chủ quán ---------- */
+// Nhóm đơn cho chủ quán: gấp, chưa giao, đang giao, đã giao
+const OGROUPS = [["gap", "Đơn gấp"], ["chua", "Chưa giao"], ["nau", "Đang giao"], ["giao", "Đã giao"], ["all", "Tất cả"]];
+function inGroup(o, g) {
+  if (g === "gap") return o.st !== "giao" && o.st !== "huy" && urgency(o).lv !== "thuong";
+  if (g === "chua") return o.st === "moi" || o.st === "xong";
+  return g === "all" || o.st === g;
+}
 function renderOwner() {
   $("owner-date").textContent = new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "numeric" });
   $("st-orders").textContent = orders.length;
@@ -857,10 +891,9 @@ function renderOwner() {
   $("st-paid").innerHTML = `<span class="paid">Đã thu ${fmt(paid)}</span> · <span class="collect">Cần thu ${fmt(due)}</span>`;
 
 
-  const counts = { all: orders.length, moi: 0, xong: 0, nau: 0, giao: 0 };
-  orders.forEach(o => counts[o.st]++);
-  $("filters").innerHTML = [["all", "Tất cả"], ["moi", "Chưa soạn"], ["xong", "Chờ shipper"], ["nau", "Đang giao"], ["giao", "Đã giao"]].map(([key, l]) =>
-    `<button type="button" class="tab" style="padding:4px 10px;font-size:13px" aria-pressed="${filter === key}" data-filter="${key}">${l} ${key !== "all" && key !== "giao" && counts[key] ? `<span class="badge">${counts[key]}</span>` : counts[key]}</button>`).join("");
+  const counts = {}; OGROUPS.forEach(([key]) => counts[key] = orders.filter(o => inGroup(o, key)).length);
+  $("filters").innerHTML = OGROUPS.map(([key, l]) =>
+    `<button type="button" class="ogroup ${key}" aria-pressed="${filter === key}" data-filter="${key}"><b>${counts[key]}</b><small>${l}</small></button>`).join("");
 
   const need = {};
   orders.filter(o => o.st === "moi").forEach(o => {
@@ -873,7 +906,7 @@ function renderOwner() {
     Object.entries(need).sort((a, b) => b[1] - a[1]).map(([id, q]) => `<li><span>${esc(byId[id]?.name ?? "?")}</span><b>${q}</b></li>`).join("");
 
   const pending = orders.filter(o => o.st !== "giao").sort(byDue), doneO = orders.filter(o => o.st === "giao").reverse();
-  const shown = pending.concat(doneO).filter(o => filter === "all" || o.st === filter);
+  const shown = pending.concat(doneO).filter(o => inGroup(o, filter));
   $("orders").innerHTML = shown.length ? shown.map(o => `
     <article class="order" data-st="${o.st}">
       <div class="order-head"><span class="sub">Đơn #${o.no} · giao lúc ${esc(o.time)} ${o.st !== "giao" ? `<span class="flag ${urgency(o).lv}">${urgency(o).text}</span>` : ""}</span><span class="pill">${STATUS[o.st]}</span></div>
@@ -883,7 +916,7 @@ function renderOwner() {
         <div class="row"><span class="k">Địa chỉ</span><span>${esc(o.addr)} · <a href="https://www.google.com/maps/search/${encodeURIComponent(o.addr + ", Lào Cai")}" target="_blank" rel="noopener">Xem bản đồ</a></span></div>
         <div class="row"><span class="k">Thu tiền</span>${o.pay === "Chuyển khoản" ? `<b class="paid">Đã thu tiền (chuyển khoản)</b>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} khi giao</b>`}</div>
       </div>
-      <div class="dishes-list">${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1}${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${s.picks.map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
+      <div class="dishes-list">${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${s.picks.map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
         ${Object.entries(o.extras).filter(([, q]) => q).length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${Object.entries(o.extras).filter(([, q]) => q).map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
       ${o.note ? `<div class="meta"><b>Ghi chú:</b> ${esc(o.note)}</div>` : ""}
       <div class="foot"><span><b>${fmt(orderTotal(o))}</b> · ${o.pay}</span>
@@ -903,7 +936,7 @@ function renderAnn() {
   }).filter(Boolean);
   $("ann").value =
 `🍚 CÔ BÍCH QUÁN – THỰC ĐƠN HÔM NAY
-${k(SET.price)}/suất: cơm trắng + chọn ${SET.picks} món
+Suất cơm trắng + món tự chọn: ${TIERS.map(t => `${k(t.price)} được ${t.picks} món`).join(", ")}
 
 ${groups.join("\n\n")}
 
@@ -913,7 +946,7 @@ ${groups.join("\n\n")}
 👉 Đặt cơm tại: [link trang đặt cơm]`;
 }
 function orderText(o) {
-  const sets = o.sets.map((s, i) => `Suất ${i + 1}${s.qty > 1 ? ` (x${s.qty} hộp)` : ""}:\n${s.picks.map(id => "- " + (byId[id]?.name ?? "?")).join("\n")}`).join("\n");
+  const sets = o.sets.map((s, i) => `Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` (x${s.qty} hộp)` : ""}:\n${s.picks.map(id => "- " + (byId[id]?.name ?? "?")).join("\n")}`).join("\n");
   const ex = Object.entries(o.extras).filter(([, q]) => q).map(([id, q]) => `+ ${q} x ${byId[id]?.name ?? "?"}`).join("\n");
   return `ĐƠN #${o.no} – giao lúc ${o.time}\nTên: ${o.name}\nSĐT: ${o.phone}\nĐịa chỉ: ${o.addr}\n${o.pay === "Chuyển khoản" ? "ĐÃ THU TIỀN (chuyển khoản)" : "THU TIỀN MẶT: " + fmt(orderTotal(o))}\n\n${sets}${ex ? "\n" + ex : ""}${o.note ? "\n\nGhi chú: " + o.note : ""}`;
 }
@@ -934,7 +967,7 @@ function shipCard(o) {
     ${gone ? "" : `<div class="s-btns"><a href="tel:${tel}">Gọi khách</a><a href="${map}" target="_blank" rel="noopener">Chỉ đường</a></div>`}
     <div class="s-money">${cash ? `<span class="collect">Thu tiền mặt ${fmt(orderTotal(o))}</span>` : `<span class="paid">Đã thu tiền (chuyển khoản)</span>`}</div>
     <details><summary>${setCount(o)} hộp cơm${extrasCount(o) ? ` · ${extrasCount(o)} đồ uống/gọi thêm` : ""}. Bấm xem món</summary>
-      <div class="dishes-list" style="margin-top:6px">${o.sets.map((x, i) => `<div class="set"><div class="set-h">Suất ${i + 1}${x.qty > 1 ? ` <span class="x">× ${x.qty} hộp</span>` : ""}</div><ul>${x.picks.map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
+      <div class="dishes-list" style="margin-top:6px">${o.sets.map((x, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(x))})${x.qty > 1 ? ` <span class="x">× ${x.qty} hộp</span>` : ""}</div><ul>${x.picks.map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
       ${ex.length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${ex.map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div></details>
     ${o.note ? `<div class="meta"><b>Ghi chú:</b> ${esc(o.note)}</div>` : ""}
     ${o.st === "moi" ? `<div class="s-ready">Bếp đang soạn, chờ chủ quán bấm “Soạn xong” rồi lấy.</div>` : ""}
@@ -963,15 +996,20 @@ function updateBadge() {
   const u = orders.filter(o => o.st !== "giao" && urgency(o).lv !== "thuong").length;
   $("s-badge").hidden = !u; $("s-badge").textContent = u;
 }
-function setEdit(on) {
-  editMode = on; build = new Set(); buildQty = 1;
+let ownerPage = "";
+function setEdit(on, page = "mon") {
+  editMode = on; ownerPage = on ? page : ""; build = new Set(); buildQty = 1;
   $("edit-toggle").setAttribute("aria-pressed", on);
   $("edit-tools").hidden = !on;
+  $("mon-tools").hidden = page !== "mon";
+  $("sp-tools").hidden = page !== "sp";
+  $("khach-head").hidden = on && page === "sp";
 }
 function show(id, on) { $(id).hidden = !on; $(id).style.display = on ? "grid" : "none"; }
 function route() {
   const h = location.hash.slice(1);
-  const r = ["chu", "chu-mon", "shipper"].includes(h) ? h : "khach";
+  const r = ["chu", "chu-mon", "chu-sp", "shipper"].includes(h) ? h : "khach";
+  const page = r === "chu-sp" ? "sp" : r === "chu-mon" ? "mon" : "";
   mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";
   [["m-khach", "khach"], ["m-chu", "chu"], ["m-ship", "shipper"]].forEach(([id, m]) => {
     if (m === "chu" ? r.startsWith("chu") : m === r) $(id).setAttribute("aria-current", "page"); else $(id).removeAttribute("aria-current");
@@ -979,14 +1017,16 @@ function route() {
   $("owner-tabs").hidden = !r.startsWith("chu");
   $("t-don").setAttribute("aria-pressed", r === "chu");
   $("t-mon").setAttribute("aria-pressed", r === "chu-mon");
+  $("t-sp").setAttribute("aria-pressed", r === "chu-sp");
   document.title = r === "shipper" ? "Shipper · Cô Bích" : r.startsWith("chu") ? "Chủ quán · Cô Bích" : "Đặt Cơm Cô Bích";
-  show("khach", r === "khach" || r === "chu-mon");
+  show("khach", r === "khach" || !!page);
   show("chu", r === "chu");
   show("ship", r === "shipper");
-  if (r === "khach" || r === "chu-mon") {
-    if (editMode !== (r === "chu-mon")) setEdit(r === "chu-mon");
+  if (r === "khach" || page) {
+    if (ownerPage !== page) setEdit(!!page, page);
+    if (page === "sp") catFilter = "all";
     refresh();
-    showKhach(r === "chu-mon" ? "menu" : !$("view-done").hidden ? "done" : !$("view-checkout").hidden ? "checkout" : "menu");
+    showKhach(page ? "menu" : !$("view-done").hidden ? "done" : !$("view-checkout").hidden ? "checkout" : "menu");
   } else { $("cartbar").hidden = true; refresh(); }
   window.scrollTo(0, 0);
 }
@@ -995,7 +1035,8 @@ document.addEventListener("click", e => {
   const t = e.target.closest("button");
   if (!t) return;
   const d = t.dataset;
-  if (d.pick) { build.has(d.pick) ? build.delete(d.pick) : build.size < SET.picks && build.add(d.pick); renderBuilder(); }
+  if (d.tier) { tierIx = +d.tier; Object.assign(SET, TIERS[tierIx]); build = new Set([...build].slice(0, SET.picks)); renderBuilder(); }
+  if (d.pick && tierIx >= 0) { build.has(d.pick) ? build.delete(d.pick) : build.size < SET.picks && build.add(d.pick); renderBuilder(); }
   if (d.inc && left(d.inc) > 0) { cart.extras[d.inc] = (cart.extras[d.inc] || 0) + 1; renderKhach(); }
   if (d.dec) { cart.extras[d.dec] = Math.max(0, (cart.extras[d.dec] || 0) - 1); renderKhach(); }
   if (d.rmset) { cart.sets.splice(+d.rmset, 1); renderKhach(); }
@@ -1024,8 +1065,8 @@ document.addEventListener("click", e => {
 $("bq-inc").onclick = () => { if ([...build].every(id => left(id) > buildQty)) buildQty++; renderBuilder(); };
 $("bq-dec").onclick = () => { buildQty = Math.max(1, buildQty - 1); renderBuilder(); };
 $("add-set").onclick = () => {
-  if (!build.size) return;
-  cart.sets.push({ picks: [...build], qty: buildQty });
+  if (tierIx < 0 || build.size !== SET.picks) return;
+  cart.sets.push({ picks: [...build], qty: buildQty, price: SET.price });
   build = new Set(); buildQty = 1;
   renderKhach();
 };
@@ -1034,8 +1075,8 @@ document.addEventListener("change", e => {
   if (d.left) { const n = Math.max(0, parseInt(e.target.value, 10) || 0); stock[d.left] = sold(d.left) + n; if (!n) { lastQty[d.left] = stock[d.left]; } refresh(); }
   if (d.today) { stock[d.today] = Math.max(0, parseInt(e.target.value, 10) || 0); refresh(); }
   if (d.price) { byId[d.price].price = Math.max(0, parseFloat(e.target.value) || 0) * 1000; refresh(); }
-  if (e.target.id === "cfg-price") { SET.price = Math.max(0, parseFloat(e.target.value) || 0) * 1000; refresh(); }
-  if (e.target.id === "cfg-picks") { SET.picks = Math.max(1, parseInt(e.target.value, 10) || 1); build = new Set(); refresh(); }
+  if (d.tprice) { TIERS[+d.tprice].price = Math.max(0, parseFloat(e.target.value) || 0) * 1000; refresh(); }
+  if (d.tpicks) { TIERS[+d.tpicks].picks = Math.max(1, parseInt(e.target.value, 10) || 1); tierIx = -1; build = new Set(); refresh(); }
   if (e.target.id === "a-cat") $("a-price-wrap").hidden = e.target.value !== EXTRA;
   if (d.img && e.target.files[0]) readImage(e.target.files[0], url => { byId[d.img].img = url; renderCatalog(); });
 });

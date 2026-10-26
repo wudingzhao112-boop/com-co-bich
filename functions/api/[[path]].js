@@ -110,11 +110,14 @@ export async function onRequest({ request, env, params }) {
       const name = str(body.name, 80), phone = str(body.phone, 20), addr = str(body.addr, 200);
       if (!name || !/^[0-9 +.]{9,14}$/.test(phone) || !addr) return bad("Vui lòng điền tên, số điện thoại và địa chỉ.");
       const menu = await getKV(db, "menu");
-      const picks = menu?.set?.picks || 5, price = menu?.set?.price || 40000;
-      const sets = (Array.isArray(body.sets) ? body.sets : []).slice(0, 30).map(s => ({
-        picks: (Array.isArray(s.picks) ? s.picks : []).slice(0, picks).map(x => str(x, 40)),
-        qty: Math.max(1, Math.min(50, parseInt(s.qty, 10) || 1)),
-      })).filter(s => s.picks.length);
+      const tiers = Array.isArray(menu?.tiers) && menu.tiers.length ? menu.tiers
+        : [{ price: 35000, picks: 3 }, { price: 40000, picks: 4 }, { price: 50000, picks: 5 }];
+      const maxPicks = Math.max(...tiers.map(t => +t.picks || 0));
+      const sets = (Array.isArray(body.sets) ? body.sets : []).slice(0, 30).map(s => {
+        const picks = [...new Set((Array.isArray(s.picks) ? s.picks : []).slice(0, maxPicks).map(x => str(x, 40)))];
+        return { picks, qty: Math.max(1, Math.min(50, parseInt(s.qty, 10) || 1)), price: +tiers.find(t => +t.picks === picks.length)?.price || 0 };
+      }).filter(s => s.picks.length);
+      if (sets.some(s => !s.price)) return bad("Số món trong suất chưa đúng, bạn chọn lại giúp quán nhé.");
       const extras = {};
       for (const [id, q] of Object.entries(body.extras || {})) { const n = Math.min(50, parseInt(q, 10) || 0); if (n > 0) extras[str(id, 40)] = n; }
       if (!sets.length && !Object.keys(extras).length) return bad("Giỏ hàng trống.");
@@ -125,7 +128,7 @@ export async function onRequest({ request, env, params }) {
         const out = Object.entries(need).filter(([id, q]) => (menu.stock?.[id] || 0) - (sold[id] || 0) < q).map(([id]) => id);
         if (out.length) return json({ error: "Có món vừa hết, bạn chọn lại giúp quán nhé.", out }, 409);
       }
-      const total = sets.reduce((s, x) => s + x.qty * price, 0)
+      const total = sets.reduce((s, x) => s + x.qty * x.price, 0)
         + Object.entries(extras).reduce((s, [id, q]) => s + q * (menu?.prices?.[id] || 0), 0);
       const no = orders.reduce((mx, o) => Math.max(mx, o.no || 0), 0) + 1;
       const id = crypto.randomUUID().slice(0, 12), at = Date.now();
