@@ -140,6 +140,16 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 .edit-bar > div { display: grid; gap: 2px; min-width: 0; }
 .edit-bar small { font-size: 12px; }
 .dish.edit { cursor: default; }
+/* Chủ quán, tab Món hôm nay: 4 món một hàng, gọn */
+.editing .dish-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+@media (max-width: 340px) { .editing .dish-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.dish.edit { padding: 4px; gap: 2px; position: relative; border-radius: 10px; }
+.dish.edit .thumb { aspect-ratio: 1 / 1; }
+.dish.edit .sw-mini { position: absolute; top: 6px; right: 6px; transform: scale(.75); transform-origin: top right; box-shadow: 0 1px 3px rgb(0 0 0 / .3); }
+.dish.edit .e-name { font-size: 12px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.dish.edit .e-sold { font-size: 11px; }
+.dish.edit .left-in { font-size: 11px; gap: 3px; }
+.dish.edit .left-in .num { width: 100%; min-width: 0; padding: 3px 4px; font-size: 13px; }
 .dish.edit.off { opacity: .55; }
 .live { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; display: grid; gap: 6px; min-width: 0; }
 .live.off { opacity: .55; }
@@ -429,6 +439,7 @@ details.sorder { border-left-color: var(--st); }
     <a class="tab" href="#chu" id="t-don">Đơn hàng</a>
     <a class="tab" href="#chu-bc" id="t-bc">Báo cáo</a>
     <a class="tab" href="#chu-mon" id="t-mon">Món hôm nay</a>
+    <a class="tab" href="#chu-km" id="t-km">Khuyến mãi</a>
     <a class="tab" href="#chu-sp" id="t-sp">Sửa sản phẩm</a>
     <button type="button" class="tab" id="chpin" style="margin-left:auto">Đổi mã</button>
     <button type="button" class="tab" id="logout">Thoát</button>
@@ -604,7 +615,7 @@ details.sorder { border-left-color: var(--st); }
       <p class="sub" style="font-size:13px;margin:0">Bật công tắc là khách thấy ngay ở trang đặt cơm. Tắt là ẩn đi.</p>
       <div class="promo-row"><div><b>🎁 Tặng quà</b><input id="pr-gift-text" placeholder="VD: Tặng 1 trà đá cho đơn từ 2 suất" aria-label="Nội dung quà tặng"></div><button type="button" class="switch" id="pr-gift" aria-pressed="false" aria-label="Bật tặng quà"></button></div>
       <div class="promo-row"><div><b>⭐ Tích điểm đổi suất miễn phí</b><label class="sub" style="font-size:13px">Đủ <input class="num" type="number" inputmode="numeric" min="1" id="pr-free-pts" aria-label="Số điểm"> điểm đổi 1 suất (1 suất đã giao = 1 điểm)</label></div><button type="button" class="switch" id="pr-free" aria-pressed="false" aria-label="Bật đổi điểm"></button></div>
-      <div class="promo-row"><div><b>🤝 Mời bạn dùng app</b><label class="sub" style="font-size:13px">Mỗi bạn đăng ký qua link mời, người mời được giảm <input class="num" type="number" inputmode="numeric" min="0" id="pr-ref-amt" aria-label="Số tiền giảm"> nghìn cho 1 đơn</label></div><button type="button" class="switch" id="pr-ref" aria-pressed="false" aria-label="Bật mời bạn"></button></div>
+      <div class="promo-row"><div><b>🤝 Mời bạn dùng app</b><label class="sub" style="font-size:13px">Mỗi bạn đăng ký qua link mời, người mời được giảm <input class="num" type="number" inputmode="numeric" min="0" step="1000" id="pr-ref-amt" aria-label="Số tiền giảm (đồng)" style="width:88px"> đồng cho 1 đơn</label></div><button type="button" class="switch" id="pr-ref" aria-pressed="false" aria-label="Bật mời bạn"></button></div>
       <p class="toast" id="promo-ok" aria-live="polite"></p>
     </section>
     <section class="panel" id="sp-tools">
@@ -1148,9 +1159,10 @@ function renderBuilder() {
       return `<div class="group-label">${c.toUpperCase()}</div><div class="dish-grid">${list.map(m => {
         const on = stock[m.id] > 0, s = sold(m.id), rem = on ? Math.max(0, stock[m.id] - s) : 0;
         return `<div class="dish edit${on ? "" : " off"}"><span class="thumb">${thumb(m)}</span>
-          <div class="live-top"><b>${esc(m.name)}</b><button type="button" class="switch" data-toggle="${m.id}" aria-pressed="${on}" aria-label="Bán ${esc(m.name)}"></button></div>
-          <div class="live-mid"><small class="sub" style="white-space:nowrap">Bán ${s}</small>
-          ${on ? `<label class="left-in">Còn <input class="num" type="number" inputmode="numeric" min="0" id="left-${m.id}" data-left="${m.id}" value="${rem}" aria-label="Số suất còn lại ${esc(m.name)}"></label>` : `<b style="color:var(--chili);font-size:13px">Đã tắt</b>`}</div></div>`;
+          <button type="button" class="switch sw-mini" data-toggle="${m.id}" aria-pressed="${on}" aria-label="Bán ${esc(m.name)}"></button>
+          <b class="e-name">${esc(m.name)}</b>
+          <small class="sub e-sold">Đã bán ${s}</small>
+          ${on ? `<label class="left-in">Còn <input class="num" type="number" inputmode="numeric" min="0" id="left-${m.id}" data-left="${m.id}" value="${rem}" aria-label="Số suất còn lại ${esc(m.name)}"></label>` : `<b style="color:var(--chili);font-size:12px">Đã tắt</b>`}</div>`;
       }).join("")}</div>`;
     }).join("") || `<p class="sub">Hôm nay chưa bật món nào. Vào tab <a href="#chu-sp">Sửa sản phẩm</a> để bật món.</p>`;
     return;
@@ -1296,7 +1308,7 @@ function syncTime() {
 }
 $("f-hour").onchange = $("f-min").onchange = syncTime;
 function showKhach(view) {
-  const vm = view === "menu" && ownerPage !== "sp";
+  const vm = view === "menu" && ownerPage !== "sp" && ownerPage !== "km";
   $("view-menu").hidden = !vm;
   $("view-menu").style.display = vm ? "grid" : "none";
   $("view-checkout").hidden = view !== "checkout";
@@ -1472,15 +1484,15 @@ function setEdit(on, page = "mon") {
   $("edit-toggle").setAttribute("aria-pressed", on);
   $("edit-tools").hidden = !on;
   $("mon-tools").hidden = page !== "mon";
-  $("promo-tools").hidden = page !== "mon";
+  $("promo-tools").hidden = page !== "km";
   $("sp-tools").hidden = page !== "sp";
-  $("khach-head").hidden = on && page === "sp";
+  $("khach-head").hidden = on && (page === "sp" || page === "km");
 }
 function show(id, on) { $(id).hidden = !on; $(id).style.display = on ? "grid" : "none"; }
 function route() {
   const h = location.hash.slice(1);
-  const r = ["chu", "chu-bc", "chu-mon", "chu-sp", "shipper"].includes(h) ? h : "khach";
-  const page = r === "chu-sp" ? "sp" : r === "chu-mon" ? "mon" : "";
+  const r = ["chu", "chu-bc", "chu-mon", "chu-sp", "chu-km", "shipper"].includes(h) ? h : "khach";
+  const page = r === "chu-sp" ? "sp" : r === "chu-mon" ? "mon" : r === "chu-km" ? "km" : "";
   mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";
   const allowed = r === "khach" || role === "owner" || (role === "ship" && r === "shipper");
   $("nav").hidden = role !== "owner" || r === "khach";
@@ -1494,6 +1506,7 @@ function route() {
   $("t-don").setAttribute("aria-pressed", r === "chu");
   $("t-mon").setAttribute("aria-pressed", r === "chu-mon");
   $("t-sp").setAttribute("aria-pressed", r === "chu-sp");
+  $("t-km").setAttribute("aria-pressed", r === "chu-km");
   $("t-bc").setAttribute("aria-pressed", r === "chu-bc");
   if (r === "chu-bc") mode = "chu";
   if (r === "chu-bc" && typeof loadFeedback === "function") loadFeedback();
@@ -2038,7 +2051,7 @@ function renderPromo() {
   [["gift"], ["free"], ["ref"]].forEach(([x]) => $("pr-" + x).setAttribute("aria-pressed", !!PROMO[x].on));
   if (ae !== $("pr-gift-text")) $("pr-gift-text").value = PROMO.gift.text;
   if (ae !== $("pr-free-pts")) $("pr-free-pts").value = PROMO.free.points;
-  if (ae !== $("pr-ref-amt")) $("pr-ref-amt").value = PROMO.ref.amount / 1000;
+  if (ae !== $("pr-ref-amt")) $("pr-ref-amt").value = PROMO.ref.amount;
   if (!$("view-pts").hidden && typeof renderPts === "function") renderPtsExtra();
 }
 async function savePromo() {
@@ -2048,7 +2061,7 @@ async function savePromo() {
 ["gift", "free", "ref"].forEach(x => { $("pr-" + x).onclick = () => { PROMO[x].on = !PROMO[x].on; savePromo(); }; });
 $("pr-gift-text").onchange = () => { PROMO.gift.text = $("pr-gift-text").value.trim(); savePromo(); };
 $("pr-free-pts").onchange = () => { PROMO.free.points = Math.max(1, parseInt($("pr-free-pts").value, 10) || 10); savePromo(); };
-$("pr-ref-amt").onchange = () => { PROMO.ref.amount = Math.max(0, parseFloat($("pr-ref-amt").value) || 0) * 1000; savePromo(); };
+$("pr-ref-amt").onchange = () => { PROMO.ref.amount = Math.max(0, Math.round(parseFloat($("pr-ref-amt").value) || 0)); savePromo(); };
 document.addEventListener("click", e => { const b = e.target.closest("[data-nav-go]"); if (b) showKhach(b.dataset.navGo); });
 
 // Trang Tích điểm: tiến độ đổi suất miễn phí + mời bạn

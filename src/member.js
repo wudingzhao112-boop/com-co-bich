@@ -298,7 +298,7 @@ function renderPromo() {
   [["gift"], ["free"], ["ref"]].forEach(([x]) => $("pr-" + x).setAttribute("aria-pressed", !!PROMO[x].on));
   if (ae !== $("pr-gift-text")) $("pr-gift-text").value = PROMO.gift.text;
   if (ae !== $("pr-free-pts")) $("pr-free-pts").value = PROMO.free.points;
-  if (ae !== $("pr-ref-amt")) $("pr-ref-amt").value = PROMO.ref.amount / 1000;
+  if (ae !== $("pr-ref-amt")) $("pr-ref-amt").value = PROMO.ref.amount;
   if (!$("view-pts").hidden && typeof renderPts === "function") renderPtsExtra();
 }
 async function savePromo() {
@@ -308,7 +308,7 @@ async function savePromo() {
 ["gift", "free", "ref"].forEach(x => { $("pr-" + x).onclick = () => { PROMO[x].on = !PROMO[x].on; savePromo(); }; });
 $("pr-gift-text").onchange = () => { PROMO.gift.text = $("pr-gift-text").value.trim(); savePromo(); };
 $("pr-free-pts").onchange = () => { PROMO.free.points = Math.max(1, parseInt($("pr-free-pts").value, 10) || 10); savePromo(); };
-$("pr-ref-amt").onchange = () => { PROMO.ref.amount = Math.max(0, parseFloat($("pr-ref-amt").value) || 0) * 1000; savePromo(); };
+$("pr-ref-amt").onchange = () => { PROMO.ref.amount = Math.max(0, Math.round(parseFloat($("pr-ref-amt").value) || 0)); savePromo(); };
 document.addEventListener("click", e => { const b = e.target.closest("[data-nav-go]"); if (b) showKhach(b.dataset.navGo); });
 
 // Trang Tích điểm: tiến độ đổi suất miễn phí + mời bạn
