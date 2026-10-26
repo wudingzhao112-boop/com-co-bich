@@ -1190,9 +1190,9 @@ function goHome() {
 }
 function fillTimes() {
   // Chỉ cho chọn giờ từ bây giờ trở đi (giờ đã qua thì không hiện)
-  // Giờ nhận: trưa từ 10 giờ, chiều từ 17 giờ
+  // Giờ nhận: trưa 10–14 giờ, chiều 17–20 giờ
   const cur = $("f-hour").value, curM = $("f-min").value, hNow = new Date().getHours();
-  $("f-hour").innerHTML = `<option value="">Sớm nhất</option>` + [10, 11, 12, 13, 17, 18, 19, 20].filter(x => x >= hNow).map(x => `<option value="${x}"${String(x) === cur ? " selected" : ""}>${String(x).padStart(2, "0")} giờ</option>`).join("");
+  $("f-hour").innerHTML = `<option value="">Sớm nhất</option>` + [10, 11, 12, 13, 14, 17, 18, 19, 20].filter(x => x >= hNow).map(x => `<option value="${x}"${String(x) === cur ? " selected" : ""}>${String(x).padStart(2, "0")} giờ</option>`).join("");
   $("f-min").innerHTML = Array.from({ length: 12 }, (_, i) => i * 5).map(x => `<option value="${x}"${String(x) === curM ? " selected" : ""}>${String(x).padStart(2, "0")} phút</option>`).join("");
   syncTime();
 }
