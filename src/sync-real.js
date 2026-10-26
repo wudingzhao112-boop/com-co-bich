@@ -57,6 +57,7 @@ async function pollMenu() {
   try {
     const d = await api("menu");
     soldSrv = d.sold || {};
+    if (d.promo) { PROMO = d.promo; renderPromo(); }
     if (d.menu && !(ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName) && editMode)) applyMenu(d.menu, d.imgs);
     else if (d.imgs) for (const [id, v] of Object.entries(d.imgs)) if (byId[id]) byId[id].img = "/api/img/" + id + "?v=" + v;
     if (!menuReady) { menuReady = true; menuSig = d.menu ? JSON.stringify(menuState()) : ""; }
@@ -78,7 +79,7 @@ async function pollOrders() {
   catch (e) { if (e.status === 401) { role = null; route(); } else syncErr(e); }
 }
 async function placeOrder(o) {
-  try { return { ok: true, ...(await api("orders", { method: "POST", body: JSON.stringify(o) })) }; }
+  try { return { ok: true, ...(await api("orders", { method: "POST", body: JSON.stringify(o), headers: { "x-cus": memGet()?.token || "" } })) }; }
   catch (e) { if (e.status === 409) pollMenu(); return { ok: false, error: e.message }; }
 }
 async function checkRole() {

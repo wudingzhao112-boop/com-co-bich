@@ -67,7 +67,7 @@ rep('''  orders.push(o);
   placeOrder(o).then(r => {
     $("submit-btn").disabled = false; $("submit-btn").textContent = "Đặt cơm";
     if (!r.ok) { $("err").textContent = r.error; $("err").hidden = false; return; }
-    o.no = r.no; o.id = r.id;
+    o.no = r.no; o.id = r.id; o.discount = r.discount || 0; promoUse.free = promoUse.ref = false;
     if (!memGet()?.member) try { localStorage.setItem("cobich-khach", JSON.stringify({ name: o.name, phone: o.phone, addr: o.addr })); } catch (_) {}
     cart.sets = []; cart.extras = {}; pollMenu();
     finishOrder(o); renderMember();

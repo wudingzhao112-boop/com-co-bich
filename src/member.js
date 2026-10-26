@@ -20,7 +20,7 @@ async function renderMember() {
   $("mem-sub").textContent = n ? `Đơn này được +${n} điểm khi giao xong.` : "Mỗi suất cơm = 1 điểm, dùng đổi quà tri ân của quán.";
   try {
     const d = (await cusApi("cus/me")).me;
-    memSet({ ...k, name: d.name, phone: d.phone, addr: d.addr, avatar: d.avatar || "", gender: d.gender, geo: d.geo, points: d.points });
+    memSet({ ...k, name: d.name, phone: d.phone, addr: d.addr, avatar: d.avatar || "", gender: d.gender, geo: d.geo, points: d.points, code: d.code, invites: d.invites, refLeft: d.refLeft });
     $("mem-pts").textContent = $("mem-top-pts").textContent = `${d.points} điểm`;
   } catch (e) {
     if (e.status === 401) { memSet({ ...k, member: false, token: "" }); return renderMember(); }
@@ -70,9 +70,10 @@ $("acct-form").addEventListener("submit", async e => {
   try {
     let d;
     if (acctMode === "me") d = await cusApi("cus/me", { method: "PUT", body: JSON.stringify({ name, addr, gender, geo }) });
-    else d = await api("cus/" + (acctMode === "reg" ? "register" : "login"), { method: "POST", body: JSON.stringify({ phone, pass, addr, gender, geo }) });
+    else d = await api("cus/" + (acctMode === "reg" ? "register" : "login"), { method: "POST", body: JSON.stringify({ phone, pass, addr, gender, geo, ref: refCode() }) });
+    if (acctMode === "reg") try { localStorage.removeItem("cobich-ref"); } catch (_) {}
     const k = memGet() || {};
-    memSet({ ...k, member: true, token: d.token || k.token, name: d.me.name, phone: d.me.phone, addr: d.me.addr, avatar: d.me.avatar || "", gender: d.me.gender, geo: d.me.geo, points: d.me.points });
+    memSet({ ...k, member: true, token: d.token || k.token, name: d.me.name, phone: d.me.phone, addr: d.me.addr, avatar: d.me.avatar || "", gender: d.me.gender, geo: d.me.geo, points: d.me.points, code: d.me.code, invites: d.me.invites, refLeft: d.me.refLeft });
     fillFromMem(); $("acct").hidden = true; renderMember(); refreshMeViews();
     if (!$("view-done").hidden && lastOrder) showMemDone(lastOrder, true);
   } catch (ex) { err(ex.message); }
@@ -107,7 +108,7 @@ async function renderPts() {
   }
   const show = d => { box.innerHTML = `<div class="me-card"><div class="avatar">${avHTML(memGet())}</div><div><b>${esc(d.name || "")}</b><div class="pts-big">${d.points ?? 0}</div><small class="sub">điểm đã tích</small></div></div>
     ${d.pending ? `<p class="sub" style="margin:0">Sắp được cộng thêm <b>${d.pending} điểm</b> khi các đơn đang làm giao xong.</p>` : ""}
-    <p class="sub" style="margin:0">Mỗi suất cơm giao xong = 1 điểm. Quà tri ân quán sẽ báo sau.${d.orders != null ? ` Bạn đã đặt ${d.orders} đơn.` : ""}</p>`; };
+    <p class="sub" style="margin:0">Mỗi suất cơm giao xong = 1 điểm.${PROMO.free.on ? "" : " Quà tri ân quán sẽ báo sau."}${d.orders != null ? ` Bạn đã đặt ${d.orders} đơn.` : ""}</p>`; };
   show(memGet());
   try { const d = (await cusApi("cus/me")).me; memSet({ ...memGet(), ...d }); show(d); } catch (e) { if (e.status === 401) { memSet({ ...memGet(), member: false, token: "" }); renderPts(); } }
 }
@@ -273,8 +274,99 @@ function showWelcome() {
   $("w-hi").textContent = `Chào ${who}! 👋`;
   $("w-sub").textContent = `Cô Bích Quán chúc ${who === "bạn" ? "bạn" : "quý khách"} ${h < 11 ? "một ngày tốt lành và bữa trưa" : h < 15 ? "bữa trưa" : "bữa tối"} thật ngon miệng.`;
   $("w-tiers").innerHTML = TIERS.map((t, i) => `<button type="button" class="tier" data-tier="${i}"><b>${k2(t.price)}</b><small>${t.picks} món</small></button>`).join("");
+  if (refCode() && !k?.member) $("w-sub").textContent += " Bạn được bạn bè mời dùng app, bấm Tích điểm để đăng ký nhé.";
   $("welcome").hidden = false;
 }
 const k2 = v => Math.round(v / 1000) + "k";
 $("w-skip").onclick = () => { $("welcome").hidden = true; };
+
+// ---------- Chương trình khuyến mãi ----------
+let PROMO = { gift: { on: false, text: "" }, free: { on: false, points: 10 }, ref: { on: false, amount: 5000 } };
+const promoUse = { free: false, ref: false };
+// Khách mở link mời ?ref=MÃ: nhớ mã để gửi khi đăng ký
+try { const rc = new URLSearchParams(location.search).get("ref"); if (rc) localStorage.setItem("cobich-ref", rc.toUpperCase().slice(0, 12)); } catch (_) {}
+const refCode = () => { try { return localStorage.getItem("cobich-ref") || ""; } catch (_) { return ""; } };
+const inviteUrl = code => location.origin + "/?ref=" + code;
+function renderPromo() {
+  const k = memGet(), items = [];
+  if (PROMO.gift.on && PROMO.gift.text) items.push(`<button type="button" data-nav-go="pts">🎁 ${esc(PROMO.gift.text)}</button>`);
+  if (PROMO.free.on) items.push(`<button type="button" data-nav-go="pts">⭐ Tích đủ ${PROMO.free.points} điểm đổi 1 suất cơm miễn phí${k?.member ? ` · bạn có ${k.points ?? 0} điểm` : ""}</button>`);
+  if (PROMO.ref.on) items.push(`<button type="button" data-nav-go="pts">🤝 Mời bạn dùng app: mỗi bạn đăng ký, bạn được giảm ${fmt(PROMO.ref.amount)}</button>`);
+  $("promo-bar").innerHTML = items.join(""); $("promo-bar").hidden = !items.length || mode !== "khach" || editMode;
+  // ô chủ quán (không ghi đè khi đang gõ)
+  const ae = document.activeElement;
+  [["gift"], ["free"], ["ref"]].forEach(([x]) => $("pr-" + x).setAttribute("aria-pressed", !!PROMO[x].on));
+  if (ae !== $("pr-gift-text")) $("pr-gift-text").value = PROMO.gift.text;
+  if (ae !== $("pr-free-pts")) $("pr-free-pts").value = PROMO.free.points;
+  if (ae !== $("pr-ref-amt")) $("pr-ref-amt").value = PROMO.ref.amount / 1000;
+  if (!$("view-pts").hidden && typeof renderPts === "function") renderPtsExtra();
+}
+async function savePromo() {
+  try { PROMO = (await api("promo", { method: "PUT", body: JSON.stringify(PROMO) })).promo; $("promo-ok").textContent = "Đã lưu, khách thấy ngay."; renderPromo(); }
+  catch (e) { $("promo-ok").textContent = "Chưa lưu được: " + e.message; }
+}
+["gift", "free", "ref"].forEach(x => { $("pr-" + x).onclick = () => { PROMO[x].on = !PROMO[x].on; savePromo(); }; });
+$("pr-gift-text").onchange = () => { PROMO.gift.text = $("pr-gift-text").value.trim(); savePromo(); };
+$("pr-free-pts").onchange = () => { PROMO.free.points = Math.max(1, parseInt($("pr-free-pts").value, 10) || 10); savePromo(); };
+$("pr-ref-amt").onchange = () => { PROMO.ref.amount = Math.max(0, parseFloat($("pr-ref-amt").value) || 0) * 1000; savePromo(); };
+document.addEventListener("click", e => { const b = e.target.closest("[data-nav-go]"); if (b) showKhach(b.dataset.navGo); });
+
+// Trang Tích điểm: tiến độ đổi suất miễn phí + mời bạn
+function renderPtsExtra() {
+  const k = memGet(); let box = $("pts-extra");
+  if (!box) { box = document.createElement("div"); box.id = "pts-extra"; box.style.cssText = "display:grid;gap:12px"; $("view-pts").append(box); }
+  if (!k?.member || !k?.token) { box.innerHTML = ""; return; }
+  const parts = [];
+  if (PROMO.gift.on && PROMO.gift.text) parts.push(`<div class="member">🎁 <b>Quà tặng:</b> ${esc(PROMO.gift.text)}</div>`);
+  if (PROMO.free.on) {
+    const pts = k.points ?? 0, need = PROMO.free.points, pct = Math.min(100, Math.round(pts / need * 100));
+    parts.push(`<div class="member" style="display:grid;gap:6px"><b>⭐ Đổi ${need} điểm lấy 1 suất miễn phí</b>
+      <div class="live"><div class="bar"><i style="width:${pct}%"></i></div></div>
+      <span class="sub" style="margin:0">${pts >= need ? "Bạn đã đủ điểm! Khi thanh toán, tick “Đổi điểm” để được miễn phí 1 suất." : `Còn ${need - pts} điểm nữa (${pts}/${need}).`}</span></div>`);
+  }
+  if (PROMO.ref.on || (k.invites || []).length) {
+    const inv = k.invites || [], url = k.code ? inviteUrl(k.code) : "";
+    parts.push(`<div class="member" style="display:grid;gap:8px"><b>🤝 Mời bạn dùng app</b>
+      <span class="sub" style="margin:0">Gửi link này cho bạn bè. Bạn bè đăng ký tài khoản qua link, bạn được 1 phiếu giảm ${fmt(PROMO.ref.amount)} cho 1 đơn.</span>
+      <div class="inv-link"><input id="inv-url" readonly value="${esc(url)}" aria-label="Link mời"><button type="button" class="btn-sm" id="inv-copy">Sao chép</button></div>
+      <button type="button" class="btn-main" id="inv-share">Chia sẻ cho bạn bè</button>
+      <b style="margin-top:4px">Bạn bè đã nhận lời mời: ${inv.length}</b>
+      ${inv.length ? `<ul style="margin:0;padding-left:18px">${inv.map(x => `<li>${esc(x.name || "Bạn mới")} · ${esc(x.phone)} · đăng ký ${new Date(x.at).toLocaleDateString("vi-VN")}</li>`).join("")}</ul>` : `<span class="sub" style="margin:0">Chưa có ai. Khi bạn bè đăng ký qua link của bạn, tên họ hiện ở đây.</span>`}
+      <span style="color:var(--leaf);font-weight:600">Phiếu giảm còn dùng được: ${k.refLeft ?? 0}</span></div>`);
+  }
+  box.innerHTML = parts.join("");
+  const copy = $("inv-copy"), share = $("inv-share");
+  if (copy) copy.onclick = () => { const u = $("inv-url"); try { navigator.clipboard.writeText(u.value).then(() => copy.textContent = "Đã chép", () => { u.select(); }); } catch (_) { u.select(); } };
+  if (share) share.onclick = () => {
+    const url = $("inv-url").value, text = "Đặt cơm Cô Bích Quán ngon, giao tận nơi. Đăng ký qua link này nhé:";
+    if (navigator.share) navigator.share({ title: "Cơm Cô Bích", text, url }).catch(() => {});
+    else location.href = "https://zalo.me/share?url=" + encodeURIComponent(url);
+  };
+}
+const _renderPts = renderPts;
+renderPts = async function () { await _renderPts(); renderPtsExtra(); };
+
+// Thanh toán: chọn dùng ưu đãi
+function promoDiscount() {
+  let d = 0; const sets = cart.sets;
+  if (promoUse.free && sets.length) d += Math.min(...sets.map(s => setPrice(s)));
+  if (promoUse.ref) d += PROMO.ref.amount;
+  return Math.min(d, orderTotal(cart));
+}
+function renderUse() {
+  const k = memGet(), on = !!(k?.member && k?.token);
+  const canFree = PROMO.free.on && on && (k.points ?? 0) >= PROMO.free.points && cart.sets.length;
+  const canRef = PROMO.ref.on && on && (k.refLeft ?? 0) > 0;
+  if (!canFree) promoUse.free = false; if (!canRef) promoUse.ref = false;
+  const rows = [];
+  if (canFree) rows.push(`<label><input type="checkbox" data-use="free"${promoUse.free ? " checked" : ""}> <span>Đổi ${PROMO.free.points} điểm: miễn phí 1 suất (−${fmt(Math.min(...cart.sets.map(s => setPrice(s))))})</span></label>`);
+  if (canRef) rows.push(`<label><input type="checkbox" data-use="ref"${promoUse.ref ? " checked" : ""}> <span>Dùng 1 phiếu mời bạn (−${fmt(PROMO.ref.amount)}), còn ${k.refLeft} phiếu</span></label>`);
+  if (!on && (PROMO.free.on || PROMO.ref.on)) rows.push(`<span class="sub" style="margin:0">Có ưu đãi cho khách có tài khoản. <button type="button" class="linkish" data-acctgo="login" style="padding:0">Đăng nhập</button></span>`);
+  $("use-box").innerHTML = rows.length ? `<b>Ưu đãi của bạn</b>${rows.join("")}${promoDiscount() ? `<span style="color:var(--leaf);font-weight:700">Đã giảm ${fmt(promoDiscount())}</span>` : ""}` : "";
+  $("use-box").hidden = !rows.length;
+  $("total-co").textContent = fmt(Math.max(0, orderTotal(cart) - promoDiscount()));
+  if (typeof updateQR === "function") updateQR();
+}
+document.addEventListener("change", e => { const x = e.target.dataset?.use; if (x) { promoUse[x] = e.target.checked; renderUse(); } });
+
 if (!location.hash && !cart.sets.length && tierIx < 0) showWelcome();

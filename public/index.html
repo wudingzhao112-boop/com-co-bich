@@ -373,6 +373,17 @@ body.has-nav .wrap { padding-bottom: 200px; }
 .pick-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; flex-wrap: wrap; }
 .pick-chip { background: var(--chili); color: #fff; font-weight: 700; font-size: 12px; border-radius: 999px; padding: 3px 9px; line-height: 1.3; }
 .pick-chip.on { background: var(--leaf); color: var(--leaf-ink); }
+.promo-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px dashed var(--line); }
+.promo-row > div { display: grid; gap: 6px; flex: 1; min-width: 0; }
+.promo-row input:not(.num) { font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); width: 100%; }
+.promo-bar { display: grid; gap: 6px; }
+.promo-bar[hidden] { display: none; }
+.promo-bar button { font: inherit; font-size: 14px; text-align: left; border: 1.5px dashed var(--chili); background: var(--surface); color: var(--fg); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+.use-box { display: grid; gap: 8px; border: 1.5px dashed var(--chili); border-radius: 12px; padding: 12px; }
+.use-box[hidden] { display: none; }
+.use-box label { display: flex; gap: 8px; align-items: flex-start; font-size: 15px; }
+.inv-link { display: flex; gap: 6px; }
+.inv-link input { flex: 1; min-width: 0; font: inherit; font-size: 13px; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
 .pin-btn { justify-self: start; font-size: 14px; padding: 8px 12px; margin-top: 6px; }
 .geo-st { color: var(--leaf); font-weight: 600; font-size: 13px; }
 .lbl { font-weight: 600; font-size: 14px; }
@@ -449,6 +460,7 @@ details.sorder { border-left-color: var(--st); }
       <button type="button" class="switch" id="edit-toggle" aria-pressed="false" aria-label="Chế độ chủ quán sửa món"></button>
     </div>
 
+    <div class="promo-bar" id="promo-bar" hidden></div>
     <div id="view-menu" style="display:grid;gap:16px">
       <section class="panel" id="builder">
         <div class="picked-bar">
@@ -496,6 +508,7 @@ details.sorder { border-left-color: var(--st); }
     <section class="panel" id="view-checkout" hidden>
       <h2>Xác nhận đơn</h2>
       <div id="cart-lines"></div>
+      <div class="use-box" id="use-box" hidden></div>
       <div class="total"><span>Tổng cộng</span><span id="total-co"></span></div>
       <div class="member" id="member">
         <div id="mem-ask">
@@ -585,6 +598,14 @@ details.sorder { border-left-color: var(--st); }
         <button type="button" class="btn-ghost" id="new-day">Sang ngày mới</button></div>
       <p class="toast" id="toast-ann" aria-live="polite"></p>
       <p class="sub" style="font-size:12px;margin:0">“Sang ngày mới” tắt hết món đang bán, sổ đơn tự sang trang mới mỗi ngày. Kho món và ảnh vẫn giữ nguyên. Muốn bật thêm món, đổi ảnh: vào tab “Sửa sản phẩm”.</p>
+    </section>
+    <section class="panel" id="promo-tools">
+      <h3>Chương trình khuyến mãi</h3>
+      <p class="sub" style="font-size:13px;margin:0">Bật công tắc là khách thấy ngay ở trang đặt cơm. Tắt là ẩn đi.</p>
+      <div class="promo-row"><div><b>🎁 Tặng quà</b><input id="pr-gift-text" placeholder="VD: Tặng 1 trà đá cho đơn từ 2 suất" aria-label="Nội dung quà tặng"></div><button type="button" class="switch" id="pr-gift" aria-pressed="false" aria-label="Bật tặng quà"></button></div>
+      <div class="promo-row"><div><b>⭐ Tích điểm đổi suất miễn phí</b><label class="sub" style="font-size:13px">Đủ <input class="num" type="number" inputmode="numeric" min="1" id="pr-free-pts" aria-label="Số điểm"> điểm đổi 1 suất (1 suất đã giao = 1 điểm)</label></div><button type="button" class="switch" id="pr-free" aria-pressed="false" aria-label="Bật đổi điểm"></button></div>
+      <div class="promo-row"><div><b>🤝 Mời bạn dùng app</b><label class="sub" style="font-size:13px">Mỗi bạn đăng ký qua link mời, người mời được giảm <input class="num" type="number" inputmode="numeric" min="0" id="pr-ref-amt" aria-label="Số tiền giảm"> nghìn cho 1 đơn</label></div><button type="button" class="switch" id="pr-ref" aria-pressed="false" aria-label="Bật mời bạn"></button></div>
+      <p class="toast" id="promo-ok" aria-live="polite"></p>
     </section>
     <section class="panel" id="sp-tools">
       <h3>Sửa sản phẩm: ảnh và bật/tắt món</h3>
@@ -967,6 +988,7 @@ async function pollMenu() {
   try {
     const d = await api("menu");
     soldSrv = d.sold || {};
+    if (d.promo) { PROMO = d.promo; renderPromo(); }
     if (d.menu && !(ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName) && editMode)) applyMenu(d.menu, d.imgs);
     else if (d.imgs) for (const [id, v] of Object.entries(d.imgs)) if (byId[id]) byId[id].img = "/api/img/" + id + "?v=" + v;
     if (!menuReady) { menuReady = true; menuSig = d.menu ? JSON.stringify(menuState()) : ""; }
@@ -988,7 +1010,7 @@ async function pollOrders() {
   catch (e) { if (e.status === 401) { role = null; route(); } else syncErr(e); }
 }
 async function placeOrder(o) {
-  try { return { ok: true, ...(await api("orders", { method: "POST", body: JSON.stringify(o) })) }; }
+  try { return { ok: true, ...(await api("orders", { method: "POST", body: JSON.stringify(o), headers: { "x-cus": memGet()?.token || "" } })) }; }
   catch (e) { if (e.status === 409) pollMenu(); return { ok: false, error: e.message }; }
 }
 async function checkRole() {
@@ -1101,7 +1123,7 @@ let step = "mon", canhPick = "";
 const sold = id => role ? orders.filter(o => o.st !== "huy").reduce((s, o) => s + usedBy(o, id), 0) : (soldSrv[id] || 0);
 const left = id => Math.max(0, (stock[id] || 0) - sold(id) - usedBy(cart, id));
 const setPrice = x => x.price || TIERS.find(t => t.picks === x.picks.length)?.price || 0;
-const orderTotal = o => o.sets.reduce((s, x) => s + x.qty * setPrice(x), 0) + Object.entries(o.extras).reduce((s, [id, q]) => s + q * byId[id].price, 0);
+const orderTotal = o => Math.max(0, o.sets.reduce((s, x) => s + x.qty * setPrice(x), 0) + Object.entries(o.extras).reduce((s, [id, q]) => s + q * byId[id].price, 0) - (o.discount || 0));
 const setCount = o => o.sets.reduce((s, x) => s + x.qty, 0);
 const picksText = p => p.map(id => byId[id]?.name ?? "?").join(", ");
 
@@ -1281,6 +1303,7 @@ function showKhach(view) {
   $("view-done").hidden = view !== "done";
   $("view-pts").hidden = view !== "pts";
   $("view-cai").hidden = view !== "cai";
+  $("promo-bar").hidden = view !== "menu" || editMode || !$("promo-bar").innerHTML;
   $("cartbar").hidden = view !== "menu" || editMode;
   const nav = mode === "khach" && !editMode;
   $("bnav").hidden = !nav; document.body.classList.toggle("has-nav", nav);
@@ -1359,6 +1382,7 @@ function renderOwner() {
       </summary>
       <div class="ship">
         <div class="row"><span class="k">Bản đồ</span><a href="${mapUrl(o)}" target="_blank" rel="noopener">${o.geo ? "📍 Đã ghim trên bản đồ, xem đường" : "Xem đường đến " + esc(o.addr)}</a></div>
+        ${o.discount ? `<div class="row"><span class="k">Ưu đãi</span><b style="color:var(--leaf)">Đã giảm ${fmt(o.discount)}${o.promo?.points ? ` (đổi ${o.promo.points} điểm)` : ""}${o.promo?.ref ? " (phiếu mời bạn)" : ""}</b></div>` : ""}
         <div class="row"><span class="k">Thu tiền</span>${isPaid(o) ? `<b class="paid">Đã nhận tiền (chuyển khoản)</b>` : o.pay === "Chuyển khoản" ? `<span><b class="collect">Chờ xác nhận chuyển khoản ${fmt(orderTotal(o))}</b><br><small class="sub">Nội dung: COBICH ${esc(o.phone.replace(/\D/g, ""))}</small><br><button type="button" class="btn-sm" style="margin-top:4px;background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-paid="${o.no}">Đã nhận tiền</button></span>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} khi giao</b>`}</div>
       </div>
       <div class="dishes-list">${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
@@ -1448,6 +1472,7 @@ function setEdit(on, page = "mon") {
   $("edit-toggle").setAttribute("aria-pressed", on);
   $("edit-tools").hidden = !on;
   $("mon-tools").hidden = page !== "mon";
+  $("promo-tools").hidden = page !== "mon";
   $("sp-tools").hidden = page !== "sp";
   $("khach-head").hidden = on && page === "sp";
 }
@@ -1602,7 +1627,7 @@ $("copy-ann").onclick = () => {
   const fail = () => { $("ann").focus(); $("ann").select(); $("toast-ann").textContent = "Máy chưa cho sao chép tự động, bạn nhấn giữ vào chữ để sao chép."; };
   try { navigator.clipboard.writeText($("ann").value).then(() => { $("toast-ann").textContent = "Đã sao chép."; }, fail); } catch (_) { fail(); }
 };
-function openCheckout() { fillTimes(); setTimeout(updateQR); $("cart-lines").innerHTML = cartLinesHTML(false); $("total-co").textContent = fmt(orderTotal(cart)); showKhach("checkout"); }
+function openCheckout() { fillTimes(); setTimeout(updateQR); $("cart-lines").innerHTML = cartLinesHTML(false); renderUse(); showKhach("checkout"); }
 $("go").onclick = () => {
   if (step === "gio") return openCheckout();
   if (step === "canh") return commitSet();
@@ -1650,12 +1675,12 @@ $("form").addEventListener("submit", e => {
   if (missing.length) { $("err").textContent = "Vui lòng điền " + missing.join(", ") + "."; $("err").hidden = false; return; }
   $("err").hidden = true;
   const o = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), no: Math.max(0, ...orders.map(x => x.no)) + 1, at: Date.now(), name, phone, addr, ...(pinGeo.f ? { geo: pinGeo.f } : {}), time: $("f-time").value, pay: document.querySelector('input[name="pay"]:checked').value,
-    note: $("f-note").value.trim(), st: "moi", sets: cart.sets.map(s => ({ ...s })), extras: { ...cart.extras } };
+    note: $("f-note").value.trim(), st: "moi", sets: cart.sets.map(s => ({ ...s })), extras: { ...cart.extras }, use: { ...promoUse }, discount: promoDiscount() };
   $("submit-btn").disabled = true; $("submit-btn").textContent = "Đang gửi…";
   placeOrder(o).then(r => {
     $("submit-btn").disabled = false; $("submit-btn").textContent = "Đặt cơm";
     if (!r.ok) { $("err").textContent = r.error; $("err").hidden = false; return; }
-    o.no = r.no; o.id = r.id;
+    o.no = r.no; o.id = r.id; o.discount = r.discount || 0; promoUse.free = promoUse.ref = false;
     if (!memGet()?.member) try { localStorage.setItem("cobich-khach", JSON.stringify({ name: o.name, phone: o.phone, addr: o.addr })); } catch (_) {}
     cart.sets = []; cart.extras = {}; pollMenu();
     finishOrder(o); renderMember();
@@ -1676,7 +1701,7 @@ function updateQR() {
   const bank = $("pay-bank").checked;
   $("qr-box").hidden = !bank;
   if (!bank) return;
-  const amt = orderTotal(cart), memo = "COBICH " + ($("f-phone").value.replace(/\D/g, "") || "SDT");
+  const amt = Math.max(0, orderTotal(cart) - promoDiscount()), memo = "COBICH " + ($("f-phone").value.replace(/\D/g, "") || "SDT");
   $("qr-amt").textContent = fmt(amt);
   $("qr-memo").textContent = memo;
 }
@@ -1735,7 +1760,7 @@ async function renderMember() {
   $("mem-sub").textContent = n ? `Đơn này được +${n} điểm khi giao xong.` : "Mỗi suất cơm = 1 điểm, dùng đổi quà tri ân của quán.";
   try {
     const d = (await cusApi("cus/me")).me;
-    memSet({ ...k, name: d.name, phone: d.phone, addr: d.addr, avatar: d.avatar || "", gender: d.gender, geo: d.geo, points: d.points });
+    memSet({ ...k, name: d.name, phone: d.phone, addr: d.addr, avatar: d.avatar || "", gender: d.gender, geo: d.geo, points: d.points, code: d.code, invites: d.invites, refLeft: d.refLeft });
     $("mem-pts").textContent = $("mem-top-pts").textContent = `${d.points} điểm`;
   } catch (e) {
     if (e.status === 401) { memSet({ ...k, member: false, token: "" }); return renderMember(); }
@@ -1785,9 +1810,10 @@ $("acct-form").addEventListener("submit", async e => {
   try {
     let d;
     if (acctMode === "me") d = await cusApi("cus/me", { method: "PUT", body: JSON.stringify({ name, addr, gender, geo }) });
-    else d = await api("cus/" + (acctMode === "reg" ? "register" : "login"), { method: "POST", body: JSON.stringify({ phone, pass, addr, gender, geo }) });
+    else d = await api("cus/" + (acctMode === "reg" ? "register" : "login"), { method: "POST", body: JSON.stringify({ phone, pass, addr, gender, geo, ref: refCode() }) });
+    if (acctMode === "reg") try { localStorage.removeItem("cobich-ref"); } catch (_) {}
     const k = memGet() || {};
-    memSet({ ...k, member: true, token: d.token || k.token, name: d.me.name, phone: d.me.phone, addr: d.me.addr, avatar: d.me.avatar || "", gender: d.me.gender, geo: d.me.geo, points: d.me.points });
+    memSet({ ...k, member: true, token: d.token || k.token, name: d.me.name, phone: d.me.phone, addr: d.me.addr, avatar: d.me.avatar || "", gender: d.me.gender, geo: d.me.geo, points: d.me.points, code: d.me.code, invites: d.me.invites, refLeft: d.me.refLeft });
     fillFromMem(); $("acct").hidden = true; renderMember(); refreshMeViews();
     if (!$("view-done").hidden && lastOrder) showMemDone(lastOrder, true);
   } catch (ex) { err(ex.message); }
@@ -1822,7 +1848,7 @@ async function renderPts() {
   }
   const show = d => { box.innerHTML = `<div class="me-card"><div class="avatar">${avHTML(memGet())}</div><div><b>${esc(d.name || "")}</b><div class="pts-big">${d.points ?? 0}</div><small class="sub">điểm đã tích</small></div></div>
     ${d.pending ? `<p class="sub" style="margin:0">Sắp được cộng thêm <b>${d.pending} điểm</b> khi các đơn đang làm giao xong.</p>` : ""}
-    <p class="sub" style="margin:0">Mỗi suất cơm giao xong = 1 điểm. Quà tri ân quán sẽ báo sau.${d.orders != null ? ` Bạn đã đặt ${d.orders} đơn.` : ""}</p>`; };
+    <p class="sub" style="margin:0">Mỗi suất cơm giao xong = 1 điểm.${PROMO.free.on ? "" : " Quà tri ân quán sẽ báo sau."}${d.orders != null ? ` Bạn đã đặt ${d.orders} đơn.` : ""}</p>`; };
   show(memGet());
   try { const d = (await cusApi("cus/me")).me; memSet({ ...memGet(), ...d }); show(d); } catch (e) { if (e.status === 401) { memSet({ ...memGet(), member: false, token: "" }); renderPts(); } }
 }
@@ -1988,10 +2014,101 @@ function showWelcome() {
   $("w-hi").textContent = `Chào ${who}! 👋`;
   $("w-sub").textContent = `Cô Bích Quán chúc ${who === "bạn" ? "bạn" : "quý khách"} ${h < 11 ? "một ngày tốt lành và bữa trưa" : h < 15 ? "bữa trưa" : "bữa tối"} thật ngon miệng.`;
   $("w-tiers").innerHTML = TIERS.map((t, i) => `<button type="button" class="tier" data-tier="${i}"><b>${k2(t.price)}</b><small>${t.picks} món</small></button>`).join("");
+  if (refCode() && !k?.member) $("w-sub").textContent += " Bạn được bạn bè mời dùng app, bấm Tích điểm để đăng ký nhé.";
   $("welcome").hidden = false;
 }
 const k2 = v => Math.round(v / 1000) + "k";
 $("w-skip").onclick = () => { $("welcome").hidden = true; };
+
+// ---------- Chương trình khuyến mãi ----------
+let PROMO = { gift: { on: false, text: "" }, free: { on: false, points: 10 }, ref: { on: false, amount: 5000 } };
+const promoUse = { free: false, ref: false };
+// Khách mở link mời ?ref=MÃ: nhớ mã để gửi khi đăng ký
+try { const rc = new URLSearchParams(location.search).get("ref"); if (rc) localStorage.setItem("cobich-ref", rc.toUpperCase().slice(0, 12)); } catch (_) {}
+const refCode = () => { try { return localStorage.getItem("cobich-ref") || ""; } catch (_) { return ""; } };
+const inviteUrl = code => location.origin + "/?ref=" + code;
+function renderPromo() {
+  const k = memGet(), items = [];
+  if (PROMO.gift.on && PROMO.gift.text) items.push(`<button type="button" data-nav-go="pts">🎁 ${esc(PROMO.gift.text)}</button>`);
+  if (PROMO.free.on) items.push(`<button type="button" data-nav-go="pts">⭐ Tích đủ ${PROMO.free.points} điểm đổi 1 suất cơm miễn phí${k?.member ? ` · bạn có ${k.points ?? 0} điểm` : ""}</button>`);
+  if (PROMO.ref.on) items.push(`<button type="button" data-nav-go="pts">🤝 Mời bạn dùng app: mỗi bạn đăng ký, bạn được giảm ${fmt(PROMO.ref.amount)}</button>`);
+  $("promo-bar").innerHTML = items.join(""); $("promo-bar").hidden = !items.length || mode !== "khach" || editMode;
+  // ô chủ quán (không ghi đè khi đang gõ)
+  const ae = document.activeElement;
+  [["gift"], ["free"], ["ref"]].forEach(([x]) => $("pr-" + x).setAttribute("aria-pressed", !!PROMO[x].on));
+  if (ae !== $("pr-gift-text")) $("pr-gift-text").value = PROMO.gift.text;
+  if (ae !== $("pr-free-pts")) $("pr-free-pts").value = PROMO.free.points;
+  if (ae !== $("pr-ref-amt")) $("pr-ref-amt").value = PROMO.ref.amount / 1000;
+  if (!$("view-pts").hidden && typeof renderPts === "function") renderPtsExtra();
+}
+async function savePromo() {
+  try { PROMO = (await api("promo", { method: "PUT", body: JSON.stringify(PROMO) })).promo; $("promo-ok").textContent = "Đã lưu, khách thấy ngay."; renderPromo(); }
+  catch (e) { $("promo-ok").textContent = "Chưa lưu được: " + e.message; }
+}
+["gift", "free", "ref"].forEach(x => { $("pr-" + x).onclick = () => { PROMO[x].on = !PROMO[x].on; savePromo(); }; });
+$("pr-gift-text").onchange = () => { PROMO.gift.text = $("pr-gift-text").value.trim(); savePromo(); };
+$("pr-free-pts").onchange = () => { PROMO.free.points = Math.max(1, parseInt($("pr-free-pts").value, 10) || 10); savePromo(); };
+$("pr-ref-amt").onchange = () => { PROMO.ref.amount = Math.max(0, parseFloat($("pr-ref-amt").value) || 0) * 1000; savePromo(); };
+document.addEventListener("click", e => { const b = e.target.closest("[data-nav-go]"); if (b) showKhach(b.dataset.navGo); });
+
+// Trang Tích điểm: tiến độ đổi suất miễn phí + mời bạn
+function renderPtsExtra() {
+  const k = memGet(); let box = $("pts-extra");
+  if (!box) { box = document.createElement("div"); box.id = "pts-extra"; box.style.cssText = "display:grid;gap:12px"; $("view-pts").append(box); }
+  if (!k?.member || !k?.token) { box.innerHTML = ""; return; }
+  const parts = [];
+  if (PROMO.gift.on && PROMO.gift.text) parts.push(`<div class="member">🎁 <b>Quà tặng:</b> ${esc(PROMO.gift.text)}</div>`);
+  if (PROMO.free.on) {
+    const pts = k.points ?? 0, need = PROMO.free.points, pct = Math.min(100, Math.round(pts / need * 100));
+    parts.push(`<div class="member" style="display:grid;gap:6px"><b>⭐ Đổi ${need} điểm lấy 1 suất miễn phí</b>
+      <div class="live"><div class="bar"><i style="width:${pct}%"></i></div></div>
+      <span class="sub" style="margin:0">${pts >= need ? "Bạn đã đủ điểm! Khi thanh toán, tick “Đổi điểm” để được miễn phí 1 suất." : `Còn ${need - pts} điểm nữa (${pts}/${need}).`}</span></div>`);
+  }
+  if (PROMO.ref.on || (k.invites || []).length) {
+    const inv = k.invites || [], url = k.code ? inviteUrl(k.code) : "";
+    parts.push(`<div class="member" style="display:grid;gap:8px"><b>🤝 Mời bạn dùng app</b>
+      <span class="sub" style="margin:0">Gửi link này cho bạn bè. Bạn bè đăng ký tài khoản qua link, bạn được 1 phiếu giảm ${fmt(PROMO.ref.amount)} cho 1 đơn.</span>
+      <div class="inv-link"><input id="inv-url" readonly value="${esc(url)}" aria-label="Link mời"><button type="button" class="btn-sm" id="inv-copy">Sao chép</button></div>
+      <button type="button" class="btn-main" id="inv-share">Chia sẻ cho bạn bè</button>
+      <b style="margin-top:4px">Bạn bè đã nhận lời mời: ${inv.length}</b>
+      ${inv.length ? `<ul style="margin:0;padding-left:18px">${inv.map(x => `<li>${esc(x.name || "Bạn mới")} · ${esc(x.phone)} · đăng ký ${new Date(x.at).toLocaleDateString("vi-VN")}</li>`).join("")}</ul>` : `<span class="sub" style="margin:0">Chưa có ai. Khi bạn bè đăng ký qua link của bạn, tên họ hiện ở đây.</span>`}
+      <span style="color:var(--leaf);font-weight:600">Phiếu giảm còn dùng được: ${k.refLeft ?? 0}</span></div>`);
+  }
+  box.innerHTML = parts.join("");
+  const copy = $("inv-copy"), share = $("inv-share");
+  if (copy) copy.onclick = () => { const u = $("inv-url"); try { navigator.clipboard.writeText(u.value).then(() => copy.textContent = "Đã chép", () => { u.select(); }); } catch (_) { u.select(); } };
+  if (share) share.onclick = () => {
+    const url = $("inv-url").value, text = "Đặt cơm Cô Bích Quán ngon, giao tận nơi. Đăng ký qua link này nhé:";
+    if (navigator.share) navigator.share({ title: "Cơm Cô Bích", text, url }).catch(() => {});
+    else location.href = "https://zalo.me/share?url=" + encodeURIComponent(url);
+  };
+}
+const _renderPts = renderPts;
+renderPts = async function () { await _renderPts(); renderPtsExtra(); };
+
+// Thanh toán: chọn dùng ưu đãi
+function promoDiscount() {
+  let d = 0; const sets = cart.sets;
+  if (promoUse.free && sets.length) d += Math.min(...sets.map(s => setPrice(s)));
+  if (promoUse.ref) d += PROMO.ref.amount;
+  return Math.min(d, orderTotal(cart));
+}
+function renderUse() {
+  const k = memGet(), on = !!(k?.member && k?.token);
+  const canFree = PROMO.free.on && on && (k.points ?? 0) >= PROMO.free.points && cart.sets.length;
+  const canRef = PROMO.ref.on && on && (k.refLeft ?? 0) > 0;
+  if (!canFree) promoUse.free = false; if (!canRef) promoUse.ref = false;
+  const rows = [];
+  if (canFree) rows.push(`<label><input type="checkbox" data-use="free"${promoUse.free ? " checked" : ""}> <span>Đổi ${PROMO.free.points} điểm: miễn phí 1 suất (−${fmt(Math.min(...cart.sets.map(s => setPrice(s))))})</span></label>`);
+  if (canRef) rows.push(`<label><input type="checkbox" data-use="ref"${promoUse.ref ? " checked" : ""}> <span>Dùng 1 phiếu mời bạn (−${fmt(PROMO.ref.amount)}), còn ${k.refLeft} phiếu</span></label>`);
+  if (!on && (PROMO.free.on || PROMO.ref.on)) rows.push(`<span class="sub" style="margin:0">Có ưu đãi cho khách có tài khoản. <button type="button" class="linkish" data-acctgo="login" style="padding:0">Đăng nhập</button></span>`);
+  $("use-box").innerHTML = rows.length ? `<b>Ưu đãi của bạn</b>${rows.join("")}${promoDiscount() ? `<span style="color:var(--leaf);font-weight:700">Đã giảm ${fmt(promoDiscount())}</span>` : ""}` : "";
+  $("use-box").hidden = !rows.length;
+  $("total-co").textContent = fmt(Math.max(0, orderTotal(cart) - promoDiscount()));
+  if (typeof updateQR === "function") updateQR();
+}
+document.addEventListener("change", e => { const x = e.target.dataset?.use; if (x) { promoUse[x] = e.target.checked; renderUse(); } });
+
 if (!location.hash && !cart.sets.length && tierIx < 0) showWelcome();
 
 $("chpin").onclick = () => {

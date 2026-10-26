@@ -105,15 +105,35 @@ async function cusOf(db, request) {
 async function pointsOf(db, key, olds = []) {
   const keys = [key, ...olds].slice(0, 6);
   const { results } = await db.prepare(`SELECT data, st FROM orders WHERE ${PHONE_SQL} IN (${keys.map(() => "?").join(",")}) AND st != 'huy'`).bind(...keys).all();
-  let points = 0, pending = 0;
+  let earned = 0, pending = 0, spent = 0, refUsed = 0;
   for (const r of results) {
-    const n = (JSON.parse(r.data).sets || []).reduce((t, x) => t + (x.qty || 0), 0);
-    if (r.st === "giao") points += n; else pending += n;
+    const d = JSON.parse(r.data), n = (d.sets || []).reduce((t, x) => t + (x.qty || 0), 0);
+    if (r.st === "giao") earned += n; else pending += n;
+    spent += d.promo?.points || 0; refUsed += d.promo?.ref || 0;
   }
-  return { points, pending, orders: results.length };
+  return { points: Math.max(0, earned - spent), earned, spent, pending, orders: results.length, refUsed };
 }
+// Chương trình khuyến mãi: chủ quán bật/tắt
+const PROMO0 = { gift: { on: false, text: "" }, free: { on: false, points: 10 }, ref: { on: false, amount: 5000 } };
+const promoOf = async db => {
+  const p = (await getKV(db, "promo")) || {};
+  return { gift: { ...PROMO0.gift, ...p.gift }, free: { ...PROMO0.free, ...p.free }, ref: { ...PROMO0.ref, ...p.ref } };
+};
+// Mã mời riêng của mỗi khách (link ?ref=MÃ)
+async function ensureCode(db, c) {
+  if (c.code) return;
+  for (let i = 0; i < 5 && !c.code; i++) {
+    const code = [...crypto.getRandomValues(new Uint8Array(6))].map(x => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[x % 32]).join("");
+    if (!(await getKV(db, "ref:" + code))) { c.code = code; await putKV(db, "ref:" + code, { phone: c.phone }); await putKV(db, "cus:" + c.phone, c); }
+  }
+}
+const maskPhone = p => String(p).replace(/^(\d{3})\d+(\d{3})$/, "$1 xxx $2");
 const pubCus = c => ({ name: c.name, phone: c.phone, addr: c.addr, avatar: c.avatar || "", gender: c.gender || "", geo: c.geo || null });
-const cusPoints = (db, c) => pointsOf(db, c.phone, c.olds || []);
+async function cusPoints(db, c) {
+  await ensureCode(db, c);
+  const p = await pointsOf(db, c.phone, c.olds || []), inv = c.invites || [];
+  return { ...p, code: c.code, invites: inv.map(x => ({ name: x.name, phone: maskPhone(x.phone), at: x.at })), refLeft: Math.max(0, inv.length - p.refUsed) };
+}
 
 export async function onRequest({ request, env, params, waitUntil }) {
   const later = p => (waitUntil ? waitUntil(p) : p.catch(() => {}));
@@ -161,7 +181,17 @@ export async function onRequest({ request, env, params, waitUntil }) {
     // Khách xem thực đơn hôm nay và số suất đã bán
     if (a === "menu" && m === "GET") {
       const [menu, orders, imgs] = await Promise.all([getKV(db, "menu"), todayOrders(db), db.prepare("SELECT id, v FROM images").all()]);
-      return json({ menu, sold: soldMap(orders), imgs: Object.fromEntries(imgs.results.map(r => [r.id, r.v])), day: vnDay() });
+      return json({ menu, promo: await promoOf(db), sold: soldMap(orders), imgs: Object.fromEntries(imgs.results.map(r => [r.id, r.v])), day: vnDay() });
+    }
+    if (a === "promo" && m === "PUT") {
+      if ((await roleOf(db, request)) !== "owner") return bad("Cần mã PIN chủ quán.", 401);
+      const b2 = await request.json();
+      const p = {
+        gift: { on: !!b2.gift?.on, text: str(b2.gift?.text, 200) },
+        free: { on: !!b2.free?.on, points: Math.max(1, Math.min(500, parseInt(b2.free?.points, 10) || 10)) },
+        ref: { on: !!b2.ref?.on, amount: Math.max(0, Math.min(100000, parseInt(b2.ref?.amount, 10) || 0)) } };
+      await putKV(db, "promo", p);
+      return json({ promo: p });
     }
     if (a === "menu" && m === "PUT") {
       if ((await roleOf(db, request)) !== "owner") return bad("Cần mã PIN chủ quán.", 401);
@@ -214,16 +244,33 @@ export async function onRequest({ request, env, params, waitUntil }) {
         const out = Object.entries(need).filter(([id, q]) => (menu.stock?.[id] || 0) - (sold[id] || 0) < q).map(([id]) => id);
         if (out.length) return json({ error: "Có món vừa hết, bạn chọn lại giúp quán nhé.", out }, 409);
       }
-      const total = sets.reduce((s, x) => s + x.qty * x.price, 0)
+      let total = sets.reduce((s, x) => s + x.qty * x.price, 0)
         + Object.entries(extras).reduce((s, [id, q]) => s + q * (menu?.prices?.[id] || 0), 0);
+      // Ưu đãi: đổi điểm lấy 1 suất miễn phí, phiếu mời bạn
+      let discount = 0; const promo = {};
+      if (body.use?.free || body.use?.ref) {
+        const c = await cusOf(db, request);
+        if (!c || ![c.phone, ...(c.olds || [])].includes(phoneKey(phone))) return bad("Đăng nhập đúng số điện thoại của đơn để dùng ưu đãi.", 401);
+        const pr = await promoOf(db), pts = await pointsOf(db, c.phone, c.olds || []);
+        if (body.use.free) {
+          if (!pr.free.on || pts.points < pr.free.points || !sets.length) return bad("Chưa đủ điểm để đổi suất miễn phí.", 409);
+          discount += Math.min(...sets.map(x => x.price)); promo.points = pr.free.points;
+        }
+        if (body.use.ref) {
+          if (!pr.ref.on || (c.invites || []).length - pts.refUsed < 1) return bad("Bạn chưa có phiếu mời bạn để dùng.", 409);
+          discount += pr.ref.amount; promo.ref = 1;
+        }
+      }
+      discount = Math.min(discount, total);
       const no = orders.reduce((mx, o) => Math.max(mx, o.no || 0), 0) + 1;
       const id = crypto.randomUUID().slice(0, 12), at = Date.now();
       const geo = geoOf(body.geo);
       const order = { no, at, name, phone, addr, ...(geo ? { geo } : {}), time: str(body.time, 30) || "Càng sớm càng tốt",
-        pay: body.pay === "Chuyển khoản" ? "Chuyển khoản" : "Tiền mặt", paid: false, note: str(body.note, 300), sets, extras, total };
+        pay: body.pay === "Chuyển khoản" ? "Chuyển khoản" : "Tiền mặt", paid: false, note: str(body.note, 300), sets, extras,
+        ...(discount ? { discount, promo } : {}), total: total - discount };
       await db.prepare("INSERT INTO orders (id, no, day, at, st, data) VALUES (?, ?, ?, ?, 'moi', ?)").bind(id, no, vnDay(at), at, JSON.stringify(order)).run();
       later(sendPush(db, "owner"));
-      return json({ ok: true, id, no, total });
+      return json({ ok: true, id, no, total: total - discount, discount });
     }
 
     // Tài khoản khách: đăng ký, đăng nhập, xem và sửa thông tin (tên, địa chỉ)
@@ -242,6 +289,12 @@ export async function onRequest({ request, env, params, waitUntil }) {
         if (cur) return bad("Số điện thoại này đã có tài khoản. Bạn bấm “Đăng nhập” nhé.", 409);
         const salt = crypto.randomUUID();
         const c = { phone, name, gender, addr, ...(geo ? { geo } : {}), salt, hash: await passHash(pass, salt), at: Date.now() };
+        // Được bạn mời (link ?ref=MÃ): ghi nhận cho người mời nếu là khách mới
+        const inv = body.ref ? await getKV(db, "ref:" + str(body.ref, 12).toUpperCase()) : null;
+        if (inv && inv.phone !== phone && !(await pointsOf(db, phone)).orders) {
+          const host = await getKV(db, "cus:" + inv.phone);
+          if (host) { c.by = host.phone; host.invites = [...(host.invites || []), { phone, name: c.name, at: Date.now() }].slice(-200); await putKV(db, "cus:" + host.phone, host); }
+        }
         await putKV(db, "cus:" + phone, c);
         return json({ token: await newSession(db, phone), me: { ...pubCus(c), ...(await cusPoints(db, c)) } });
       }
@@ -268,6 +321,7 @@ export async function onRequest({ request, env, params, waitUntil }) {
           if (await getKV(db, "cus:" + phone)) return bad("Số này đã có tài khoản khác.", 409);
           c.olds = [...new Set([old, ...(c.olds || [])])].filter(x => x !== phone).slice(0, 5);
           c.phone = phone;
+          if (c.code) await putKV(db, "ref:" + c.code, { phone });
           await putKV(db, "cses:" + await sha(request.headers.get("x-cus")), { phone, at: Date.now() });
           await db.prepare("DELETE FROM kv WHERE k = ?").bind("cus:" + old).run();
         }
