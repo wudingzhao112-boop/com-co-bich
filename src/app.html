@@ -466,7 +466,7 @@ details.sorder { border-left-color: var(--st); }
       <p class="sub" id="mem-done-msg" hidden style="color:var(--leaf);font-weight:600"></p>
       <pre class="ticket" id="ticket"></pre>
       <div class="actions" style="justify-content:center">
-        <button type="button" class="btn-main" id="mem-done">Đăng nhập để tích điểm</button>
+        <button type="button" class="btn-main" id="mem-done">Đăng ký để tích điểm</button>
         <button type="button" class="linkish" id="again">Đặt đơn mới</button>
         <a class="btn-ghost" href="#chu" id="see-owner" style="text-decoration:none">Xem bên chủ quán (demo)</a>
       </div>
@@ -563,6 +563,22 @@ details.sorder { border-left-color: var(--st); }
       <button type="button" class="btn-main" id="zoom-pick">Chọn món này</button>
     </div>
   </div>
+</div>
+<div class="zoom" id="acct" hidden role="dialog" aria-modal="true" aria-labelledby="acct-title">
+  <form class="zoom-card" id="acct-form" novalidate style="max-height:92vh;overflow:auto">
+    <div class="order-head"><h3 id="acct-title">Đăng ký tích điểm</h3><button type="button" class="linkish" id="acct-close">Đóng</button></div>
+    <div class="chips" id="acct-tabs"><button type="button" data-acct="reg" aria-pressed="true">Đăng ký</button><button type="button" data-acct="login" aria-pressed="false">Đăng nhập</button><button type="button" data-acct="me" aria-pressed="false" hidden>Tài khoản</button></div>
+    <p class="sub" id="acct-sub" style="margin:0">Mỗi suất cơm giao xong được 1 điểm, đổi quà tri ân của quán. Lần sau đặt không phải gõ lại.</p>
+    <div class="field acct-reg acct-me"><label for="a-uname">Họ tên</label><input id="a-uname" autocomplete="name" placeholder="VD: Chị Lan"></div>
+    <div class="field acct-reg acct-login"><label for="a-phone">Tên tài khoản (số điện thoại)</label><input id="a-phone" type="tel" inputmode="tel" autocomplete="username" placeholder="09xx xxx xxx"></div>
+    <div class="field acct-reg acct-login"><label for="a-pass">Mật khẩu</label><input id="a-pass" type="password" autocomplete="current-password" placeholder="Từ 6 ký tự trở lên"></div>
+    <div class="field acct-reg"><label for="a-pass2">Nhập lại mật khẩu</label><input id="a-pass2" type="password" autocomplete="new-password"></div>
+    <div class="field acct-reg acct-me"><label for="a-addr">Địa chỉ giao cơm</label><input id="a-addr" autocomplete="street-address" placeholder="Số nhà, ngõ/ngách, đường, phường"><small class="sub" style="font-size:12px">Ghi đầy đủ để shipper tìm đúng nhà, VD: 12 ngõ 3 Hoàng Liên, Cốc Lếu.</small></div>
+    <p class="sub acct-me" id="acct-pts" style="margin:0;font-weight:600;color:var(--leaf)"></p>
+    <p class="err" id="acct-err" hidden></p>
+    <button type="submit" class="btn-main" id="acct-go">Đăng ký</button>
+    <button type="button" class="linkish acct-me" id="acct-out">Đăng xuất</button>
+  </form>
 </div>
 <script>
 const EXTRA = "Đồ uống & gọi thêm";

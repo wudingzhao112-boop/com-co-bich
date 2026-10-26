@@ -252,7 +252,7 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 .price-tag b { font-family: var(--font-display); font-size: 22px; white-space: nowrap; }
 .member { border: 1.5px solid var(--yolk); background: var(--yolk-soft); border-radius: 12px; padding: 14px; }
 .member h3 { margin: 0; }
-.mem-top { display: flex; justify-content: space-between; gap: 8px; background: var(--yolk-soft); border-radius: 10px; padding: 8px 12px; font-size: 14px; }
+.mem-top { font: inherit; color: var(--fg); border: 0; cursor: pointer; text-align: left; width: 100%; display: flex; justify-content: space-between; gap: 8px; background: var(--yolk-soft); border-radius: 10px; padding: 8px 12px; font-size: 14px; }
 .mem-top .pts { color: var(--leaf); }
 .member .sub { margin: 4px 0 0; }
 .mem-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -394,7 +394,7 @@ details.sorder { border-left-color: var(--st); }
       <div class="hours"><span>206 Duyên Hà, Cốc Lếu, Lào Cai</span><span>035 456 3552</span></div>
       <div class="price-tag"><b id="set-price-k">40k</b><span id="set-rule">1 suất, chọn 5 món</span></div>
     </header>
-    <div class="mem-top" id="mem-top" hidden><span id="mem-top-hi"></span><b class="pts" id="mem-top-pts"></b></div>
+    <button type="button" class="mem-top" id="mem-top" hidden><span id="mem-top-hi"></span><b class="pts" id="mem-top-pts"></b></button>
     <div class="edit-bar" hidden>
       <div><b>Chủ quán sửa món</b><small class="sub">Bật để tắt món hết, sửa số suất ngay trên thực đơn. Bản thật chỉ chủ quán đăng nhập mới thấy nút này.</small></div>
       <button type="button" class="switch" id="edit-toggle" aria-pressed="false" aria-label="Chế độ chủ quán sửa món"></button>
@@ -458,7 +458,7 @@ details.sorder { border-left-color: var(--st); }
             <button type="button" class="linkish" id="m-skip">Đặt không cần đăng nhập</button>
           </div>
         </div>
-        <div id="mem-in" class="mem-row" hidden><div><b id="mem-hi"></b> · <b id="mem-pts" class="pts"></b><small class="sub" id="mem-sub" style="display:block"></small></div><button type="button" class="linkish" id="m-out">Đổi số</button></div>
+        <div id="mem-in" class="mem-row" hidden><div><b id="mem-hi"></b> · <b id="mem-pts" class="pts"></b><small class="sub" id="mem-sub" style="display:block"></small></div><button type="button" class="linkish" id="m-out">Tài khoản</button></div>
         <div id="mem-guest" class="mem-row" hidden><span>Đăng nhập số điện thoại để <b>tích điểm</b> cho đơn này.</span><button type="button" class="btn-sm" id="m-login">Đăng nhập</button></div>
       </div>
       <form id="form" novalidate style="display:grid;gap:14px">
@@ -504,7 +504,7 @@ details.sorder { border-left-color: var(--st); }
       <p class="sub" id="mem-done-msg" hidden style="color:var(--leaf);font-weight:600"></p>
       <pre class="ticket" id="ticket"></pre>
       <div class="actions" style="justify-content:center">
-        <button type="button" class="btn-main" id="mem-done">Đăng nhập để tích điểm</button>
+        <button type="button" class="btn-main" id="mem-done">Đăng ký để tích điểm</button>
         <button type="button" class="linkish" id="again">Đặt đơn mới</button>
         
       </div>
@@ -601,6 +601,22 @@ details.sorder { border-left-color: var(--st); }
       <button type="button" class="btn-main" id="zoom-pick">Chọn món này</button>
     </div>
   </div>
+</div>
+<div class="zoom" id="acct" hidden role="dialog" aria-modal="true" aria-labelledby="acct-title">
+  <form class="zoom-card" id="acct-form" novalidate style="max-height:92vh;overflow:auto">
+    <div class="order-head"><h3 id="acct-title">Đăng ký tích điểm</h3><button type="button" class="linkish" id="acct-close">Đóng</button></div>
+    <div class="chips" id="acct-tabs"><button type="button" data-acct="reg" aria-pressed="true">Đăng ký</button><button type="button" data-acct="login" aria-pressed="false">Đăng nhập</button><button type="button" data-acct="me" aria-pressed="false" hidden>Tài khoản</button></div>
+    <p class="sub" id="acct-sub" style="margin:0">Mỗi suất cơm giao xong được 1 điểm, đổi quà tri ân của quán. Lần sau đặt không phải gõ lại.</p>
+    <div class="field acct-reg acct-me"><label for="a-uname">Họ tên</label><input id="a-uname" autocomplete="name" placeholder="VD: Chị Lan"></div>
+    <div class="field acct-reg acct-login"><label for="a-phone">Tên tài khoản (số điện thoại)</label><input id="a-phone" type="tel" inputmode="tel" autocomplete="username" placeholder="09xx xxx xxx"></div>
+    <div class="field acct-reg acct-login"><label for="a-pass">Mật khẩu</label><input id="a-pass" type="password" autocomplete="current-password" placeholder="Từ 6 ký tự trở lên"></div>
+    <div class="field acct-reg"><label for="a-pass2">Nhập lại mật khẩu</label><input id="a-pass2" type="password" autocomplete="new-password"></div>
+    <div class="field acct-reg acct-me"><label for="a-addr">Địa chỉ giao cơm</label><input id="a-addr" autocomplete="street-address" placeholder="Số nhà, ngõ/ngách, đường, phường"><small class="sub" style="font-size:12px">Ghi đầy đủ để shipper tìm đúng nhà, VD: 12 ngõ 3 Hoàng Liên, Cốc Lếu.</small></div>
+    <p class="sub acct-me" id="acct-pts" style="margin:0;font-weight:600;color:var(--leaf)"></p>
+    <p class="err" id="acct-err" hidden></p>
+    <button type="submit" class="btn-main" id="acct-go">Đăng ký</button>
+    <button type="button" class="linkish acct-me" id="acct-out">Đăng xuất</button>
+  </form>
 </div>
 <script>
 const EXTRA = "Đồ uống & gọi thêm";
@@ -1300,7 +1316,7 @@ function route() {
   $("nav").hidden = role !== "owner" || r === "khach";
   if (!allowed) { showLogin(r); return; }
   $("login").hidden = true;
-  $("mem-top").hidden = r !== "khach" || !memGet()?.member;
+  $("mem-top").hidden = r !== "khach";
   [["m-khach", "khach"], ["m-chu", "chu"], ["m-ship", "shipper"]].forEach(([id, m]) => {
     if (m === "chu" ? r.startsWith("chu") : m === r) $(id).setAttribute("aria-current", "page"); else $(id).removeAttribute("aria-current");
   });
@@ -1461,7 +1477,7 @@ $("form").addEventListener("submit", e => {
     $("submit-btn").disabled = false; $("submit-btn").textContent = "Đặt cơm";
     if (!r.ok) { $("err").textContent = r.error; $("err").hidden = false; return; }
     o.no = r.no; o.id = r.id;
-    try { localStorage.setItem("cobich-khach", JSON.stringify({ ...(memGet() || {}), name: o.name, phone: o.phone, addr: o.addr })); } catch (_) {}
+    if (!memGet()?.member) try { localStorage.setItem("cobich-khach", JSON.stringify({ name: o.name, phone: o.phone, addr: o.addr })); } catch (_) {}
     cart.sets = []; cart.extras = {}; pollMenu();
     finishOrder(o); renderMember();
 
@@ -1518,59 +1534,97 @@ $("login-form").addEventListener("submit", async e => {
 });
 const logout = () => { pin = ""; role = null; orders = []; try { localStorage.removeItem(KEY); } catch (_) {} location.hash = ""; route(); };
 $("logout").onclick = logout; $("logout2").onclick = logout;
-// Thành viên: khách đăng nhập bằng số điện thoại để tích điểm (1 suất đã giao = 1 điểm).
-// Lời mời hiện lúc khách bấm "Đặt ngay", kèm số điểm đơn này sẽ được.
+// Tài khoản khách: đăng ký bằng số điện thoại + mật khẩu để tích điểm (1 suất đã giao = 1 điểm).
+// Đăng nhập rồi thì lần sau tự điền tên, số điện thoại, địa chỉ.
 const MEM = "cobich-khach";
 function memGet() { try { return JSON.parse(localStorage.getItem(MEM) || "null"); } catch (_) { return null; } }
 const memSet = v => { try { if (v) localStorage.setItem(MEM, JSON.stringify(v)); else localStorage.removeItem(MEM); } catch (_) {} };
 let guest = false;
-try { guest = sessionStorage.getItem("cobich-guest") === "1"; } catch (_) {}
+const cusApi = (path, opts = {}) => api(path, { ...opts, headers: { "x-cus": memGet()?.token || "" } });
+function fillFromMem() {
+  const k = memGet(); if (!k?.member) return;
+  $("f-name").value = k.name || $("f-name").value; $("f-phone").value = k.phone || $("f-phone").value; $("f-addr").value = k.addr || $("f-addr").value;
+}
 async function renderMember() {
-  const k = memGet(), n = setCount(cart);
-  const state = k?.member ? "in" : guest ? "guest" : "ask";
-  ["ask", "in", "guest"].forEach(s => $("mem-" + s).hidden = s !== state);
-  // Tạm thời chưa mời tích điểm lúc đặt: chỉ hiện khi khách đã đăng nhập
-  $("member").hidden = state !== "in";
-  $("mem-ask-title").textContent = n ? `Đơn này được +${n} điểm. Tích ngay!` : "Tích điểm nhận quà tri ân";
-  $("mem-top").hidden = mode !== "khach" || editMode || !k?.member;
-  if (state !== "in") return;
+  const k = memGet(), n = setCount(cart), on = !!k?.member && !!k?.token;
+  ["ask", "guest"].forEach(s => $("mem-" + s).hidden = true);
+  $("mem-in").hidden = !on; $("member").hidden = !on;
+  $("mem-top").hidden = mode !== "khach" || editMode;
+  if (!on) { $("mem-top-hi").textContent = "Đăng ký / đăng nhập tích điểm"; $("mem-top-pts").textContent = "›"; return; }
   $("mem-hi").textContent = $("mem-top-hi").textContent = `Chào ${k.name || "bạn"}`;
   $("mem-sub").textContent = n ? `Đơn này được +${n} điểm khi giao xong.` : "Mỗi suất cơm = 1 điểm, dùng đổi quà tri ân của quán.";
   try {
-    const d = await api("me?phone=" + encodeURIComponent(k.phone));
+    const d = (await cusApi("cus/me")).me;
+    memSet({ ...k, name: d.name, phone: d.phone, addr: d.addr, points: d.points });
     $("mem-pts").textContent = $("mem-top-pts").textContent = `${d.points} điểm`;
-  } catch (_) { $("mem-pts").textContent = $("mem-top-pts").textContent = ""; }
+  } catch (e) {
+    if (e.status === 401) { memSet({ ...k, member: false, token: "" }); return renderMember(); }
+    $("mem-pts").textContent = $("mem-top-pts").textContent = k.points != null ? `${k.points} điểm` : "";
+  }
 }
-$("m-go").onclick = () => {
-  const phone = $("m-phone").value.trim(), name = $("m-name").value.trim();
-  if (!/^[0-9 +.]{9,14}$/.test(phone)) { $("m-err").textContent = "Số điện thoại chưa đúng."; $("m-err").hidden = false; return; }
-  $("m-err").hidden = true;
-  memSet({ member: true, name, phone, addr: memGet()?.addr || "" });
-  $("f-phone").value = phone; if (name) $("f-name").value = name;
-  renderMember();
-};
-$("m-skip").onclick = () => { guest = true; try { sessionStorage.setItem("cobich-guest", "1"); } catch (_) {} renderMember(); };
-$("m-login").onclick = () => { guest = false; try { sessionStorage.removeItem("cobich-guest"); } catch (_) {} renderMember(); $("m-phone").focus(); };
-$("m-out").onclick = () => { memSet(null); $("f-name").value = $("f-phone").value = $("f-addr").value = ""; $("m-phone").value = $("m-name").value = ""; renderMember(); };
+// Hộp đăng ký / đăng nhập / tài khoản
+let acctMode = "reg";
+function openAcct(m, pre = {}) {
+  const k = memGet();
+  acctMode = k?.member && k?.token ? "me" : m || "reg";
+  $("acct-err").hidden = true; $("a-pass").value = $("a-pass2").value = "";
+  $("a-uname").value = pre.name ?? k?.name ?? $("f-name").value ?? "";
+  $("a-phone").value = pre.phone ?? k?.phone ?? $("f-phone").value ?? "";
+  $("a-addr").value = pre.addr ?? k?.addr ?? $("f-addr").value ?? "";
+  renderAcct(); $("acct").hidden = false;
+}
+function renderAcct() {
+  const me = acctMode === "me";
+  document.querySelectorAll("#acct-tabs [data-acct]").forEach(b => { b.setAttribute("aria-pressed", b.dataset.acct === acctMode); b.hidden = me ? b.dataset.acct !== "me" : b.dataset.acct === "me"; });
+  document.querySelectorAll("#acct-form .field, #acct-form .acct-me").forEach(el => { el.hidden = !el.classList.contains("acct-" + acctMode); });
+  $("acct-title").textContent = me ? "Tài khoản của bạn" : acctMode === "login" ? "Đăng nhập tích điểm" : "Đăng ký tích điểm";
+  $("acct-sub").hidden = me;
+  $("acct-go").textContent = me ? "Lưu thông tin" : acctMode === "login" ? "Đăng nhập" : "Đăng ký";
+  if (me) { const k = memGet(); $("acct-pts").textContent = `Tài khoản ${k.phone} · ${k.points ?? 0} điểm`; }
+}
+$("acct-tabs").addEventListener("click", e => { const b = e.target.closest("[data-acct]"); if (b) { acctMode = b.dataset.acct; $("acct-err").hidden = true; renderAcct(); } });
+$("acct-close").onclick = () => { $("acct").hidden = true; };
+$("acct").addEventListener("click", e => { if (e.target.id === "acct") $("acct").hidden = true; });
+$("acct-out").onclick = () => { memSet(null); $("acct").hidden = true; renderMember(); };
+$("acct-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const err = t => { $("acct-err").textContent = t; $("acct-err").hidden = false; };
+  const name = $("a-uname").value.trim(), phone = $("a-phone").value.trim(), pass = $("a-pass").value, addr = $("a-addr").value.trim();
+  if (acctMode === "reg") {
+    if (!name) return err("Vui lòng nhập họ tên.");
+    if (!/^[0-9 +.]{9,14}$/.test(phone)) return err("Số điện thoại chưa đúng.");
+    if (pass.length < 6) return err("Mật khẩu từ 6 ký tự trở lên.");
+    if (pass !== $("a-pass2").value) return err("Hai mật khẩu chưa giống nhau.");
+    if (addr.length < 8) return err("Vui lòng nhập địa chỉ đầy đủ: số nhà, ngõ, đường, phường.");
+  }
+  $("acct-go").disabled = true;
+  try {
+    let d;
+    if (acctMode === "me") d = await cusApi("cus/me", { method: "PUT", body: JSON.stringify({ name, addr }) });
+    else d = await api("cus/" + (acctMode === "reg" ? "register" : "login"), { method: "POST", body: JSON.stringify({ name, phone, pass, addr }) });
+    const k = memGet() || {};
+    memSet({ ...k, member: true, token: d.token || k.token, name: d.me.name, phone: d.me.phone, addr: d.me.addr, points: d.me.points });
+    fillFromMem(); $("acct").hidden = true; renderMember();
+    if (!$("view-done").hidden && lastOrder) showMemDone(lastOrder, true);
+  } catch (ex) { err(ex.message); }
+  finally { $("acct-go").disabled = false; }
+});
+$("mem-top").onclick = () => openAcct("reg");
+$("m-out").onclick = () => openAcct("me");
 $("go").addEventListener("click", renderMember);
+fillFromMem();
 renderMember();
 
-// Sau khi đặt xong: mời đăng nhập bằng chính số điện thoại vừa đặt để tích điểm
+// Sau khi đặt xong: mời đăng ký tích điểm, điền sẵn tên, số điện thoại, địa chỉ của đơn
 let lastOrder = null;
-function showMemDone(o) {
+function showMemDone(o, justJoined) {
   lastOrder = o;
-  const k = memGet();
-  $("mem-done").hidden = !!k?.member;
-  $("mem-done-msg").hidden = !k?.member;
-  if (k?.member) $("mem-done-msg").textContent = `Đơn này được +${setCount(o)} điểm khi giao xong (tích theo số ${o.phone}).`;
+  const on = !!memGet()?.member;
+  $("mem-done").hidden = on;
+  $("mem-done-msg").hidden = !on;
+  if (on) $("mem-done-msg").textContent = (justJoined ? "Đăng ký xong! " : "") + `Đơn này được +${setCount(o)} điểm khi giao xong.`;
 }
-$("mem-done").onclick = () => {
-  const o = lastOrder; if (!o) return;
-  memSet({ member: true, name: o.name, phone: o.phone, addr: o.addr });
-  guest = false; try { sessionStorage.removeItem("cobich-guest"); } catch (_) {}
-  showMemDone(o); renderMember();
-  $("mem-done-msg").textContent = `Đã đăng nhập bằng số ${o.phone}. Đơn này được +${setCount(o)} điểm khi giao xong, lần sau đặt không phải gõ lại.`;
-};
+$("mem-done").onclick = () => { const o = lastOrder || {}; openAcct("reg", { name: o.name, phone: o.phone, addr: o.addr }); };
 
 $("chpin").onclick = () => {
   ["khach", "chu", "ship"].forEach(id => show(id, false)); $("cartbar").hidden = true; $("owner-tabs").hidden = true;

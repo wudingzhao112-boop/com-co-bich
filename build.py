@@ -58,7 +58,7 @@ rep('''  mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";''',
   $("nav").hidden = role !== "owner" || r === "khach";
   if (!allowed) { showLogin(r); return; }
   $("login").hidden = true;
-  $("mem-top").hidden = r !== "khach" || !memGet()?.member;''')
+  $("mem-top").hidden = r !== "khach";''')
 
 # Đặt đơn: gửi lên máy chủ, chờ số đơn
 rep('''  orders.push(o);
@@ -68,7 +68,7 @@ rep('''  orders.push(o);
     $("submit-btn").disabled = false; $("submit-btn").textContent = "Đặt cơm";
     if (!r.ok) { $("err").textContent = r.error; $("err").hidden = false; return; }
     o.no = r.no; o.id = r.id;
-    try { localStorage.setItem("cobich-khach", JSON.stringify({ ...(memGet() || {}), name: o.name, phone: o.phone, addr: o.addr })); } catch (_) {}
+    if (!memGet()?.member) try { localStorage.setItem("cobich-khach", JSON.stringify({ name: o.name, phone: o.phone, addr: o.addr })); } catch (_) {}
     cart.sets = []; cart.extras = {}; pollMenu();
     finishOrder(o); renderMember();
 
@@ -102,7 +102,7 @@ rep("“Sang ngày mới” tắt hết món đang bán. Kho", "“Sang ngày m�
 rep('.price-tag b { font-family: var(--font-display); font-size: 22px; white-space: nowrap; }', """.price-tag b { font-family: var(--font-display); font-size: 22px; white-space: nowrap; }
 .member { border: 1.5px solid var(--yolk); background: var(--yolk-soft); border-radius: 12px; padding: 14px; }
 .member h3 { margin: 0; }
-.mem-top { display: flex; justify-content: space-between; gap: 8px; background: var(--yolk-soft); border-radius: 10px; padding: 8px 12px; font-size: 14px; }
+.mem-top { font: inherit; color: var(--fg); border: 0; cursor: pointer; text-align: left; width: 100%; display: flex; justify-content: space-between; gap: 8px; background: var(--yolk-soft); border-radius: 10px; padding: 8px 12px; font-size: 14px; }
 .mem-top .pts { color: var(--leaf); }
 .member .sub { margin: 4px 0 0; }
 .mem-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -111,7 +111,7 @@ rep('.price-tag b { font-family: var(--font-display); font-size: 22px; white-spa
 rep("""      <div class="price-tag"><b id="set-price-k">40k</b><span id="set-rule">1 suất, chọn 5 món</span></div>
     </header>""", """      <div class="price-tag"><b id="set-price-k">40k</b><span id="set-rule">1 suất, chọn 5 món</span></div>
     </header>
-    <div class="mem-top" id="mem-top" hidden><span id="mem-top-hi"></span><b class="pts" id="mem-top-pts"></b></div>""")
+    <button type="button" class="mem-top" id="mem-top" hidden><span id="mem-top-hi"></span><b class="pts" id="mem-top-pts"></b></button>""")
 rep("""      <div class="total"><span>Tổng cộng</span><span id="total-co"></span></div>
       <form id="form" novalidate""", """      <div class="total"><span>Tổng cộng</span><span id="total-co"></span></div>
       <div class="member" id="member">
@@ -126,7 +126,7 @@ rep("""      <div class="total"><span>Tổng cộng</span><span id="total-co"></
             <button type="button" class="linkish" id="m-skip">Đặt không cần đăng nhập</button>
           </div>
         </div>
-        <div id="mem-in" class="mem-row" hidden><div><b id="mem-hi"></b> · <b id="mem-pts" class="pts"></b><small class="sub" id="mem-sub" style="display:block"></small></div><button type="button" class="linkish" id="m-out">Đổi số</button></div>
+        <div id="mem-in" class="mem-row" hidden><div><b id="mem-hi"></b> · <b id="mem-pts" class="pts"></b><small class="sub" id="mem-sub" style="display:block"></small></div><button type="button" class="linkish" id="m-out">Tài khoản</button></div>
         <div id="mem-guest" class="mem-row" hidden><span>Đăng nhập số điện thoại để <b>tích điểm</b> cho đơn này.</span><button type="button" class="btn-sm" id="m-login">Đăng nhập</button></div>
       </div>
       <form id="form" novalidate""")

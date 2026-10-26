@@ -77,6 +77,34 @@ async function sendPush(db, role) {
 }
 const phoneKey = v => String(v ?? "").replace(/[\s.]/g, "");
 
+// Tài khoản khách: tên đăng nhập là số điện thoại, mật khẩu băm PBKDF2
+async function passHash(pass, salt) {
+  const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: new TextEncoder().encode(salt), iterations: 20000 }, k, 256);
+  return [...new Uint8Array(bits)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+async function newSession(db, phone) {
+  const token = crypto.randomUUID() + crypto.randomUUID().slice(0, 8);
+  await putKV(db, "cses:" + await sha(token), { phone, at: Date.now() });
+  return token;
+}
+async function cusOf(db, request) {
+  const t = request.headers.get("x-cus");
+  if (!t) return null;
+  const s = await getKV(db, "cses:" + await sha(t));
+  return s ? await getKV(db, "cus:" + s.phone) : null;
+}
+async function pointsOf(db, key) {
+  const { results } = await db.prepare("SELECT data, st FROM orders WHERE REPLACE(REPLACE(json_extract(data, '$.phone'), ' ', ''), '.', '') = ? AND st != 'huy'").bind(key).all();
+  let points = 0, pending = 0;
+  for (const r of results) {
+    const n = (JSON.parse(r.data).sets || []).reduce((t, x) => t + (x.qty || 0), 0);
+    if (r.st === "giao") points += n; else pending += n;
+  }
+  return { points, pending, orders: results.length };
+}
+const pubCus = c => ({ name: c.name, phone: c.phone, addr: c.addr });
+
 export async function onRequest({ request, env, params, waitUntil }) {
   const later = p => (waitUntil ? waitUntil(p) : p.catch(() => {}));
   const db = env.DB;
@@ -185,6 +213,39 @@ export async function onRequest({ request, env, params, waitUntil }) {
       await db.prepare("INSERT INTO orders (id, no, day, at, st, data) VALUES (?, ?, ?, ?, 'moi', ?)").bind(id, no, vnDay(at), at, JSON.stringify(order)).run();
       later(sendPush(db, "owner"));
       return json({ ok: true, id, no, total });
+    }
+
+    // Tài khoản khách: đăng ký, đăng nhập, xem và sửa thông tin (tên, địa chỉ)
+    if (a === "cus" && (b === "register" || b === "login") && m === "POST") {
+      const body = await request.json();
+      const phone = phoneKey(body.phone), pass = String(body.pass ?? "");
+      if (!/^\+?\d{9,13}$/.test(phone)) return bad("Số điện thoại chưa đúng.");
+      if (pass.length < 6 || pass.length > 64) return bad("Mật khẩu từ 6 ký tự trở lên.");
+      const cur = await getKV(db, "cus:" + phone);
+      if (b === "register") {
+        const name = str(body.name, 80), addr = str(body.addr, 200);
+        if (!name) return bad("Vui lòng nhập họ tên.");
+        if (addr.length < 8) return bad("Vui lòng nhập địa chỉ đầy đủ: số nhà, ngõ, đường, phường.");
+        if (cur) return bad("Số điện thoại này đã có tài khoản. Bạn bấm “Đăng nhập” nhé.", 409);
+        const salt = crypto.randomUUID();
+        const c = { phone, name, addr, salt, hash: await passHash(pass, salt), at: Date.now() };
+        await putKV(db, "cus:" + phone, c);
+        return json({ token: await newSession(db, phone), me: { ...pubCus(c), ...(await pointsOf(db, phone)) } });
+      }
+      if (!cur || (await passHash(pass, cur.salt)) !== cur.hash) return bad("Sai số điện thoại hoặc mật khẩu.", 401);
+      return json({ token: await newSession(db, phone), me: { ...pubCus(cur), ...(await pointsOf(db, phone)) } });
+    }
+    if (a === "cus" && b === "me") {
+      const c = await cusOf(db, request);
+      if (!c) return bad("Cần đăng nhập lại.", 401);
+      if (m === "PUT") {
+        const body = await request.json();
+        const name = str(body.name, 80) || c.name, addr = str(body.addr, 200);
+        if (addr.length < 8) return bad("Vui lòng nhập địa chỉ đầy đủ: số nhà, ngõ, đường, phường.");
+        Object.assign(c, { name, addr });
+        await putKV(db, "cus:" + c.phone, c);
+      }
+      return json({ me: { ...pubCus(c), ...(await pointsOf(db, c.phone)) } });
     }
 
     // Khách tích điểm theo số điện thoại: 1 suất đã giao = 1 điểm
