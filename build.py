@@ -50,7 +50,7 @@ rep('  <!-- ============ KHÁCH ============ -->', '''  <!-- ============ ĐĂNG
 # Định tuyến: trang chủ quán, shipper cần mã PIN
 rep('''  mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";''', '''  mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";
   const allowed = r === "khach" || role === "owner" || (role === "ship" && r === "shipper");
-  $("nav").hidden = role !== "owner";
+  $("nav").hidden = role !== "owner" || r === "khach";
   if (!allowed) { showLogin(r); return; }
   $("login").hidden = true;''')
 
