@@ -46,9 +46,39 @@ function soldMap(orders) {
   return sold;
 }
 const str = (v, max) => String(v ?? "").trim().slice(0, max);
+
+// Thông báo đẩy (Web Push, VAPID, không gửi nội dung): báo chủ quán khi có đơn mới, báo shipper khi đơn soạn xong.
+// Khoá VAPID tự tạo lần đầu và lưu trong D1.
+const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+async function vapidKeys(db) {
+  let v = await getKV(db, "vapid");
+  if (!v) {
+    const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+    v = { pub: b64u(await crypto.subtle.exportKey("raw", kp.publicKey)), jwk: await crypto.subtle.exportKey("jwk", kp.privateKey) };
+    await putKV(db, "vapid", v);
+  }
+  return v;
+}
+async function sendPush(db, role) {
+  const { results } = await db.prepare("SELECT k, v FROM kv WHERE k LIKE ?").bind(`push:${role}:%`).all();
+  if (!results.length) return;
+  const v = await vapidKeys(db);
+  const key = await crypto.subtle.importKey("jwk", v.jwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+  const enc = o => b64u(new TextEncoder().encode(JSON.stringify(o)));
+  await Promise.all(results.map(async r => {
+    try {
+      const sub = JSON.parse(r.v).sub, aud = new URL(sub.endpoint).origin;
+      const head = enc({ typ: "JWT", alg: "ES256" }) + "." + enc({ aud, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: "https://com-co-bich.wudingzhao112.workers.dev" });
+      const sig = b64u(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, new TextEncoder().encode(head)));
+      const res = await fetch(sub.endpoint, { method: "POST", headers: { TTL: "3600", Urgency: "high", Authorization: `vapid t=${head}.${sig}, k=${v.pub}`, "Content-Length": "0" } });
+      if (res.status === 404 || res.status === 410) await db.prepare("DELETE FROM kv WHERE k = ?").bind(r.k).run();
+    } catch (_) {}
+  }));
+}
 const phoneKey = v => String(v ?? "").replace(/[\s.]/g, "");
 
-export async function onRequest({ request, env, params }) {
+export async function onRequest({ request, env, params, waitUntil }) {
+  const later = p => (waitUntil ? waitUntil(p) : p.catch(() => {}));
   const db = env.DB;
   if (!db) return bad("Chưa gắn cơ sở dữ liệu DB", 500);
   const path = [].concat(params.path || []);
@@ -70,6 +100,23 @@ export async function onRequest({ request, env, params }) {
       if (auth && (await roleOf(db, request)) !== "owner") return bad("Đã có mã PIN. Cần mã chủ quán để đổi.", 403);
       const salt = crypto.randomUUID();
       await putKV(db, "auth", { salt, owner: await sha(salt + owner), ship: await sha(salt + ship) });
+      return json({ ok: true });
+    }
+
+    // Thông báo đẩy: lấy khoá công khai, đăng ký máy nhận thông báo (cần mã PIN)
+    if (a === "push" && b === "key" && m === "GET") return json({ key: (await vapidKeys(db)).pub });
+    if (a === "push" && b === "sub" && m === "POST") {
+      const role = await roleOf(db, request);
+      if (!role) return bad("Cần mã PIN.", 401);
+      const { sub } = await request.json();
+      if (!sub || typeof sub.endpoint !== "string" || !/^https:\/\//.test(sub.endpoint)) return bad("Đăng ký thông báo không hợp lệ.");
+      await putKV(db, `push:${role}:${(await sha(sub.endpoint)).slice(0, 20)}`, { sub, at: Date.now() });
+      return json({ ok: true });
+    }
+    if (a === "push" && b === "test" && m === "POST") {
+      const role = await roleOf(db, request);
+      if (!role) return bad("Cần mã PIN.", 401);
+      await sendPush(db, role);
       return json({ ok: true });
     }
 
@@ -136,6 +183,7 @@ export async function onRequest({ request, env, params }) {
       const order = { no, at, name, phone, addr, time: str(body.time, 30) || "Càng sớm càng tốt",
         pay: body.pay === "Chuyển khoản" ? "Chuyển khoản" : "Tiền mặt", paid: false, note: str(body.note, 300), sets, extras, total };
       await db.prepare("INSERT INTO orders (id, no, day, at, st, data) VALUES (?, ?, ?, ?, 'moi', ?)").bind(id, no, vnDay(at), at, JSON.stringify(order)).run();
+      later(sendPush(db, "owner"));
       return json({ ok: true, id, no, total });
     }
 
@@ -172,6 +220,7 @@ export async function onRequest({ request, env, params }) {
       const { st } = await request.json();
       if (!STATUSES.includes(st) || (role === "ship" && !SHIP_CAN.includes(st))) return bad("Không đổi được trạng thái này.", 403);
       await db.prepare("UPDATE orders SET st = ? WHERE id = ?").bind(st, b).run();
+      if (st === "xong") later(sendPush(db, "ship"));
       return json({ ok: true });
     }
     return bad("Không tìm thấy", 404);

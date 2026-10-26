@@ -10,6 +10,11 @@ def rep(a, b, cnt=1):
 
 # Khung trang đầy đủ (bản demo được bọc khi đăng)
 s = ('<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+     '<meta name="theme-color" content="#6b3a1c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">'
+     '<link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" href="/icon-192.png">'
+     # Mỗi link một app riêng khi "Thêm vào màn hình chính": khách, chủ quán, shipper
+     '<script>(function(){var h=location.hash,k=h.indexOf("#chu")===0?"chu":h==="#shipper"?"ship":"khach",l=document.createElement("link");l.rel="manifest";l.href="/manifest-"+k+".webmanifest";document.head.appendChild(l);'
+     'var t=document.createElement("meta");t.name="apple-mobile-web-app-title";t.content=k==="chu"?"Quán Cô Bích":k==="ship"?"Ship Cô Bích":"Cô Bích";document.head.appendChild(t)})()</script>'
      '<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style></head><body>' + s + '</body></html>')
 
 # Đồng bộ thật
@@ -141,8 +146,6 @@ rep("""${o.pay === "Chuyển khoản" ? "ĐÃ THU TIỀN (chuyển khoản)" : "
 """${isPaid(o) ? "ĐÃ THU TIỀN (chuyển khoản)" : o.pay === "Chuyển khoản" ? "CHUYỂN KHOẢN CHƯA XÁC NHẬN: hỏi chủ quán trước khi thu " + fmt(orderTotal(o)) : "THU TIỀN MẶT: " + fmt(orderTotal(o))}""")
 rep("""const u = urgency(o), gone = o.st === "giao", cash = o.pay !== "Chuyển khoản";""",
 """const u = urgency(o), gone = o.st === "giao", cash = !isPaid(o), waitBank = o.pay === "Chuyển khoản" && !o.paid;""")
-rep("""  const cash = list.filter(o => o.pay !== "Chuyển khoản").reduce((s, o) => s + orderTotal(o), 0);""",
-"""  const cash = list.filter(o => !isPaid(o)).reduce((s, o) => s + orderTotal(o), 0);""")
 rep("""    ? "Đơn đã thanh toán bằng chuyển khoản. Quán sẽ giao đúng giờ, bạn không cần trả thêm."
 """, """    ? "Quán sẽ xác nhận khi nhận được tiền chuyển khoản, rồi giao đúng giờ. Nhớ ghi đúng nội dung chuyển khoản nhé."
 """)

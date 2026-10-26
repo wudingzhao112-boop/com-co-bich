@@ -1,4 +1,4 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style></head><body><title>Đặt Cơm Cô Bích</title>
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6b3a1c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" href="/icon-192.png"><script>(function(){var h=location.hash,k=h.indexOf("#chu")===0?"chu":h==="#shipper"?"ship":"khach",l=document.createElement("link");l.rel="manifest";l.href="/manifest-"+k+".webmanifest";document.head.appendChild(l);var t=document.createElement("meta");t.name="apple-mobile-web-app-title";t.content=k==="chu"?"Quán Cô Bích":k==="ship"?"Ship Cô Bích":"Cô Bích";document.head.appendChild(t)})()</script><style>*,*::before,*::after{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style></head><body><title>Đặt Cơm Cô Bích</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap">
@@ -348,6 +348,14 @@ details.order[data-grp="xanh"] .pill { background: #2e7d32; color: #fff; border-
 .sum-money { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
 .sum-money .more { margin-left: auto; font-size: 13px; color: var(--leaf); font-weight: 600; }
 details.order[open] .sum-money .more { visibility: hidden; }
+#chu[data-tab="don"] .bc-only, #chu[data-tab="bc"] .don-only { display: none !important; }
+.sold-sum { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; justify-content: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-size: 15px; }
+.sold-sum b { font-size: 18px; color: var(--leaf); }
+.ship-groups { grid-template-columns: repeat(3, 1fr); }
+details.sorder { border-left-color: var(--st); }
+.bell { font: inherit; font-size: 14px; font-weight: 600; border: 1.5px solid var(--leaf); background: var(--surface); color: var(--leaf); border-radius: 999px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
+.bell.on { background: var(--leaf); color: var(--leaf-ink); }
+.bell-help { font-size: 13px; color: var(--muted); }
 </style>
 
 <div class="wrap">
@@ -359,6 +367,7 @@ details.order[open] .sum-money .more { visibility: hidden; }
   <p class="demo-note" id="demo-note" hidden><b id="sync-note"></b></p>
   <div class="subtabs" id="owner-tabs" hidden>
     <a class="tab" href="#chu" id="t-don">Đơn hàng</a>
+    <a class="tab" href="#chu-bc" id="t-bc">Báo cáo</a>
     <a class="tab" href="#chu-mon" id="t-mon">Món hôm nay</a>
     <a class="tab" href="#chu-sp" id="t-sp">Sửa sản phẩm</a>
     <button type="button" class="tab" id="chpin" style="margin-left:auto">Đổi mã</button>
@@ -538,11 +547,11 @@ details.order[open] .sum-money .more { visibility: hidden; }
   <!-- ============ CHỦ QUÁN ============ -->
   <div id="chu" hidden style="display:none;gap:20px">
     <header>
-      <h1>Quản lý quán</h1>
+      <div class="order-head"><h1>Quản lý quán</h1><button type="button" class="bell" data-bell>🔔 Bật thông báo</button></div>
       <p class="sub" id="owner-date"></p>
     </header>
-    <div class="alert" id="alert"></div>
-    <div class="stats">
+    <div class="alert bc-only" id="alert"></div>
+    <div class="stats bc-only">
       <div class="stat"><b id="st-orders">0</b><small>đơn hàng</small></div>
       <div class="stat"><b id="st-cust">0</b><small>khách mua</small></div>
       <div class="stat"><b id="st-sets">0</b><small>suất cơm</small></div>
@@ -550,15 +559,16 @@ details.order[open] .sum-money .more { visibility: hidden; }
     </div>
 
 
-    <section class="panel" id="prep-panel">
+    <section class="panel bc-only" id="prep-panel">
       <h3>Cần soạn (đơn mới)</h3>
       <p class="sub" style="font-size:13px;margin:0">Cộng dồn các đơn chưa soạn để múc một lượt cho nhanh.</p>
       <ul class="prep" id="prep"></ul>
     </section>
-    <section class="panel">
+    <section class="panel don-only">
       <h3>Danh sách đơn</h3><div class="ogroups" id="filters"></div>
       <div class="orders" id="orders"></div>
     </section>
+    <div class="sold-sum don-only" id="sold-sum"></div>
 
   </div>
 
@@ -567,10 +577,10 @@ details.order[open] .sum-money .more { visibility: hidden; }
   <header>
     <div class="order-head"><h1>Đơn cần giao</h1><button type="button" class="tab" id="logout2">Thoát</button></div>
     <p class="sub" id="ship-sub"></p>
+    <button type="button" class="bell" data-bell style="justify-self:start">🔔 Bật thông báo</button>
   </header>
-  <div class="stats" id="ship-stats"></div>
+  <div class="ogroups ship-groups" id="ship-filters"></div>
   <div class="sorders" id="sorders"></div>
-  <details class="panel" id="ship-done"><summary></summary><div class="sorders" id="sdone" style="margin-top:10px"></div></details>
   </div>
 </div>
 
@@ -836,9 +846,17 @@ async function pollMenu() {
     render();
   } catch (e) { syncErr(e); }
 }
+// Chuông: đơn mới (chủ quán) hoặc đơn vừa soạn xong (shipper) thì kêu khi đang mở app
+let seen = null;
+function checkNew(list) {
+  const key = o => o.id + (role === "ship" ? ":" + o.st : "");
+  const watch = role === "owner" ? list : list.filter(o => o.st === "xong");
+  if (seen && watch.some(o => !seen.has(key(o)))) ding();
+  seen = new Set(watch.map(key));
+}
 async function pollOrders() {
   if (!role) return;
-  try { const d = await api("orders"); orders = d.orders; render(); }
+  try { const d = await api("orders"); checkNew(d.orders); orders = d.orders; render(); }
   catch (e) { if (e.status === 401) { role = null; route(); } else syncErr(e); }
 }
 async function placeOrder(o) {
@@ -868,6 +886,59 @@ document.addEventListener("click", e => {
 });
 function save() {}
 function load() {}
+
+// Thông báo ra màn hình điện thoại (kể cả khi tắt app) và tiếng chuông
+const canPush = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+let actx = null;
+function ding() {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = actx.currentTime;
+    [988, 784, 988, 784].forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.frequency.value = f; o.connect(g); g.connect(actx.destination);
+      const s = t + i * 0.22;
+      g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(0.5, s + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.2);
+      o.start(s); o.stop(s + 0.21);
+    });
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+  } catch (_) {}
+}
+document.addEventListener("pointerdown", () => { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (_) {} }, { once: true });
+const bellKey = () => role === "owner" ? "chu" : "ship";
+function renderBell() {
+  let on = false;
+  try { on = canPush && Notification.permission === "granted" && localStorage.getItem("cobich-bell") === bellKey(); } catch (_) {}
+  document.querySelectorAll("[data-bell]").forEach(b => { b.classList.toggle("on", on); b.textContent = on ? "🔔 Đã bật thông báo" : "🔔 Bật thông báo"; });
+}
+const keyBytes = k => Uint8Array.from(atob(k.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - k.length % 4) % 4)), c => c.charCodeAt(0));
+async function enableBell() {
+  ding();
+  if (!role) return;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  if (!canPush) {
+    alert(ios ? "Trên iPhone: bấm nút Chia sẻ (ô vuông có mũi tên) rồi chọn “Thêm vào MH chính”. Sau đó mở app từ màn hình chính và bấm chuông lại."
+      : "Trình duyệt này chưa nhận được thông báo. Hãy mở link bằng Chrome, chọn “Thêm vào màn hình chính”, rồi bấm chuông lại.");
+    return;
+  }
+  try {
+    if ((await Notification.requestPermission()) !== "granted") { alert("Bạn chưa cho phép thông báo. Vào phần Cài đặt của điện thoại, mục Thông báo, để bật cho app này."); return; }
+    const reg = await navigator.serviceWorker.register("/sw.js?r=" + bellKey());
+    await navigator.serviceWorker.ready;
+    const { key } = await api("push/key");
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
+    await api("push/sub", { method: "POST", body: JSON.stringify({ sub: sub.toJSON() }) });
+    try { localStorage.setItem("cobich-bell", bellKey()); } catch (_) {}
+    reg.showNotification("Đã bật thông báo", { body: role === "owner" ? "Khách đặt đơn mới, điện thoại sẽ báo và kêu chuông." : "Có đơn soạn xong, điện thoại sẽ báo để đi giao.", icon: "/icon-192.png" });
+  } catch (e) { alert("Chưa bật được thông báo: " + (e.message || e)); }
+  renderBell();
+}
+document.addEventListener("click", e => { if (e.target.closest("[data-bell]")) enableBell(); });
+// Máy đã bật chuông: đăng ký lại mỗi lần mở để máy chủ luôn có địa chỉ mới nhất
+if (canPush) navigator.serviceWorker.getRegistration().then(reg => reg && reg.pushManager.getSubscription()).then(sub => {
+  if (sub && pin) api("push/sub", { method: "POST", body: JSON.stringify({ sub: sub.toJSON() }) }).catch(() => {});
+}).catch(() => {});
 // Hạn giao: giờ khách chọn, hoặc 30 phút sau lúc đặt nếu chọn "càng sớm càng tốt"
 function due(o) {
   const m = /^(\d{1,2}):(\d{2})$/.exec(o.time);
@@ -1113,6 +1184,8 @@ function renderOwner() {
   $("prep").innerHTML = `<li style="grid-column:1/-1"><span>Hộp cơm</span><b>${boxes}</b></li>` +
     Object.entries(need).sort((a, b) => b[1] - a[1]).map(([id, q]) => `<li><span>${esc(byId[id]?.name ?? "?")}</span><b>${q}</b></li>`).join("");
 
+  const live = orders.filter(o => o.st !== "huy");
+  $("sold-sum").innerHTML = `<span>Hôm nay đã bán</span><b>${live.reduce((s, o) => s + setCount(o), 0)} suất</b><b>${fmt(live.reduce((s, o) => s + orderTotal(o), 0))}</b>`;
   const pending = orders.filter(o => o.st !== "giao").sort(byDue), doneO = orders.filter(o => o.st === "giao").reverse();
   const shown = pending.concat(doneO).filter(o => inGroup(o, filter));
   $("orders").innerHTML = shown.length ? shown.map(o => `
@@ -1171,33 +1244,33 @@ function shipCard(o) {
   const btn = gone ? "" : o.st === "nau"
     ? `<button type="button" class="btn-main" data-ship="${o.no}">Đã giao xong</button>`
     : `<button type="button" class="btn-main" data-ship="${o.no}">Lấy đơn, đi giao</button>`;
-  return `<article class="sorder ${gone ? "" : u.lv}" data-st="${o.st}">
+  return `<details class="order sorder" data-st="${o.st}" data-grp="${o.st === "giao" ? "xanh" : o.st === "nau" ? "vang" : "do"}" data-ono="${o.no}"${openOrders.has(o.no) ? " open" : ""}>
+    <summary>
     <div class="s-top"><span class="s-time">${/^\d/.test(o.time) ? esc(o.time) : "Sớm nhất"}</span>${gone ? "" : `<span class="flag ${u.lv}">${u.text}</span>`}<span class="pill">${STATUS[o.st]}</span></div>
     <div class="who">#${o.no} · ${esc(o.name)}</div>
-    <div class="s-addr">${esc(o.addr)}</div>
-    ${gone ? "" : `<div class="s-btns"><a href="tel:${tel}">Gọi khách</a><a href="${map}" target="_blank" rel="noopener">Chỉ đường</a></div>`}
+    <div class="sum-who"><span class="tel">${esc(o.phone)}</span></div>
+    <div class="s-addr">📍 ${esc(o.addr)}</div>
     <div class="s-money">${waitBank ? `<span class="collect">Khách chọn chuyển khoản, quán CHƯA xác nhận tiền. Gọi chủ quán trước khi thu ${fmt(orderTotal(o))}.</span>` : cash ? `<span class="collect">Thu tiền mặt ${fmt(orderTotal(o))}</span>` : `<span class="paid">Đã thu tiền (chuyển khoản)</span>`}</div>
-    <details><summary>${setCount(o)} hộp cơm${extrasCount(o) ? ` · ${extrasCount(o)} đồ uống/gọi thêm` : ""}. Bấm xem món</summary>
+    <div class="sum-money"><span>${setCount(o)} hộp cơm${extrasCount(o) ? ` · ${extrasCount(o)} đồ uống` : ""}</span><span class="more">Xem chi tiết ▾</span></div>
+    </summary>
+    ${gone ? "" : `<div class="s-btns"><a href="tel:${tel}">Gọi khách</a><a href="${map}" target="_blank" rel="noopener">Chỉ đường</a></div>`}
       <div class="dishes-list" style="margin-top:6px">${o.sets.map((x, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(x))})${x.qty > 1 ? ` <span class="x">× ${x.qty} hộp</span>` : ""}</div><ul>${allPicks(x).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
-      ${ex.length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${ex.map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div></details>
+      ${ex.length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${ex.map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
     ${o.note ? `<div class="meta"><b>Ghi chú:</b> ${esc(o.note)}</div>` : ""}
     ${o.st === "moi" ? `<div class="s-ready">Bếp đang soạn, chờ chủ quán bấm “Soạn xong” rồi lấy.</div>` : ""}
     ${btn}
-  </article>`;
+  </details>`;
 }
+let shipFilter = "chua";
+const SGROUPS = [["gap", "Đơn gấp"], ["chua", "Chưa giao"], ["giao", "Đã giao"]];
 function renderShip() {
-  const list = orders.filter(o => o.st !== "giao").sort(byDue), done = orders.filter(o => o.st === "giao").reverse();
-  const urgent = list.filter(o => urgency(o).lv !== "thuong").length;
-  const cash = list.filter(o => !isPaid(o)).reduce((s, o) => s + orderTotal(o), 0);
+  const inG = (o, g) => g === "gap" ? o.st !== "giao" && o.st !== "huy" && urgency(o).lv !== "thuong" : g === "chua" ? o.st !== "giao" && o.st !== "huy" : o.st === "giao";
+  const list = orders.filter(o => inG(o, shipFilter));
+  const cash = orders.filter(o => o.st !== "giao" && o.st !== "huy" && !isPaid(o)).reduce((s, o) => s + orderTotal(o), 0);
   $("ship-sub").textContent = `Xếp theo giờ khách cần nhận, đơn gấp lên đầu. Cập nhật lúc ${new Date().toTimeString().slice(0, 5)}.`;
-  $("ship-stats").innerHTML = `<div class="stat"><b style="color:${list.length ? "var(--chili)" : "inherit"}">${list.length}</b><small>đơn chưa giao</small></div>
-    <div class="stat"><b style="color:${urgent ? "var(--chili)" : "inherit"}">${urgent}</b><small>đơn gấp hoặc trễ</small></div>
-    <div class="stat"><b>${list.filter(o => o.st === "xong").length}</b><small>đơn sẵn sàng lấy</small></div>
-    <div class="stat"><b>${fmt(cash)}</b><small>tiền mặt cần thu</small></div>`;
-  $("sorders").innerHTML = list.length ? list.map(shipCard).join("") : `<p class="sub">Hết đơn cần giao. Nghỉ tay chút nhé!</p>`;
-  $("ship-done").hidden = !done.length;
-  $("ship-done").querySelector("summary").textContent = `Đã giao hôm nay (${done.length} đơn)`;
-  $("sdone").innerHTML = done.map(shipCard).join("");
+  $("ship-filters").innerHTML = SGROUPS.map(([key, l]) => `<button type="button" class="ogroup ${key}" aria-pressed="${shipFilter === key}" data-sfilter="${key}"><b>${orders.filter(o => inG(o, key)).length}</b><small>${l}</small></button>`).join("");
+  $("sorders").innerHTML = list.length ? (shipFilter === "giao" ? list.reverse() : list.sort(byDue)).map(shipCard).join("")
+    : `<p class="sub">${shipFilter === "giao" ? "Chưa giao xong đơn nào." : "Hết đơn cần giao. Nghỉ tay chút nhé!"}</p>`;
 }
 
 /* ---------- Chuyển trang: mỗi link một trang ---------- */
@@ -1220,7 +1293,7 @@ function setEdit(on, page = "mon") {
 function show(id, on) { $(id).hidden = !on; $(id).style.display = on ? "grid" : "none"; }
 function route() {
   const h = location.hash.slice(1);
-  const r = ["chu", "chu-mon", "chu-sp", "shipper"].includes(h) ? h : "khach";
+  const r = ["chu", "chu-bc", "chu-mon", "chu-sp", "shipper"].includes(h) ? h : "khach";
   const page = r === "chu-sp" ? "sp" : r === "chu-mon" ? "mon" : "";
   mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";
   const allowed = r === "khach" || role === "owner" || (role === "ship" && r === "shipper");
@@ -1235,9 +1308,12 @@ function route() {
   $("t-don").setAttribute("aria-pressed", r === "chu");
   $("t-mon").setAttribute("aria-pressed", r === "chu-mon");
   $("t-sp").setAttribute("aria-pressed", r === "chu-sp");
+  $("t-bc").setAttribute("aria-pressed", r === "chu-bc");
+  if (r === "chu-bc") mode = "chu";
+  $("chu").dataset.tab = r === "chu-bc" ? "bc" : "don";
   document.title = r === "shipper" ? "Shipper · Cô Bích" : r.startsWith("chu") ? "Chủ quán · Cô Bích" : "Đặt Cơm Cô Bích";
   show("khach", r === "khach" || !!page);
-  show("chu", r === "chu");
+  show("chu", r === "chu" || r === "chu-bc");
   show("ship", r === "shipper");
   if (r === "khach" || page) {
     if (ownerPage !== page) setEdit(!!page, page);
@@ -1263,6 +1339,7 @@ document.addEventListener("click", e => {
   if (d.dec) { cart.extras[d.dec] = Math.max(0, (cart.extras[d.dec] || 0) - 1); renderKhach(); }
   if (d.rmset) { cart.sets.splice(+d.rmset, 1); renderKhach(); }
   if (d.filter) { filter = d.filter; refresh(); }
+  if (d.sfilter) { shipFilter = d.sfilter; renderShip(); }
   if (d.catfilter) { catFilter = d.catfilter; renderCatalog(); }
   if (d.toggle) {
     const id = d.toggle;

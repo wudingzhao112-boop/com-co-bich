@@ -51,9 +51,17 @@ async function pollMenu() {
     render();
   } catch (e) { syncErr(e); }
 }
+// Chuông: đơn mới (chủ quán) hoặc đơn vừa soạn xong (shipper) thì kêu khi đang mở app
+let seen = null;
+function checkNew(list) {
+  const key = o => o.id + (role === "ship" ? ":" + o.st : "");
+  const watch = role === "owner" ? list : list.filter(o => o.st === "xong");
+  if (seen && watch.some(o => !seen.has(key(o)))) ding();
+  seen = new Set(watch.map(key));
+}
 async function pollOrders() {
   if (!role) return;
-  try { const d = await api("orders"); orders = d.orders; render(); }
+  try { const d = await api("orders"); checkNew(d.orders); orders = d.orders; render(); }
   catch (e) { if (e.status === 401) { role = null; route(); } else syncErr(e); }
 }
 async function placeOrder(o) {
@@ -83,3 +91,56 @@ document.addEventListener("click", e => {
 });
 function save() {}
 function load() {}
+
+// Thông báo ra màn hình điện thoại (kể cả khi tắt app) và tiếng chuông
+const canPush = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+let actx = null;
+function ding() {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = actx.currentTime;
+    [988, 784, 988, 784].forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.frequency.value = f; o.connect(g); g.connect(actx.destination);
+      const s = t + i * 0.22;
+      g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(0.5, s + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.2);
+      o.start(s); o.stop(s + 0.21);
+    });
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+  } catch (_) {}
+}
+document.addEventListener("pointerdown", () => { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (_) {} }, { once: true });
+const bellKey = () => role === "owner" ? "chu" : "ship";
+function renderBell() {
+  let on = false;
+  try { on = canPush && Notification.permission === "granted" && localStorage.getItem("cobich-bell") === bellKey(); } catch (_) {}
+  document.querySelectorAll("[data-bell]").forEach(b => { b.classList.toggle("on", on); b.textContent = on ? "🔔 Đã bật thông báo" : "🔔 Bật thông báo"; });
+}
+const keyBytes = k => Uint8Array.from(atob(k.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - k.length % 4) % 4)), c => c.charCodeAt(0));
+async function enableBell() {
+  ding();
+  if (!role) return;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  if (!canPush) {
+    alert(ios ? "Trên iPhone: bấm nút Chia sẻ (ô vuông có mũi tên) rồi chọn “Thêm vào MH chính”. Sau đó mở app từ màn hình chính và bấm chuông lại."
+      : "Trình duyệt này chưa nhận được thông báo. Hãy mở link bằng Chrome, chọn “Thêm vào màn hình chính”, rồi bấm chuông lại.");
+    return;
+  }
+  try {
+    if ((await Notification.requestPermission()) !== "granted") { alert("Bạn chưa cho phép thông báo. Vào phần Cài đặt của điện thoại, mục Thông báo, để bật cho app này."); return; }
+    const reg = await navigator.serviceWorker.register("/sw.js?r=" + bellKey());
+    await navigator.serviceWorker.ready;
+    const { key } = await api("push/key");
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
+    await api("push/sub", { method: "POST", body: JSON.stringify({ sub: sub.toJSON() }) });
+    try { localStorage.setItem("cobich-bell", bellKey()); } catch (_) {}
+    reg.showNotification("Đã bật thông báo", { body: role === "owner" ? "Khách đặt đơn mới, điện thoại sẽ báo và kêu chuông." : "Có đơn soạn xong, điện thoại sẽ báo để đi giao.", icon: "/icon-192.png" });
+  } catch (e) { alert("Chưa bật được thông báo: " + (e.message || e)); }
+  renderBell();
+}
+document.addEventListener("click", e => { if (e.target.closest("[data-bell]")) enableBell(); });
+// Máy đã bật chuông: đăng ký lại mỗi lần mở để máy chủ luôn có địa chỉ mới nhất
+if (canPush) navigator.serviceWorker.getRegistration().then(reg => reg && reg.pushManager.getSubscription()).then(sub => {
+  if (sub && pin) api("push/sub", { method: "POST", body: JSON.stringify({ sub: sub.toJSON() }) }).catch(() => {});
+}).catch(() => {});
