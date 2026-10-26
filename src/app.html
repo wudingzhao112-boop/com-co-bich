@@ -1165,7 +1165,7 @@ function renderKhach() {
   $("cart-panel").hidden = !gio;
   const full = step === "mon" && tierIx >= 0 && build.size === SET.picks;
   const go = $("go");
-  go.classList.toggle("btn-red", gio);
+  go.classList.toggle("btn-red", gio || full || step === "canh");
   go.textContent = gio ? "Thanh toán" : step === "canh" ? "Xem đơn hàng →" : full ? "Tiếp: chọn canh →" : has ? "Xem đơn hàng" : tierIx >= 0 ? `Chọn đủ ${SET.picks} món` : "Chọn suất ở trên";
   go.disabled = !(gio || step === "canh" || full || has);
   // Tổng tiền luôn tính cả suất đang chọn dở
@@ -1183,8 +1183,9 @@ function goHome() {
 }
 function fillTimes() {
   // Chỉ cho chọn giờ từ bây giờ trở đi (giờ đã qua thì không hiện)
-  const cur = $("f-hour").value, curM = $("f-min").value, h0 = Math.max(6, new Date().getHours());
-  $("f-hour").innerHTML = `<option value="">Sớm nhất</option>` + Array.from({ length: Math.max(0, 22 - h0) }, (_, i) => i + h0).map(x => `<option value="${x}"${String(x) === cur ? " selected" : ""}>${String(x).padStart(2, "0")} giờ</option>`).join("");
+  // Giờ nhận: trưa từ 10 giờ, chiều từ 17 giờ
+  const cur = $("f-hour").value, curM = $("f-min").value, hNow = new Date().getHours();
+  $("f-hour").innerHTML = `<option value="">Sớm nhất</option>` + [10, 11, 12, 13, 17, 18, 19, 20].filter(x => x >= hNow).map(x => `<option value="${x}"${String(x) === cur ? " selected" : ""}>${String(x).padStart(2, "0")} giờ</option>`).join("");
   $("f-min").innerHTML = Array.from({ length: 12 }, (_, i) => i * 5).map(x => `<option value="${x}"${String(x) === curM ? " selected" : ""}>${String(x).padStart(2, "0")} phút</option>`).join("");
   syncTime();
 }
