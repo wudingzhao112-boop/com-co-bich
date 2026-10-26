@@ -96,8 +96,9 @@ async function cusOf(db, request) {
   const s = await getKV(db, "cses:" + await sha(t));
   return s ? await getKV(db, "cus:" + s.phone) : null;
 }
-async function pointsOf(db, key) {
-  const { results } = await db.prepare(`SELECT data, st FROM orders WHERE ${PHONE_SQL} = ? AND st != 'huy'`).bind(key).all();
+async function pointsOf(db, key, olds = []) {
+  const keys = [key, ...olds].slice(0, 6);
+  const { results } = await db.prepare(`SELECT data, st FROM orders WHERE ${PHONE_SQL} IN (${keys.map(() => "?").join(",")}) AND st != 'huy'`).bind(...keys).all();
   let points = 0, pending = 0;
   for (const r of results) {
     const n = (JSON.parse(r.data).sets || []).reduce((t, x) => t + (x.qty || 0), 0);
@@ -105,7 +106,8 @@ async function pointsOf(db, key) {
   }
   return { points, pending, orders: results.length };
 }
-const pubCus = c => ({ name: c.name, phone: c.phone, addr: c.addr });
+const pubCus = c => ({ name: c.name, phone: c.phone, addr: c.addr, avatar: c.avatar || "" });
+const cusPoints = (db, c) => pointsOf(db, c.phone, c.olds || []);
 
 export async function onRequest({ request, env, params, waitUntil }) {
   const later = p => (waitUntil ? waitUntil(p) : p.catch(() => {}));
@@ -232,22 +234,63 @@ export async function onRequest({ request, env, params, waitUntil }) {
         const salt = crypto.randomUUID();
         const c = { phone, name, addr, salt, hash: await passHash(pass, salt), at: Date.now() };
         await putKV(db, "cus:" + phone, c);
-        return json({ token: await newSession(db, phone), me: { ...pubCus(c), ...(await pointsOf(db, phone)) } });
+        return json({ token: await newSession(db, phone), me: { ...pubCus(c), ...(await cusPoints(db, c)) } });
       }
       if (!cur || (await passHash(pass, cur.salt)) !== cur.hash) return bad("Sai số điện thoại hoặc mật khẩu.", 401);
-      return json({ token: await newSession(db, phone), me: { ...pubCus(cur), ...(await pointsOf(db, phone)) } });
+      return json({ token: await newSession(db, phone), me: { ...pubCus(cur), ...(await cusPoints(db, cur)) } });
     }
     if (a === "cus" && b === "me") {
       const c = await cusOf(db, request);
       if (!c) return bad("Cần đăng nhập lại.", 401);
       if (m === "PUT") {
         const body = await request.json();
-        const name = str(body.name, 80) || c.name, addr = str(body.addr, 200);
+        const name = str(body.name, 80) || c.name, addr = body.addr == null ? c.addr : str(body.addr, 200);
         if (addr.length < 8) return bad("Vui lòng nhập địa chỉ đầy đủ: số nhà, ngõ, đường, phường.");
+        if (body.avatar != null) {
+          const av = String(body.avatar);
+          if (av && (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(av) || av.length > 120000)) return bad("Ảnh chưa hợp lệ, bạn chọn ảnh khác nhé.");
+          c.avatar = av;
+        }
+        const old = c.phone, phone = body.phone == null ? old : phoneKey(body.phone);
+        if (phone !== old) {
+          // Đổi số điện thoại: cần mật khẩu, giữ điểm của số cũ
+          if (!/^\+?\d{9,13}$/.test(phone)) return bad("Số điện thoại chưa đúng.");
+          if ((await passHash(String(body.pass ?? ""), c.salt)) !== c.hash) return bad("Đổi số điện thoại cần nhập đúng mật khẩu.", 401);
+          if (await getKV(db, "cus:" + phone)) return bad("Số này đã có tài khoản khác.", 409);
+          c.olds = [...new Set([old, ...(c.olds || [])])].filter(x => x !== phone).slice(0, 5);
+          c.phone = phone;
+          await putKV(db, "cses:" + await sha(request.headers.get("x-cus")), { phone, at: Date.now() });
+          await db.prepare("DELETE FROM kv WHERE k = ?").bind("cus:" + old).run();
+        }
         Object.assign(c, { name, addr });
         await putKV(db, "cus:" + c.phone, c);
       }
-      return json({ me: { ...pubCus(c), ...(await pointsOf(db, c.phone)) } });
+      return json({ me: { ...pubCus(c), ...(await cusPoints(db, c)) } });
+    }
+    if (a === "cus" && b === "pass" && m === "POST") {
+      const c = await cusOf(db, request);
+      if (!c) return bad("Cần đăng nhập lại.", 401);
+      const body = await request.json(), pass = String(body.pass ?? "");
+      if ((await passHash(String(body.old ?? ""), c.salt)) !== c.hash) return bad("Mật khẩu cũ chưa đúng.", 401);
+      if (pass.length < 6 || pass.length > 64) return bad("Mật khẩu mới từ 6 ký tự trở lên.");
+      c.salt = crypto.randomUUID(); c.hash = await passHash(pass, c.salt);
+      await putKV(db, "cus:" + c.phone, c);
+      return json({ ok: true });
+    }
+
+    // Góp ý của khách: ai cũng gửi được, chủ quán xem trong Báo cáo
+    if (a === "feedback" && m === "POST") {
+      const body = await request.json(), c = await cusOf(db, request);
+      const text = str(body.text, 1000);
+      if (text.length < 3) return bad("Bạn viết góp ý giúp quán nhé.");
+      const at = Date.now();
+      await putKV(db, `fb:${at}:${crypto.randomUUID().slice(0, 6)}`, { at, text, name: c?.name || str(body.name, 80), phone: c?.phone || "" });
+      return json({ ok: true });
+    }
+    if (a === "feedback" && m === "GET") {
+      if ((await roleOf(db, request)) !== "owner") return bad("Cần mã PIN chủ quán.", 401);
+      const { results } = await db.prepare("SELECT v FROM kv WHERE k LIKE 'fb:%' ORDER BY k DESC LIMIT 50").all();
+      return json({ items: results.map(r => JSON.parse(r.v)) });
     }
 
     // Khách tích điểm theo số điện thoại: 1 suất đã giao = 1 điểm

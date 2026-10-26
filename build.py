@@ -156,7 +156,7 @@ rep("""    <div class="s-money">${cash ? `<span class="collect">Thu tiền mặt
 rep('''load(); fillTimes(); route();''', '''fillTimes();
 try { const k = JSON.parse(localStorage.getItem("cobich-khach") || "null"); if (k) { $("f-name").value = k.name; $("f-phone").value = k.phone; $("f-addr").value = k.addr; } } catch (_) {}
 function showLogin(r) {
-  ["khach", "chu", "ship"].forEach(id => show(id, false)); $("cartbar").hidden = true; $("owner-tabs").hidden = true;
+  ["khach", "chu", "ship"].forEach(id => show(id, false)); $("cartbar").hidden = $("bnav").hidden = true; document.body.classList.remove("has-nav"); $("owner-tabs").hidden = true;
   $("login").hidden = false;
   api("auth").then(d => {
     const setup = !d.ready;
@@ -184,7 +184,7 @@ const logout = () => { pin = ""; role = null; orders = []; try { localStorage.re
 $("logout").onclick = logout; $("logout2").onclick = logout;
 ''' + (here / "src/member.js").read_text(encoding="utf8") + '''
 $("chpin").onclick = () => {
-  ["khach", "chu", "ship"].forEach(id => show(id, false)); $("cartbar").hidden = true; $("owner-tabs").hidden = true;
+  ["khach", "chu", "ship"].forEach(id => show(id, false)); $("cartbar").hidden = $("bnav").hidden = true; document.body.classList.remove("has-nav"); $("owner-tabs").hidden = true;
   $("login").hidden = false; $("login").dataset.setup = "1";
   $("login-title").textContent = "Đổi mã PIN";
   $("login-sub").textContent = "Nhập mã mới cho chủ quán và cho shipper (6 chữ số trở lên, hai mã khác nhau). Máy shipper sẽ phải nhập lại mã mới.";

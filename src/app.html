@@ -243,8 +243,31 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 .tier small { color: var(--muted); font-size: 13px; }
 .tier[aria-pressed="true"] { border-color: var(--leaf); background: var(--leaf); color: var(--leaf-ink); }
 .tier[aria-pressed="true"] small { color: var(--leaf-ink); }
-.tiers.need { outline: 2px dashed var(--chili); outline-offset: 4px; border-radius: 12px; }
-@media (prefers-reduced-motion: no-preference) { .tiers.need { animation: pulse 0.6s 2; } @keyframes pulse { 50% { outline-color: transparent; } } }
+.tiers.need { outline: 3px dashed var(--chili); outline-offset: 4px; border-radius: 12px; }
+.tiers.need .tier { border-color: var(--chili); }
+#build-title.step1 { color: var(--chili); font-size: 22px; }
+@media (prefers-reduced-motion: no-preference) {
+  .tiers.need { animation: pulse 1s infinite; } @keyframes pulse { 50% { outline-color: transparent; } }
+  .tiers.need .tier { animation: bump 1s infinite; } @keyframes bump { 50% { transform: scale(1.05); } }
+}
+/* Thanh menu dưới cùng của khách: Trang chủ, Tích điểm, Chọn món, Cài đặt */
+.bnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--line);
+  padding: 4px max(8px, env(safe-area-inset-right, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
+.bnav[hidden] { display: none; }
+.bnav .in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+.bnav button { font: inherit; font-size: 12px; font-weight: 600; background: none; border: 0; color: var(--muted); display: grid; justify-items: center; gap: 1px; padding: 4px 2px; cursor: pointer; min-height: 52px; }
+.bnav button span { font-size: 22px; line-height: 1.1; }
+.bnav button[aria-current="page"] { color: var(--leaf); }
+.bnav button.plus span { width: 40px; height: 40px; border-radius: 50%; background: var(--chili); color: #fff; display: grid; place-items: center; font-size: 26px; margin-top: -14px; box-shadow: 0 2px 8px rgb(0 0 0 / .2); }
+body.has-nav .cartbar { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); padding-bottom: 10px; box-shadow: 0 -2px 8px rgb(0 0 0 / .06); }
+body.has-nav .wrap { padding-bottom: 200px; }
+.me-card { display: flex; gap: 14px; align-items: center; }
+.avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--yolk-soft); display: grid; place-items: center; font-size: 30px; overflow: hidden; flex: none; border: 2px solid var(--yolk); }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.pts-big { font-family: var(--font-display); font-size: 48px; color: var(--leaf); line-height: 1; }
+.set-list { display: grid; gap: 0; }
+.set-list > button { font: inherit; text-align: left; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: none; border: 0; border-bottom: 1px solid var(--line); color: var(--fg); padding: 14px 2px; cursor: pointer; font-size: 16px; }
+.set-list > button small { color: var(--muted); font-size: 13px; display: block; }
 .set-line { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
 .set-line:last-child { border-bottom: 0; }
 .set-line .picks { font-size: 13px; color: var(--muted); grid-column: 1; }
@@ -402,7 +425,7 @@ details.sorder { border-left-color: var(--st); }
         <div id="dishes" style="display:grid;gap:10px"></div>
         <div id="drinks-wrap" class="cust-only" hidden style="display:none;gap:8px">
           <h2 style="margin:8px 0 0">Bạn có muốn uống nước không?</h2>
-          <p class="sub" style="font-size:13px;margin:0">Đồ uống tính tiền riêng. Không cần thì bấm “Xem đơn hàng” luôn.</p>
+          <p class="sub" style="font-size:13px;margin:0">Đồ uống tính tiền riêng. Không cần thì bấm “Xem đơn hàng” ở dưới.</p>
           <div class="dish-grid drink-grid" id="drinks"></div>
         </div>
         <div class="picked-bar cust-only" id="build-foot" style="border-top:1px dashed var(--line);padding-top:12px">
@@ -412,7 +435,7 @@ details.sorder { border-left-color: var(--st); }
             <button class="btn-round add" type="button" id="bq-inc" aria-label="Thêm 1 suất">+</button>
             <small class="sub">suất</small>
           </div>
-          <button class="btn-main" type="button" id="add-set" disabled>Thêm vào giỏ</button>
+          <button class="btn-main" type="button" id="add-set" disabled hidden>Thêm vào giỏ</button>
         </div>
         <button type="button" class="btn-ghost cust-only" id="back-mon" hidden>← Quay lại sửa món</button>
       </section>
@@ -486,6 +509,21 @@ details.sorder { border-left-color: var(--st); }
         <a class="btn-ghost" href="#chu" id="see-owner" style="text-decoration:none">Xem bên chủ quán (demo)</a>
       </div>
     </section>
+    <section class="panel" id="view-pts" hidden>
+      <h2 style="margin:0">Tích điểm</h2>
+      <div id="pts-body" style="display:grid;gap:12px"></div>
+    </section>
+    <section class="panel" id="view-cai" hidden>
+      <h2 style="margin:0">Cài đặt</h2>
+      <div id="cai-body" style="display:grid;gap:14px"></div>
+      <form id="fb-form" class="member" novalidate style="display:grid;gap:10px">
+        <h3>Góp ý cho quán</h3>
+        <p class="sub" style="margin:0">Món ăn, giao hàng, app… quý khách thấy chưa ổn chỗ nào, xin ghi giúp quán.</p>
+        <textarea id="fb-text" rows="4" style="font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line)" placeholder="Viết góp ý ở đây" aria-label="Góp ý"></textarea>
+        <p class="err" id="fb-err" hidden></p><p class="toast" id="fb-ok" aria-live="polite"></p>
+        <button type="submit" class="btn-main">Gửi góp ý</button>
+      </form>
+    </section>
     <div id="edit-tools" hidden style="display:grid;gap:16px">
     <section class="panel" id="mon-tools">
       <h3>Giá các loại suất</h3>
@@ -541,6 +579,10 @@ details.sorder { border-left-color: var(--st); }
       <p class="sub" style="font-size:13px;margin:0">Cộng dồn các đơn chưa soạn để múc một lượt cho nhanh.</p>
       <ul class="prep" id="prep"></ul>
     </section>
+    <section class="panel bc-only" id="fb-panel">
+      <h3>Góp ý của khách</h3>
+      <div id="fb-list" style="display:grid;gap:8px"><p class="sub" style="margin:0">Chưa có góp ý.</p></div>
+    </section>
     <section class="panel don-only">
       <h3>Danh sách đơn</h3><div class="ogroups" id="filters"></div>
       <div class="orders" id="orders"></div>
@@ -567,6 +609,15 @@ details.sorder { border-left-color: var(--st); }
     <button class="btn-main" id="go" disabled>Đặt ngay</button>
   </div>
 </div>
+
+<nav class="bnav" id="bnav" hidden aria-label="Menu khách">
+  <div class="in">
+    <button type="button" data-nav="menu"><span>🏠</span>Trang chủ</button>
+    <button type="button" data-nav="pts"><span>⭐</span>Tích điểm</button>
+    <button type="button" data-nav="mon" class="plus"><span>+</span>Chọn món</button>
+    <button type="button" data-nav="cai"><span>⚙️</span>Cài đặt</button>
+  </div>
+</nav>
 
 <div class="zoom" id="zoom" hidden role="dialog" aria-modal="true" aria-labelledby="zoom-name">
   <div class="zoom-card">
@@ -599,7 +650,7 @@ details.sorder { border-left-color: var(--st); }
 const EXTRA = "Đồ uống & gọi thêm";
 // Các loại suất: khách chọn loại trước rồi mới chọn món. SET = loại đang chọn.
 const TIERS = [{ price: 35000, picks: 3 }, { price: 40000, picks: 4 }, { price: 50000, picks: 5 }];
-let tierIx = -1;
+let tierIx = -1, autoTier = false;
 const SET = { price: 0, picks: 0 };
 const MENU = [
   { id: "ga", cat: "Món mặn", name: "Gà rang", hot: true },
@@ -899,8 +950,9 @@ function renderBuilder() {
   $("tiers").classList.toggle("need", tierIx < 0 && !editMode);
   $("dots").innerHTML = Array.from({ length: SET.picks }, (_, i) => `<i class="${i < build.size ? "on" : ""}"></i>`).join("");
   const need = SET.picks - build.size;
-  $("build-title").textContent = tierIx < 0 ? "Bước 1: chọn loại suất" : `Suất ${k(SET.price)}: chọn món (${build.size}/${SET.picks})`;
-  $("pick-hint").textContent = tierIx < 0 ? "Bấm chọn suất ở trên để bắt đầu chọn món. Món hôm nay của quán ở dưới." : need > 0 ? `Chọn thêm ${need} món nữa. Suất kèm cơm trắng.` : `Đủ ${SET.picks} món. Bấm “Tiếp: chọn canh”.`;
+  $("build-title").textContent = tierIx < 0 ? "👇 Bước 1: chọn loại suất" : `Suất ${k(SET.price)}: chọn món (${build.size}/${SET.picks})`;
+  $("build-title").classList.toggle("step1", tierIx < 0 && !editMode);
+  $("pick-hint").textContent = tierIx < 0 ? "Bấm 35k, 40k hoặc 50k ở trên. Hoặc bấm luôn vào tên món, quán tự chọn suất 40k cho bạn." : (autoTier ? `Đã chọn suất ${k(SET.price)} (${SET.picks} món). Muốn đổi thì bấm loại suất ở trên. ` : "") + (need > 0 ? `Chọn thêm ${need} món nữa. Suất kèm cơm trắng.` : `Đủ ${SET.picks} món. Bấm “Tiếp: chọn canh” ở dưới.`);
   $("view-menu").classList.toggle("editing", editMode);
   if (editMode) {
     syncToday();
@@ -951,7 +1003,7 @@ function renderBuilder() {
     return `<div class="group-label">${label}</div><div class="dish-grid">${list.map(m => {
       const on = build.has(m.id), rem = left(m.id);
       const info = rem === 0 && !on ? "Hết" : c === EXTRA ? fmt(m.price) : rem <= 5 ? `<span style="color:var(--chili)">còn ${rem}</span>` : `còn ${rem}`;
-      if (browse) return `<button type="button" class="dish" data-browse="1"><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${info}</small></button>`;
+      if (browse) return `<button type="button" class="dish" data-browse="${c === EXTRA || c === CANH ? "1" : m.id}" ${rem === 0 ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${info}</small></button>`;
       const out = !on && (rem < buildQty || build.size >= SET.picks);
       return `<button type="button" class="dish" data-pick="${m.id}" aria-pressed="${on}" ${out ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${info}</small></button>`;
     }).join("")}</div>`;
@@ -1028,7 +1080,7 @@ function renderKhach() {
   const full = step === "mon" && tierIx >= 0 && build.size === SET.picks;
   const go = $("go");
   go.classList.toggle("btn-red", gio);
-  go.textContent = gio ? "Thanh toán" : step === "canh" ? "Xem đơn hàng →" : full ? "Tiếp: chọn canh →" : has ? "Xem đơn hàng" : "Đặt ngay";
+  go.textContent = gio ? "Thanh toán" : step === "canh" ? "Xem đơn hàng →" : full ? "Tiếp: chọn canh →" : has ? "Xem đơn hàng" : tierIx >= 0 ? `Chọn đủ ${SET.picks} món` : "Chọn suất ở trên";
   go.disabled = !(gio || step === "canh" || full || has);
   // Tổng tiền luôn tính cả suất đang chọn dở
   if (!gio && tierIx >= 0) {
@@ -1062,9 +1114,27 @@ function showKhach(view) {
   $("view-menu").style.display = vm ? "grid" : "none";
   $("view-checkout").hidden = view !== "checkout";
   $("view-done").hidden = view !== "done";
+  $("view-pts").hidden = view !== "pts";
+  $("view-cai").hidden = view !== "cai";
   $("cartbar").hidden = view !== "menu" || editMode;
+  const nav = mode === "khach" && !editMode;
+  $("bnav").hidden = !nav; document.body.classList.toggle("has-nav", nav);
+  document.querySelectorAll("#bnav [data-nav]").forEach(b => b.dataset.nav === view ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+  if (view === "pts" && typeof renderPts === "function") renderPts();
+  if (view === "cai" && typeof renderCai === "function") renderCai();
   window.scrollTo(0, 0);
 }
+$("bnav").addEventListener("click", e => {
+  const b = e.target.closest("[data-nav]"); if (!b) return;
+  const v = b.dataset.nav;
+  if (v === "pts" || v === "cai") return showKhach(v);
+  if (v === "menu") { showKhach("menu"); return; }
+  // Nút + : về khung chọn món; chưa chọn suất thì nhấp nháy bước 1
+  if (step === "gio") step = "mon";
+  showKhach("menu"); renderKhach();
+  $("builder").scrollIntoView({ block: "start" });
+  if (tierIx < 0) { $("tiers").classList.remove("need"); void $("tiers").offsetWidth; $("tiers").classList.add("need"); }
+});
 
 /* ---------- Chủ quán ---------- */
 // Đơn đang mở xem chi tiết (giữ nguyên khi trang tự cập nhật)
@@ -1229,6 +1299,7 @@ function route() {
   $("t-sp").setAttribute("aria-pressed", r === "chu-sp");
   $("t-bc").setAttribute("aria-pressed", r === "chu-bc");
   if (r === "chu-bc") mode = "chu";
+  if (r === "chu-bc" && typeof loadFeedback === "function") loadFeedback();
   $("chu").dataset.tab = r === "chu-bc" ? "bc" : "don";
   document.title = r === "shipper" ? "Shipper · Cô Bích" : r.startsWith("chu") ? "Chủ quán · Cô Bích" : "Đặt Cơm Cô Bích";
   show("khach", r === "khach" || !!page);
@@ -1239,7 +1310,7 @@ function route() {
     if (page === "sp") catFilter = "all";
     refresh();
     showKhach(page ? "menu" : !$("view-done").hidden ? "done" : !$("view-checkout").hidden ? "checkout" : "menu");
-  } else { $("cartbar").hidden = true; refresh(); }
+  } else { $("cartbar").hidden = $("bnav").hidden = true; document.body.classList.remove("has-nav"); refresh(); }
   window.scrollTo(0, 0);
 }
 
@@ -1247,7 +1318,7 @@ document.addEventListener("click", e => {
   const t = e.target.closest("button");
   if (!t) return;
   const d = t.dataset;
-  if (d.tier) { tierIx = +d.tier; Object.assign(SET, TIERS[tierIx]); build = new Set([...build].slice(0, SET.picks)); renderKhach(); }
+  if (d.tier) { autoTier = false; tierIx = +d.tier; Object.assign(SET, TIERS[tierIx]); build = new Set([...build].slice(0, SET.picks)); renderKhach(); }
   if ((d.pick || d.canh) && t.getAttribute("aria-disabled") === "true") return;
   if (d.pick && tierIx >= 0) {
     build.has(d.pick) ? build.delete(d.pick) : build.size < SET.picks && build.add(d.pick); renderBuilder();
@@ -1255,6 +1326,12 @@ document.addEventListener("click", e => {
   }
   if (d.canh) { canhPick = canhPick === d.canh ? "" : d.canh; renderKhach(); }
   if (d.dcat) { dishCat = d.dcat; renderBuilder(); }
+  if (d.browse && d.browse !== "1" && t.getAttribute("aria-disabled") !== "true") {
+    // Khách mới bấm thẳng vào món: tự chọn suất 40k (hoặc suất giữa) rồi chọn luôn món đó
+    const ix = TIERS.findIndex(x => x.price === 40000);
+    tierIx = ix >= 0 ? ix : Math.floor(TIERS.length / 2); autoTier = true;
+    Object.assign(SET, TIERS[tierIx]); build = new Set([d.browse]); renderKhach(); return;
+  }
   if (d.browse) { $("tiers").scrollIntoView({ block: "center", behavior: "smooth" }); $("tiers").classList.remove("need"); void $("tiers").offsetWidth; $("tiers").classList.add("need"); }
   if (d.inc && left(d.inc) > 0) { cart.extras[d.inc] = (cart.extras[d.inc] || 0) + 1; renderKhach(); }
   if (d.dec) { cart.extras[d.dec] = Math.max(0, (cart.extras[d.dec] || 0) - 1); renderKhach(); }
