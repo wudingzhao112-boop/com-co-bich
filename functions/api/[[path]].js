@@ -75,7 +75,9 @@ async function sendPush(db, role) {
     } catch (_) {}
   }));
 }
-const phoneKey = v => String(v ?? "").replace(/[\s.]/g, "");
+// Số điện thoại chuẩn: bỏ dấu cách, dấu chấm, gạch; +84 / 84 đổi về 0 (0399… và +84399… là một người)
+const phoneKey = v => String(v ?? "").replace(/[\s.\-()]/g, "").replace(/^(\+84|84)(?=\d{9}$)/, "0");
+const PHONE_SQL = "REPLACE(REPLACE(REPLACE(REPLACE(json_extract(data, '$.phone'), ' ', ''), '.', ''), '-', ''), '+84', '0')";
 
 // Tài khoản khách: tên đăng nhập là số điện thoại, mật khẩu băm PBKDF2
 async function passHash(pass, salt) {
@@ -95,7 +97,7 @@ async function cusOf(db, request) {
   return s ? await getKV(db, "cus:" + s.phone) : null;
 }
 async function pointsOf(db, key) {
-  const { results } = await db.prepare("SELECT data, st FROM orders WHERE REPLACE(REPLACE(json_extract(data, '$.phone'), ' ', ''), '.', '') = ? AND st != 'huy'").bind(key).all();
+  const { results } = await db.prepare(`SELECT data, st FROM orders WHERE ${PHONE_SQL} = ? AND st != 'huy'`).bind(key).all();
   let points = 0, pending = 0;
   for (const r of results) {
     const n = (JSON.parse(r.data).sets || []).reduce((t, x) => t + (x.qty || 0), 0);
@@ -183,7 +185,7 @@ export async function onRequest({ request, env, params, waitUntil }) {
     if (a === "orders" && !b && m === "POST") {
       const body = await request.json();
       const name = str(body.name, 80), phone = str(body.phone, 20), addr = str(body.addr, 200);
-      if (!name || !/^[0-9 +.]{9,14}$/.test(phone) || !addr) return bad("Vui lòng điền tên, số điện thoại và địa chỉ.");
+      if (!name || !/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, "")) || !addr) return bad("Vui lòng điền tên, số điện thoại và địa chỉ.");
       const menu = await getKV(db, "menu");
       const tiers = Array.isArray(menu?.tiers) && menu.tiers.length ? menu.tiers
         : [{ price: 35000, picks: 3 }, { price: 40000, picks: 4 }, { price: 50000, picks: 5 }];
@@ -252,13 +254,7 @@ export async function onRequest({ request, env, params, waitUntil }) {
     if (a === "me" && m === "GET") {
       const key = phoneKey(new URL(request.url).searchParams.get("phone"));
       if (!/^\+?\d{9,13}$/.test(key)) return bad("Số điện thoại không hợp lệ.");
-      const { results } = await db.prepare("SELECT data, st FROM orders WHERE REPLACE(REPLACE(json_extract(data, '$.phone'), ' ', ''), '.', '') = ? AND st != 'huy'").bind(key).all();
-      let points = 0, pending = 0;
-      for (const r of results) {
-        const n = (JSON.parse(r.data).sets || []).reduce((t, x) => t + (x.qty || 0), 0);
-        if (r.st === "giao") points += n; else pending += n;
-      }
-      return json({ points, pending, orders: results.length });
+      return json(await pointsOf(db, key));
     }
 
     // Chủ quán và shipper xem đơn hôm nay

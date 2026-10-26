@@ -244,6 +244,7 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 .tier[aria-pressed="true"] { border-color: var(--leaf); background: var(--leaf); color: var(--leaf-ink); }
 .tier[aria-pressed="true"] small { color: var(--leaf-ink); }
 .tiers.need { outline: 2px dashed var(--chili); outline-offset: 4px; border-radius: 12px; }
+@media (prefers-reduced-motion: no-preference) { .tiers.need { animation: pulse 0.6s 2; } @keyframes pulse { 50% { outline-color: transparent; } } }
 .set-line { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
 .set-line:last-child { border-bottom: 0; }
 .set-line .picks { font-size: 13px; color: var(--muted); grid-column: 1; }
@@ -1004,7 +1005,7 @@ function renderBuilder() {
   $("dots").innerHTML = Array.from({ length: SET.picks }, (_, i) => `<i class="${i < build.size ? "on" : ""}"></i>`).join("");
   const need = SET.picks - build.size;
   $("build-title").textContent = tierIx < 0 ? "Bước 1: chọn loại suất" : `Suất ${k(SET.price)}: chọn món (${build.size}/${SET.picks})`;
-  $("pick-hint").textContent = tierIx < 0 ? "Bấm chọn suất 35k, 40k hoặc 50k ở trên rồi mới chọn món." : need > 0 ? `Chọn thêm ${need} món nữa. Suất kèm cơm trắng.` : `Đủ ${SET.picks} món. Bấm “Thêm vào giỏ”.`;
+  $("pick-hint").textContent = tierIx < 0 ? "Bấm chọn suất ở trên để bắt đầu chọn món. Món hôm nay của quán ở dưới." : need > 0 ? `Chọn thêm ${need} món nữa. Suất kèm cơm trắng.` : `Đủ ${SET.picks} món. Bấm “Thêm vào giỏ”.`;
   $("view-menu").classList.toggle("editing", editMode);
   if (editMode) {
     syncToday();
@@ -1042,16 +1043,21 @@ function renderBuilder() {
     $("add-set").textContent = "Xong suất này →";
     return;
   }
-  const groups = cats().filter(c => c !== EXTRA && c !== CANH && MENU.some(m => m.cat === c && stock[m.id] > 0));
+  // Chưa chọn suất: cho xem tổng quan cả món mặn, rau, canh, nước hôm nay
+  const browse = tierIx < 0;
+  const groups = cats().filter(c => (browse || (c !== EXTRA && c !== CANH)) && MENU.some(m => m.cat === c && stock[m.id] > 0));
   if (dishCat !== "all" && !groups.includes(dishCat)) dishCat = "all";
-  $("chips").hidden = tierIx < 0 || groups.length < 2;
-  $("chips").innerHTML = [["all", "Tất cả"], ...groups.map(c => [c, c])].map(([key, l]) => `<button type="button" data-dcat="${esc(key)}" aria-pressed="${dishCat === key}">${esc(l)}</button>`).join("");
+  const gName = c => c === EXTRA ? "Nước" : c;
+  $("chips").hidden = groups.length < 2;
+  $("chips").innerHTML = [["all", "Tất cả"], ...groups.map(c => [c, gName(c)])].map(([key, l]) => `<button type="button" data-dcat="${esc(key)}" aria-pressed="${dishCat === key}">${esc(l)}</button>`).join("");
   $("dishes").innerHTML = groups.filter(c => dishCat === "all" || c === dishCat).map(c => {
     const list = MENU.filter(m => m.cat === c && stock[m.id] > 0);
-    return `<div class="group-label">${c.toUpperCase()}</div><div class="dish-grid">${list.map(m => {
+    const label = c === EXTRA ? "NƯỚC (TÍNH RIÊNG)" : c === CANH ? "CANH (KÈM SUẤT)" : c.toUpperCase();
+    return `<div class="group-label">${label}</div><div class="dish-grid">${list.map(m => {
       const on = build.has(m.id), rem = left(m.id);
-      const out = !on && (tierIx < 0 || rem < buildQty || build.size >= SET.picks);
-      const info = rem === 0 && !on ? "Hết" : rem <= 5 ? `<span style="color:var(--chili)">còn ${rem}</span>` : `còn ${rem}`;
+      const info = rem === 0 && !on ? "Hết" : c === EXTRA ? fmt(m.price) : rem <= 5 ? `<span style="color:var(--chili)">còn ${rem}</span>` : `còn ${rem}`;
+      if (browse) return `<button type="button" class="dish" data-browse="1"><span class="thumb">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${info}</small></button>`;
+      const out = !on && (rem < buildQty || build.size >= SET.picks);
       return `<button type="button" class="dish" data-pick="${m.id}" aria-pressed="${on}" ${out ? "disabled" : ""}><span class="thumb">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${info}</small></button>`;
     }).join("")}</div>`;
   }).join("") || `<p class="sub">Quán chưa đăng món hôm nay.</p>`;
@@ -1138,8 +1144,10 @@ function goHome() {
   $("zoom").hidden = true; renderKhach(); showKhach("menu");
 }
 function fillTimes() {
-  $("f-hour").innerHTML = `<option value="">Sớm nhất</option>` + Array.from({ length: 16 }, (_, i) => i + 6).map(x => `<option value="${x}">${String(x).padStart(2, "0")} giờ</option>`).join("");
-  $("f-min").innerHTML = Array.from({ length: 12 }, (_, i) => i * 5).map(x => `<option value="${x}">${String(x).padStart(2, "0")} phút</option>`).join("");
+  // Chỉ cho chọn giờ từ bây giờ trở đi (giờ đã qua thì không hiện)
+  const cur = $("f-hour").value, curM = $("f-min").value, h0 = Math.max(6, new Date().getHours());
+  $("f-hour").innerHTML = `<option value="">Sớm nhất</option>` + Array.from({ length: Math.max(0, 22 - h0) }, (_, i) => i + h0).map(x => `<option value="${x}"${String(x) === cur ? " selected" : ""}>${String(x).padStart(2, "0")} giờ</option>`).join("");
+  $("f-min").innerHTML = Array.from({ length: 12 }, (_, i) => i * 5).map(x => `<option value="${x}"${String(x) === curM ? " selected" : ""}>${String(x).padStart(2, "0")} phút</option>`).join("");
   syncTime();
 }
 function syncTime() {
@@ -1352,6 +1360,7 @@ document.addEventListener("click", e => {
   }
   if (d.canh) { canhPick = canhPick === d.canh ? "" : d.canh; renderBuilder(); }
   if (d.dcat) { dishCat = d.dcat; renderBuilder(); }
+  if (d.browse) { $("tiers").scrollIntoView({ block: "center", behavior: "smooth" }); $("tiers").classList.remove("need"); void $("tiers").offsetWidth; $("tiers").classList.add("need"); }
   if (d.inc && left(d.inc) > 0) { cart.extras[d.inc] = (cart.extras[d.inc] || 0) + 1; renderKhach(); }
   if (d.dec) { cart.extras[d.dec] = Math.max(0, (cart.extras[d.dec] || 0) - 1); renderKhach(); }
   if (d.editset) return editSet(+d.editset, "mon");
@@ -1443,7 +1452,7 @@ $("copy-ann").onclick = () => {
   const fail = () => { $("ann").focus(); $("ann").select(); $("toast-ann").textContent = "Máy chưa cho sao chép tự động, bạn nhấn giữ vào chữ để sao chép."; };
   try { navigator.clipboard.writeText($("ann").value).then(() => { $("toast-ann").textContent = "Đã sao chép."; }, fail); } catch (_) { fail(); }
 };
-function openCheckout() { setTimeout(updateQR); $("cart-lines").innerHTML = cartLinesHTML(false); $("total-co").textContent = fmt(orderTotal(cart)); showKhach("checkout"); }
+function openCheckout() { fillTimes(); setTimeout(updateQR); $("cart-lines").innerHTML = cartLinesHTML(false); $("total-co").textContent = fmt(orderTotal(cart)); showKhach("checkout"); }
 $("go").onclick = () => {
   if (step === "gio") return openCheckout();
   if (step === "canh") return commitSet();
@@ -1480,8 +1489,13 @@ $("form").addEventListener("submit", e => {
   const name = $("f-name").value.trim(), phone = $("f-phone").value.trim(), addr = $("f-addr").value.trim();
   const missing = [];
   if (!name) missing.push("tên");
-  if (!/^[0-9 +.]{9,14}$/.test(phone)) missing.push("số điện thoại đúng");
+  if (!/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, ""))) missing.push("số điện thoại đúng");
   if (!addr) missing.push("địa chỉ giao");
+  const tm = /^(\d\d):(\d\d)$/.exec($("f-time").value);
+  if (!missing.length && tm) {
+    const d = new Date(); d.setHours(+tm[1], +tm[2], 0, 0);
+    if (d.getTime() < Date.now() + 10 * MIN) { $("err").textContent = "Giờ nhận đã qua hoặc gần quá. Bạn chọn giờ muộn hơn, hoặc chọn “Sớm nhất” nhé."; $("err").hidden = false; return; }
+  }
   if (missing.length) { $("err").textContent = "Vui lòng điền " + missing.join(", ") + "."; $("err").hidden = false; return; }
   $("err").hidden = true;
   const o = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), no: Math.max(0, ...orders.map(x => x.no)) + 1, at: Date.now(), name, phone, addr, time: $("f-time").value, pay: document.querySelector('input[name="pay"]:checked').value,
@@ -1606,7 +1620,7 @@ $("acct-form").addEventListener("submit", async e => {
   const name = $("a-uname").value.trim(), phone = $("a-phone").value.trim(), pass = $("a-pass").value, addr = $("a-addr").value.trim();
   if (acctMode === "reg") {
     if (!name) return err("Vui lòng nhập họ tên.");
-    if (!/^[0-9 +.]{9,14}$/.test(phone)) return err("Số điện thoại chưa đúng.");
+    if (!/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, ""))) return err("Số điện thoại chưa đúng.");
     if (pass.length < 6) return err("Mật khẩu từ 6 ký tự trở lên.");
     if (pass !== $("a-pass2").value) return err("Hai mật khẩu chưa giống nhau.");
     if (addr.length < 8) return err("Vui lòng nhập địa chỉ đầy đủ: số nhà, ngõ, đường, phường.");

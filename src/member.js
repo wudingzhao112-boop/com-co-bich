@@ -56,7 +56,7 @@ $("acct-form").addEventListener("submit", async e => {
   const name = $("a-uname").value.trim(), phone = $("a-phone").value.trim(), pass = $("a-pass").value, addr = $("a-addr").value.trim();
   if (acctMode === "reg") {
     if (!name) return err("Vui lòng nhập họ tên.");
-    if (!/^[0-9 +.]{9,14}$/.test(phone)) return err("Số điện thoại chưa đúng.");
+    if (!/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, ""))) return err("Số điện thoại chưa đúng.");
     if (pass.length < 6) return err("Mật khẩu từ 6 ký tự trở lên.");
     if (pass !== $("a-pass2").value) return err("Hai mật khẩu chưa giống nhau.");
     if (addr.length < 8) return err("Vui lòng nhập địa chỉ đầy đủ: số nhà, ngõ, đường, phường.");
