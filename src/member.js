@@ -7,6 +7,7 @@ let guest = false;
 const cusApi = (path, opts = {}) => api(path, { ...opts, headers: { "x-cus": memGet()?.token || "" } });
 function fillFromMem() {
   const k = memGet(); if (!k?.member) return;
+  if (k.geo) setPin("f", k.geo);
   $("f-name").value = k.name || $("f-name").value; $("f-phone").value = k.phone || $("f-phone").value; $("f-addr").value = k.addr || $("f-addr").value;
 }
 async function renderMember() {
@@ -19,7 +20,7 @@ async function renderMember() {
   $("mem-sub").textContent = n ? `Đơn này được +${n} điểm khi giao xong.` : "Mỗi suất cơm = 1 điểm, dùng đổi quà tri ân của quán.";
   try {
     const d = (await cusApi("cus/me")).me;
-    memSet({ ...k, name: d.name, phone: d.phone, addr: d.addr, avatar: d.avatar || "", points: d.points });
+    memSet({ ...k, name: d.name, phone: d.phone, addr: d.addr, avatar: d.avatar || "", gender: d.gender, geo: d.geo, points: d.points });
     $("mem-pts").textContent = $("mem-top-pts").textContent = `${d.points} điểm`;
   } catch (e) {
     if (e.status === 401) { memSet({ ...k, member: false, token: "" }); return renderMember(); }
@@ -35,6 +36,8 @@ function openAcct(m, pre = {}) {
   $("a-uname").value = pre.name ?? k?.name ?? $("f-name").value ?? "";
   $("a-phone").value = pre.phone ?? k?.phone ?? $("f-phone").value ?? "";
   $("a-addr").value = pre.addr ?? k?.addr ?? $("f-addr").value ?? "";
+  document.querySelectorAll('[name="a-gender"]').forEach(x => { x.checked = x.value === k?.gender; });
+  setPin("a", k?.member ? k.geo : pinGeo.f);
   renderAcct(); $("acct").hidden = false;
 }
 function renderAcct() {
@@ -54,9 +57,10 @@ const refreshMeViews = () => { if (!$("view-pts").hidden) renderPts(); if (!$("v
 $("acct-form").addEventListener("submit", async e => {
   e.preventDefault();
   const err = t => { $("acct-err").textContent = t; $("acct-err").hidden = false; };
+  const gender = document.querySelector('[name="a-gender"]:checked')?.value || "", geo = pinGeo.a;
   const name = $("a-uname").value.trim(), phone = $("a-phone").value.trim(), pass = $("a-pass").value, addr = $("a-addr").value.trim();
   if (acctMode === "reg") {
-    if (!name) return err("Vui lòng nhập họ tên.");
+    if (!gender) return err("Vui lòng chọn giới tính.");
     if (!/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, ""))) return err("Số điện thoại chưa đúng.");
     if (pass.length < 6) return err("Mật khẩu từ 6 ký tự trở lên.");
     if (pass !== $("a-pass2").value) return err("Hai mật khẩu chưa giống nhau.");
@@ -65,10 +69,10 @@ $("acct-form").addEventListener("submit", async e => {
   $("acct-go").disabled = true;
   try {
     let d;
-    if (acctMode === "me") d = await cusApi("cus/me", { method: "PUT", body: JSON.stringify({ name, addr }) });
-    else d = await api("cus/" + (acctMode === "reg" ? "register" : "login"), { method: "POST", body: JSON.stringify({ name, phone, pass, addr }) });
+    if (acctMode === "me") d = await cusApi("cus/me", { method: "PUT", body: JSON.stringify({ name, addr, gender, geo }) });
+    else d = await api("cus/" + (acctMode === "reg" ? "register" : "login"), { method: "POST", body: JSON.stringify({ phone, pass, addr, gender, geo }) });
     const k = memGet() || {};
-    memSet({ ...k, member: true, token: d.token || k.token, name: d.me.name, phone: d.me.phone, addr: d.me.addr, avatar: d.me.avatar || "", points: d.me.points });
+    memSet({ ...k, member: true, token: d.token || k.token, name: d.me.name, phone: d.me.phone, addr: d.me.addr, avatar: d.me.avatar || "", gender: d.me.gender, geo: d.me.geo, points: d.me.points });
     fillFromMem(); $("acct").hidden = true; renderMember(); refreshMeViews();
     if (!$("view-done").hidden && lastOrder) showMemDone(lastOrder, true);
   } catch (ex) { err(ex.message); }
@@ -118,7 +122,8 @@ function renderCai() {
       <button type="button" class="btn-sm" id="av-pick" style="justify-self:start">Đổi ảnh đại diện</button><input type="file" id="av-file" accept="image/*" hidden></div></div>
     <form id="me-form" novalidate style="display:grid;gap:10px">
       <div class="field"><label for="me-name">Họ tên</label><input id="me-name" autocomplete="name" value="${esc(k.name || "")}"></div>
-      <div class="field"><label for="me-addr">Địa chỉ giao cơm</label><input id="me-addr" autocomplete="street-address" value="${esc(k.addr || "")}" placeholder="Số nhà, ngõ/ngách, đường, phường"></div>
+      <div class="field"><span class="lbl">Giới tính</span><div class="radios"><label><input type="radio" name="me-gender" value="nam"${k.gender === "nam" ? " checked" : ""}> Anh (nam)</label><label><input type="radio" name="me-gender" value="nu"${k.gender === "nu" ? " checked" : ""}> Chị (nữ)</label></div></div>
+      <div class="field"><label for="me-addr">Địa chỉ giao cơm</label><input id="me-addr" autocomplete="street-address" value="${esc(k.addr || "")}" placeholder="Số nhà, ngõ/ngách, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="s">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="s-geo-st"></small></div>
       <div class="field"><label for="me-phone">Số điện thoại (tên đăng nhập)</label><input id="me-phone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(k.phone || "")}"></div>
       <div class="field" id="me-pass-w" hidden><label for="me-pass">Mật khẩu hiện tại (để đổi số điện thoại)</label><input id="me-pass" type="password" autocomplete="current-password"></div>
       <p class="err" id="me-err" hidden></p><p class="toast" id="me-ok" aria-live="polite"></p>
@@ -134,6 +139,7 @@ function renderCai() {
       </form>
     </details>
     <button type="button" class="btn-ghost" id="cai-out">Đăng xuất</button>`;
+  setPin("s", k.geo);
   const phoneChanged = () => phoneNorm($("me-phone").value) !== phoneNorm(k.phone);
   $("me-phone").oninput = () => { $("me-pass-w").hidden = !phoneChanged(); };
   $("av-pick").onclick = () => $("av-file").click();
@@ -155,7 +161,7 @@ function renderCai() {
     if (!/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, ""))) return err("Số điện thoại chưa đúng.");
     if (phoneChanged() && !$("me-pass").value) return err("Đổi số điện thoại cần nhập mật khẩu hiện tại.");
     try {
-      const d = (await cusApi("cus/me", { method: "PUT", body: JSON.stringify({ name, addr, phone, pass: $("me-pass").value }) })).me;
+      const d = (await cusApi("cus/me", { method: "PUT", body: JSON.stringify({ name, addr, phone, pass: $("me-pass").value, gender: document.querySelector('[name="me-gender"]:checked')?.value || "", geo: pinGeo.s }) })).me;
       memSet({ ...memGet(), ...d }); fillFromMem(); renderMember(); renderCai();
       $("me-ok").textContent = "Đã lưu thông tin.";
     } catch (ex) { err(ex.message); }
@@ -208,3 +214,67 @@ async function loadFeedback() {
     $("fb-list").innerHTML = items.length ? items.map(f => `<div class="cart-set"><small class="sub">${new Date(f.at).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}${f.name ? " · " + esc(f.name) : ""}${f.phone ? " · " + esc(f.phone) : ""}</small><div>${esc(f.text)}</div></div>`).join("") : `<p class="sub" style="margin:0">Chưa có góp ý.</p>`;
   } catch (_) {}
 }
+
+// Ghim nhà trên bản đồ (OpenStreetMap). a = đăng ký, s = cài đặt, f = đặt cơm
+const pinGeo = { a: null, s: null, f: null };
+const SHOP = [22.5006, 103.9668];
+function setPin(w, g) {
+  pinGeo[w] = g || null;
+  const st = $(w + "-geo-st"); if (st) st.textContent = g ? "✓ Đã ghim vị trí trên bản đồ" : "";
+  const b = document.querySelector(`[data-mappin="${w}"]`); if (b) b.textContent = g ? "📍 Sửa vị trí ghim" : "📍 Ghim nhà trên bản đồ";
+}
+let leafletP = null, lmap = null, lmark = null, mapFor = "", mapPick = null;
+function loadLeaflet() {
+  if (window.L) return Promise.resolve();
+  return leafletP ||= new Promise((ok, no) => {
+    const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "/leaflet/leaflet.css"; document.head.append(css);
+    const js = document.createElement("script"); js.src = "/leaflet/leaflet.js";
+    js.onload = ok; js.onerror = () => { leafletP = null; no(new Error("map")); }; document.head.append(js);
+  });
+}
+function placePin(lat, lng) {
+  mapPick = { lat: +lat.toFixed(6), lng: +lng.toFixed(6) };
+  if (lmap) { lmark ? lmark.setLatLng([lat, lng]) : (lmark = L.marker([lat, lng]).addTo(lmap)); }
+  $("map-ok").disabled = false; $("map-st").textContent = "Đã chọn vị trí. Bấm “Xong” để lưu.";
+}
+async function openMap(w) {
+  mapFor = w; mapPick = pinGeo[w]; $("map-ok").disabled = !mapPick; $("map-st").textContent = "";
+  $("mapbox").hidden = false;
+  try { await loadLeaflet(); } catch (_) { $("map-st").textContent = "Không tải được bản đồ. Bạn bấm “Vị trí của tôi” khi đang ở nhà, hoặc ghi rõ địa chỉ."; return; }
+  const c = mapPick ? [mapPick.lat, mapPick.lng] : SHOP;
+  if (!lmap) {
+    lmap = L.map("map").setView(c, 16);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(lmap);
+    lmap.on("click", e => placePin(e.latlng.lat, e.latlng.lng));
+  } else lmap.setView(c, 17);
+  if (lmark) { lmark.remove(); lmark = null; }
+  if (mapPick) lmark = L.marker(c).addTo(lmap);
+  setTimeout(() => lmap.invalidateSize(), 50);
+}
+$("map-me").onclick = () => {
+  if (!navigator.geolocation) { $("map-st").textContent = "Máy này không cho lấy vị trí."; return; }
+  $("map-st").textContent = "Đang lấy vị trí…";
+  navigator.geolocation.getCurrentPosition(p => { placePin(p.coords.latitude, p.coords.longitude); if (lmap) lmap.setView([p.coords.latitude, p.coords.longitude], 18); },
+    () => { $("map-st").textContent = "Chưa lấy được vị trí. Bạn cho phép vị trí, hoặc bấm vào bản đồ."; }, { enableHighAccuracy: true, timeout: 10000 });
+};
+$("map-ok").onclick = () => {
+  if (!mapPick) return;
+  setPin(mapFor, mapPick);
+  if (mapFor === "f") pinGeo.f = mapPick;
+  $("mapbox").hidden = true;
+};
+$("map-close").onclick = () => { $("mapbox").hidden = true; };
+document.addEventListener("click", e => { const b = e.target.closest("[data-mappin]"); if (b) openMap(b.dataset.mappin); });
+
+// Mở app: làm mờ trang, chào khách và mời chọn suất 35k / 40k / 50k
+function showWelcome() {
+  const k = memGet(), h = new Date().getHours();
+  const who = k?.member && k.name ? k.name : "bạn";
+  $("w-hi").textContent = `Chào ${who}! 👋`;
+  $("w-sub").textContent = `Cô Bích Quán chúc ${who === "bạn" ? "bạn" : "quý khách"} ${h < 11 ? "một ngày tốt lành và bữa trưa" : h < 15 ? "bữa trưa" : "bữa tối"} thật ngon miệng.`;
+  $("w-tiers").innerHTML = TIERS.map((t, i) => `<button type="button" class="tier" data-tier="${i}"><b>${k2(t.price)}</b><small>${t.picks} món</small></button>`).join("");
+  $("welcome").hidden = false;
+}
+const k2 = v => Math.round(v / 1000) + "k";
+$("w-skip").onclick = () => { $("welcome").hidden = true; };
+if (!location.hash && !cart.sets.length && tierIx < 0) showWelcome();

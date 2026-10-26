@@ -363,6 +363,19 @@ body.has-nav .wrap { padding-bottom: 200px; }
 .cart-set .money, #cart-panel .total span:last-child { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .cart-set li.ln { display: flex; justify-content: space-between; gap: 8px; }
 #cart-panel .total { font-size: 17px; font-weight: 700; }
+.welcome { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; background: rgb(30 20 10 / .55); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+.welcome[hidden] { display: none; }
+.welcome-card { background: var(--surface); color: var(--fg); border-radius: 20px; padding: 22px 18px; width: min(100%, 420px); display: grid; gap: 10px; text-align: center; box-shadow: 0 10px 30px rgb(0 0 0 / .25); }
+.welcome-card h2 { margin: 6px 0 4px; font-size: 20px; color: var(--chili); }
+.w-hi { margin: 0; font-family: var(--font-display); font-size: 24px; }
+.welcome .tier { padding: 16px 6px; }
+.welcome .tier b { font-size: 30px; }
+.pick-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; flex-wrap: wrap; }
+.pick-chip { background: var(--chili); color: #fff; font-weight: 700; font-size: 12px; border-radius: 999px; padding: 3px 9px; line-height: 1.3; }
+.pick-chip.on { background: var(--leaf); color: var(--leaf-ink); }
+.pin-btn { justify-self: start; font-size: 14px; padding: 8px 12px; margin-top: 6px; }
+.geo-st { color: var(--leaf); font-weight: 600; font-size: 13px; }
+.lbl { font-weight: 600; font-size: 14px; }
 .time-pick { display: flex; align-items: center; gap: 8px; }
 .time-pick select { flex: 1; font-size: 18px; text-align: center; }
 .time-pick b { font-size: 20px; }
@@ -504,7 +517,7 @@ details.sorder { border-left-color: var(--st); }
           <div class="field"><label for="f-name">Tên của bạn</label><input id="f-name" autocomplete="name" placeholder="VD: Chị Lan"></div>
           <div class="field"><label for="f-phone">Số điện thoại</label><input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xx xxx xxx"></div>
         </div>
-        <div class="field"><label for="f-addr">Địa chỉ giao</label><input id="f-addr" autocomplete="street-address" placeholder="Số nhà, ngõ, đường, toà/văn phòng"></div>
+        <div class="field"><label for="f-addr">Địa chỉ giao</label><input id="f-addr" autocomplete="street-address" placeholder="Số nhà, ngõ, đường, toà/văn phòng"><button type="button" class="btn-ghost pin-btn" data-mappin="f">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="f-geo-st"></small></div>
         <div class="field"><label for="f-hour">Giờ muốn nhận</label>
           <div class="time-pick"><select id="f-hour" aria-label="Giờ"></select><b>:</b><select id="f-min" aria-label="Phút"></select></div>
           <input type="hidden" id="f-time"></div>
@@ -673,16 +686,35 @@ details.sorder { border-left-color: var(--st); }
     <div class="order-head"><h3 id="acct-title">Đăng ký tích điểm</h3><button type="button" class="linkish" id="acct-close">Đóng</button></div>
     <div class="chips" id="acct-tabs"><button type="button" data-acct="reg" aria-pressed="true">Đăng ký</button><button type="button" data-acct="login" aria-pressed="false">Đăng nhập</button><button type="button" data-acct="me" aria-pressed="false" hidden>Tài khoản</button></div>
     <p class="sub" id="acct-sub" style="margin:0">Mỗi suất cơm giao xong được 1 điểm, đổi quà tri ân của quán. Lần sau đặt không phải gõ lại.</p>
-    <div class="field acct-reg acct-me"><label for="a-uname">Họ tên</label><input id="a-uname" autocomplete="name" placeholder="VD: Chị Lan"></div>
+    <div class="field acct-me"><label for="a-uname">Họ tên</label><input id="a-uname" autocomplete="name" placeholder="VD: Chị Lan"></div>
     <div class="field acct-reg acct-login"><label for="a-phone">Tên tài khoản (số điện thoại)</label><input id="a-phone" type="tel" inputmode="tel" autocomplete="username" placeholder="09xx xxx xxx"></div>
     <div class="field acct-reg acct-login"><label for="a-pass">Mật khẩu</label><input id="a-pass" type="password" autocomplete="current-password" placeholder="Từ 6 ký tự trở lên"></div>
     <div class="field acct-reg"><label for="a-pass2">Nhập lại mật khẩu</label><input id="a-pass2" type="password" autocomplete="new-password"></div>
-    <div class="field acct-reg acct-me"><label for="a-addr">Địa chỉ giao cơm</label><input id="a-addr" autocomplete="street-address" placeholder="Số nhà, ngõ/ngách, đường, phường"><small class="sub" style="font-size:12px">Ghi đầy đủ để shipper tìm đúng nhà, VD: 12 ngõ 3 Hoàng Liên, Cốc Lếu.</small></div>
+    <div class="field acct-reg acct-me"><span class="lbl">Giới tính</span><div class="radios" id="a-gender"><label><input type="radio" name="a-gender" value="nam"> Anh (nam)</label><label><input type="radio" name="a-gender" value="nu"> Chị (nữ)</label></div></div>
+    <div class="field acct-reg acct-me"><label for="a-addr">Địa chỉ giao cơm</label><input id="a-addr" autocomplete="street-address" placeholder="Số nhà, ngõ/ngách, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="a">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="a-geo-st"></small><small class="sub" style="font-size:12px">Ghi đầy đủ để shipper tìm đúng nhà, VD: 12 ngõ 3 Hoàng Liên, Cốc Lếu.</small></div>
     <p class="sub acct-me" id="acct-pts" style="margin:0;font-weight:600;color:var(--leaf)"></p>
     <p class="err" id="acct-err" hidden></p>
     <button type="submit" class="btn-main" id="acct-go">Đăng ký</button>
     <button type="button" class="linkish acct-me" id="acct-out">Đăng xuất</button>
   </form>
+</div>
+<div class="welcome" id="welcome" hidden role="dialog" aria-modal="true" aria-labelledby="w-title">
+  <div class="welcome-card">
+    <p class="w-hi" id="w-hi">Chào bạn! 👋</p>
+    <small class="sub" id="w-sub">Cô Bích Quán chúc bạn bữa cơm ngon miệng.</small>
+    <h2 id="w-title">Xin mời chọn suất ăn của bạn</h2>
+    <div class="tiers need" id="w-tiers" role="group" aria-label="Chọn loại suất"></div>
+    <button type="button" class="linkish" id="w-skip">Xem thực đơn trước</button>
+  </div>
+</div>
+<div class="zoom" id="mapbox" hidden role="dialog" aria-modal="true" aria-labelledby="map-title">
+  <div class="zoom-card" style="width:min(100%,560px)">
+    <div class="order-head"><h3 id="map-title">Ghim nhà của bạn</h3><button type="button" class="linkish" id="map-close">Đóng</button></div>
+    <p class="sub" style="margin:0;font-size:13px">Bấm vào bản đồ đúng chỗ nhà bạn (phóng to cho rõ), hoặc bấm “Vị trí của tôi”.</p>
+    <div id="map" style="height:min(55vh,420px);border-radius:12px;background:var(--bg)"></div>
+    <p class="sub" id="map-st" style="margin:0;font-size:13px"></p>
+    <div class="cart-actions"><button type="button" class="btn-ghost" id="map-me">📍 Vị trí của tôi</button><button type="button" class="btn-main" id="map-ok" disabled>Xong</button></div>
+  </div>
 </div>
 <script>
 const EXTRA = "Đồ uống & gọi thêm";
@@ -834,7 +866,7 @@ function renderCatalog() {
         const on = stock[m.id] > 0;
         return `<div class="setup-row">
           <label class="thumb-sm" title="Đổi ảnh">${thumb(m)}<input type="file" accept="image/*" data-img="${m.id}" id="img-${m.id}" hidden></label>
-          <span class="cat-name"><b style="font-weight:500">${esc(m.name)}</b><small>${on ? `Đang hiện · đã đặt ${sold(m.id)}` : "Đang ẩn"}</small></span>
+          <span class="cat-name"><button type="button" class="linkish" data-rename="${m.id}" title="Bấm để đổi tên" style="text-align:left;padding:0;color:var(--fg);text-decoration:none;font-size:15px">${esc(m.name)} ✏️</button><small>${on ? `Đang hiện · đã đặt ${sold(m.id)}` : "Đang ẩn"}</small></span>
           ${on && c === EXTRA ? `<input class="num" type="number" inputmode="numeric" min="0" id="pr-${m.id}" data-price="${m.id}" value="${m.price / 1000}" aria-label="Giá ${esc(m.name)} (nghìn)">` : ""}
           ${on ? `<input class="num" type="number" inputmode="numeric" min="0" id="td-${m.id}" data-today="${m.id}" value="${stock[m.id]}" aria-label="Số phần ${esc(m.name)}" title="Số phần">` : ""}
           <button type="button" class="switch" data-toggle="${m.id}" aria-pressed="${on}" aria-label="Bán ${esc(m.name)} hôm nay"></button>
@@ -883,7 +915,7 @@ const removed = new Set();
 try { pin = localStorage.getItem(KEY) || ""; } catch (_) {}
 const menuState = () => ({ stock: { ...stock }, lastQty: { ...lastQty }, tiers: TIERS.map(t => ({ ...t })), today: [...todaySet],
   prices: Object.fromEntries(MENU.filter(m => m.price).map(m => [m.id, m.price])),
-  added: MENU.filter(m => m.added).map(({ id, cat, name, price }) => ({ id, cat, name, price })), removed: [...removed] });
+  added: MENU.filter(m => m.added).map(({ id, cat, name, price }) => ({ id, cat, name, price })), removed: [...removed], names: Object.fromEntries(MENU.filter(m => m.renamed).map(m => [m.id, m.name])) });
 function syncNote(text, bad) { const n = $("sync-note"); n.textContent = text; n.style.color = bad ? "var(--chili)" : ""; $("demo-note").hidden = !text; }
 function syncErr(e) { syncNote("Mất kết nối máy chủ, đang thử lại… (" + (e?.message || e) + ")", true); }
 async function api(path, opts = {}) {
@@ -915,6 +947,7 @@ function applyMenu(d, imgs) {
   Object.assign(stock, d.stock || {}); Object.assign(lastQty, d.lastQty || {}); if (Array.isArray(d.tiers) && d.tiers.length) TIERS.splice(0, TIERS.length, ...d.tiers); if (tierIx >= 0) Object.assign(SET, TIERS[tierIx] || {});
   todaySet.clear(); (d.today || []).forEach(id => byId[id] && todaySet.add(id));
   for (const [id, pr] of Object.entries(d.prices || {})) if (byId[id]) byId[id].price = pr;
+  for (const [id, nm] of Object.entries(d.names || {})) if (byId[id]) Object.assign(byId[id], { name: nm, renamed: true });
   for (const [id, v] of Object.entries(imgs || {})) if (byId[id]) byId[id].img = "/api/img/" + id + "?v=" + v;
 }
 async function pollMenu() {
@@ -1100,7 +1133,7 @@ function renderBuilder() {
     $("pick-hint").textContent = canh.length ? "Mỗi suất được 1 bát canh. Bấm chọn 1 loại, không lấy canh thì bỏ qua." : "";
     $("dishes").innerHTML = canh.length ? `<div class="dish-grid">${canh.map(m => {
       const on = canhPick === m.id, rem = left(m.id);
-      return `<button type="button" class="dish" data-canh="${m.id}" aria-pressed="${on}" ${!on && rem < buildQty ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${rem ? `còn ${rem}` : "Hết"}</small></button>`;
+      return `<button type="button" class="dish" data-canh="${m.id}" aria-pressed="${on}" ${!on && rem < buildQty ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b>${pickRow(rem ? `còn ${rem}` : "Hết", on, !on && rem < buildQty)}</button>`;
     }).join("")}</div>` : "";
     renderDrinks();
     $("bq").textContent = buildQty;
@@ -1121,9 +1154,9 @@ function renderBuilder() {
     return `<div class="group-label">${label}</div><div class="dish-grid">${list.map(m => {
       const on = build.has(m.id), rem = left(m.id);
       const info = rem === 0 && !on ? "Hết" : c === EXTRA ? fmt(m.price) : rem <= 5 ? `<span style="color:var(--chili)">còn ${rem}</span>` : `còn ${rem}`;
-      if (browse) return `<button type="button" class="dish" data-browse="${c === EXTRA || c === CANH ? "1" : m.id}" ${rem === 0 ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${info}</small></button>`;
+      if (browse) return `<button type="button" class="dish" data-browse="${c === EXTRA || c === CANH ? "1" : m.id}" ${rem === 0 ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b>${c === EXTRA || c === CANH ? `<small>${info}</small>` : pickRow(info, false, rem === 0)}</button>`;
       const out = !on && (rem < buildQty || build.size >= SET.picks);
-      return `<button type="button" class="dish" data-pick="${m.id}" aria-pressed="${on}" ${out ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${info}</small></button>`;
+      return `<button type="button" class="dish" data-pick="${m.id}" aria-pressed="${on}" ${out ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b>${pickRow(info, on, out)}</button>`;
     }).join("")}</div>`;
   }).join("") || `<p class="sub">Quán chưa đăng món hôm nay.</p>`;
   $("bq").textContent = buildQty;
@@ -1132,6 +1165,8 @@ function renderBuilder() {
   $("add-set").textContent = full ? "Tiếp: chọn canh →" : "Chọn đủ món để tiếp";
 }
 let dishCat = "all";
+// Dòng dưới tên món: "còn 12" bên trái, nút đỏ "Chọn" bên phải (bấm ảnh là xem to, bấm nút là chọn)
+const pickRow = (info, on, out) => `<span class="pick-row"><small>${info}</small>${out && !on ? "" : `<span class="pick-chip${on ? " on" : ""}">${on ? "✓ Bỏ" : "Chọn"}</span>`}</span>`;
 function renderDrinks() {
   const list = MENU.filter(m => isExtra(m.id) && stock[m.id] > 0);
   $("drinks").innerHTML = list.map(m => {
@@ -1311,7 +1346,7 @@ function renderOwner() {
         <div class="sum-money"><b>${fmt(orderTotal(o))}</b> · ${o.pay}<span class="more">Xem chi tiết ▾</span></div>
       </summary>
       <div class="ship">
-        <div class="row"><span class="k">Bản đồ</span><a href="https://www.google.com/maps/search/${encodeURIComponent(o.addr + ", Lào Cai")}" target="_blank" rel="noopener">Xem đường đến ${esc(o.addr)}</a></div>
+        <div class="row"><span class="k">Bản đồ</span><a href="${mapUrl(o)}" target="_blank" rel="noopener">${o.geo ? "📍 Đã ghim trên bản đồ, xem đường" : "Xem đường đến " + esc(o.addr)}</a></div>
         <div class="row"><span class="k">Thu tiền</span>${isPaid(o) ? `<b class="paid">Đã nhận tiền (chuyển khoản)</b>` : o.pay === "Chuyển khoản" ? `<span><b class="collect">Chờ xác nhận chuyển khoản ${fmt(orderTotal(o))}</b><br><small class="sub">Nội dung: COBICH ${esc(o.phone.replace(/\D/g, ""))}</small><br><button type="button" class="btn-sm" style="margin-top:4px;background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-paid="${o.no}">Đã nhận tiền</button></span>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} khi giao</b>`}</div>
       </div>
       <div class="dishes-list">${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
@@ -1350,10 +1385,11 @@ function orderText(o) {
 }
 
 /* ---------- Shipper ---------- */
+const mapUrl = o => o.geo ? `https://www.google.com/maps/dir/?api=1&destination=${o.geo.lat},${o.geo.lng}` : "https://www.google.com/maps/search/" + encodeURIComponent(o.addr + ", Lào Cai");
 const extrasCount = o => Object.values(o.extras).reduce((s, q) => s + q, 0);
 function shipCard(o) {
   const u = urgency(o), gone = o.st === "giao", cash = !isPaid(o), waitBank = o.pay === "Chuyển khoản" && !o.paid;
-  const tel = o.phone.replace(/[^0-9+]/g, ""), map = "https://www.google.com/maps/search/" + encodeURIComponent(o.addr + ", Lào Cai");
+  const tel = o.phone.replace(/[^0-9+]/g, ""), map = mapUrl(o);
   const ex = Object.entries(o.extras).filter(([, q]) => q);
   const btn = o.st === "nau" ? `<button type="button" class="btn-main" data-ship="${o.no}">Đã giao xong</button>`
     : o.st === "xong" ? `<button type="button" class="btn-main" data-ship="${o.no}">Đã nhận đơn, đi giao</button>` : "";
@@ -1442,6 +1478,7 @@ document.addEventListener("click", e => {
   const t = e.target.closest("button");
   if (!t) return;
   const d = t.dataset;
+  if (d.tier && t.closest("#welcome")) { $("welcome").hidden = true; setTimeout(() => $("builder").scrollIntoView({ block: "start" })); }
   if (d.tier) { autoTier = false; tierIx = +d.tier; Object.assign(SET, TIERS[tierIx]); build = new Set([...build].slice(0, SET.picks)); renderKhach(); }
   if ((d.pick || d.canh) && t.getAttribute("aria-disabled") === "true") return;
   if (d.pick && tierIx >= 0) {
@@ -1475,6 +1512,11 @@ document.addEventListener("click", e => {
   if (d.copy) {
     const o = orders.find(x => x.no == d.copy), old = t.textContent;
     try { navigator.clipboard.writeText(orderText(o)).then(() => { t.textContent = "Đã chép"; setTimeout(() => t.textContent = old, 1500); }, () => { t.textContent = "Không chép được"; }); } catch (_) { t.textContent = "Không chép được"; }
+  }
+  if (d.rename) {
+    const m = byId[d.rename], nv = (prompt("Tên món mới:", m.name) || "").trim().slice(0, 60);
+    if (nv && nv !== m.name) { m.name = nv; m.renamed = true; refresh(); }
+    return;
   }
   if (d.del) {
     const id = d.del;
@@ -1595,7 +1637,7 @@ $("form").addEventListener("submit", e => {
   }
   if (missing.length) { $("err").textContent = "Vui lòng điền " + missing.join(", ") + "."; $("err").hidden = false; return; }
   $("err").hidden = true;
-  const o = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), no: Math.max(0, ...orders.map(x => x.no)) + 1, at: Date.now(), name, phone, addr, time: $("f-time").value, pay: document.querySelector('input[name="pay"]:checked').value,
+  const o = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), no: Math.max(0, ...orders.map(x => x.no)) + 1, at: Date.now(), name, phone, addr, ...(pinGeo.f ? { geo: pinGeo.f } : {}), time: $("f-time").value, pay: document.querySelector('input[name="pay"]:checked').value,
     note: $("f-note").value.trim(), st: "moi", sets: cart.sets.map(s => ({ ...s })), extras: { ...cart.extras } };
   $("submit-btn").disabled = true; $("submit-btn").textContent = "Đang gửi…";
   placeOrder(o).then(r => {
@@ -1668,6 +1710,7 @@ let guest = false;
 const cusApi = (path, opts = {}) => api(path, { ...opts, headers: { "x-cus": memGet()?.token || "" } });
 function fillFromMem() {
   const k = memGet(); if (!k?.member) return;
+  if (k.geo) setPin("f", k.geo);
   $("f-name").value = k.name || $("f-name").value; $("f-phone").value = k.phone || $("f-phone").value; $("f-addr").value = k.addr || $("f-addr").value;
 }
 async function renderMember() {
@@ -1680,7 +1723,7 @@ async function renderMember() {
   $("mem-sub").textContent = n ? `Đơn này được +${n} điểm khi giao xong.` : "Mỗi suất cơm = 1 điểm, dùng đổi quà tri ân của quán.";
   try {
     const d = (await cusApi("cus/me")).me;
-    memSet({ ...k, name: d.name, phone: d.phone, addr: d.addr, avatar: d.avatar || "", points: d.points });
+    memSet({ ...k, name: d.name, phone: d.phone, addr: d.addr, avatar: d.avatar || "", gender: d.gender, geo: d.geo, points: d.points });
     $("mem-pts").textContent = $("mem-top-pts").textContent = `${d.points} điểm`;
   } catch (e) {
     if (e.status === 401) { memSet({ ...k, member: false, token: "" }); return renderMember(); }
@@ -1696,6 +1739,8 @@ function openAcct(m, pre = {}) {
   $("a-uname").value = pre.name ?? k?.name ?? $("f-name").value ?? "";
   $("a-phone").value = pre.phone ?? k?.phone ?? $("f-phone").value ?? "";
   $("a-addr").value = pre.addr ?? k?.addr ?? $("f-addr").value ?? "";
+  document.querySelectorAll('[name="a-gender"]').forEach(x => { x.checked = x.value === k?.gender; });
+  setPin("a", k?.member ? k.geo : pinGeo.f);
   renderAcct(); $("acct").hidden = false;
 }
 function renderAcct() {
@@ -1715,9 +1760,10 @@ const refreshMeViews = () => { if (!$("view-pts").hidden) renderPts(); if (!$("v
 $("acct-form").addEventListener("submit", async e => {
   e.preventDefault();
   const err = t => { $("acct-err").textContent = t; $("acct-err").hidden = false; };
+  const gender = document.querySelector('[name="a-gender"]:checked')?.value || "", geo = pinGeo.a;
   const name = $("a-uname").value.trim(), phone = $("a-phone").value.trim(), pass = $("a-pass").value, addr = $("a-addr").value.trim();
   if (acctMode === "reg") {
-    if (!name) return err("Vui lòng nhập họ tên.");
+    if (!gender) return err("Vui lòng chọn giới tính.");
     if (!/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, ""))) return err("Số điện thoại chưa đúng.");
     if (pass.length < 6) return err("Mật khẩu từ 6 ký tự trở lên.");
     if (pass !== $("a-pass2").value) return err("Hai mật khẩu chưa giống nhau.");
@@ -1726,10 +1772,10 @@ $("acct-form").addEventListener("submit", async e => {
   $("acct-go").disabled = true;
   try {
     let d;
-    if (acctMode === "me") d = await cusApi("cus/me", { method: "PUT", body: JSON.stringify({ name, addr }) });
-    else d = await api("cus/" + (acctMode === "reg" ? "register" : "login"), { method: "POST", body: JSON.stringify({ name, phone, pass, addr }) });
+    if (acctMode === "me") d = await cusApi("cus/me", { method: "PUT", body: JSON.stringify({ name, addr, gender, geo }) });
+    else d = await api("cus/" + (acctMode === "reg" ? "register" : "login"), { method: "POST", body: JSON.stringify({ phone, pass, addr, gender, geo }) });
     const k = memGet() || {};
-    memSet({ ...k, member: true, token: d.token || k.token, name: d.me.name, phone: d.me.phone, addr: d.me.addr, avatar: d.me.avatar || "", points: d.me.points });
+    memSet({ ...k, member: true, token: d.token || k.token, name: d.me.name, phone: d.me.phone, addr: d.me.addr, avatar: d.me.avatar || "", gender: d.me.gender, geo: d.me.geo, points: d.me.points });
     fillFromMem(); $("acct").hidden = true; renderMember(); refreshMeViews();
     if (!$("view-done").hidden && lastOrder) showMemDone(lastOrder, true);
   } catch (ex) { err(ex.message); }
@@ -1779,7 +1825,8 @@ function renderCai() {
       <button type="button" class="btn-sm" id="av-pick" style="justify-self:start">Đổi ảnh đại diện</button><input type="file" id="av-file" accept="image/*" hidden></div></div>
     <form id="me-form" novalidate style="display:grid;gap:10px">
       <div class="field"><label for="me-name">Họ tên</label><input id="me-name" autocomplete="name" value="${esc(k.name || "")}"></div>
-      <div class="field"><label for="me-addr">Địa chỉ giao cơm</label><input id="me-addr" autocomplete="street-address" value="${esc(k.addr || "")}" placeholder="Số nhà, ngõ/ngách, đường, phường"></div>
+      <div class="field"><span class="lbl">Giới tính</span><div class="radios"><label><input type="radio" name="me-gender" value="nam"${k.gender === "nam" ? " checked" : ""}> Anh (nam)</label><label><input type="radio" name="me-gender" value="nu"${k.gender === "nu" ? " checked" : ""}> Chị (nữ)</label></div></div>
+      <div class="field"><label for="me-addr">Địa chỉ giao cơm</label><input id="me-addr" autocomplete="street-address" value="${esc(k.addr || "")}" placeholder="Số nhà, ngõ/ngách, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="s">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="s-geo-st"></small></div>
       <div class="field"><label for="me-phone">Số điện thoại (tên đăng nhập)</label><input id="me-phone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(k.phone || "")}"></div>
       <div class="field" id="me-pass-w" hidden><label for="me-pass">Mật khẩu hiện tại (để đổi số điện thoại)</label><input id="me-pass" type="password" autocomplete="current-password"></div>
       <p class="err" id="me-err" hidden></p><p class="toast" id="me-ok" aria-live="polite"></p>
@@ -1795,6 +1842,7 @@ function renderCai() {
       </form>
     </details>
     <button type="button" class="btn-ghost" id="cai-out">Đăng xuất</button>`;
+  setPin("s", k.geo);
   const phoneChanged = () => phoneNorm($("me-phone").value) !== phoneNorm(k.phone);
   $("me-phone").oninput = () => { $("me-pass-w").hidden = !phoneChanged(); };
   $("av-pick").onclick = () => $("av-file").click();
@@ -1816,7 +1864,7 @@ function renderCai() {
     if (!/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, ""))) return err("Số điện thoại chưa đúng.");
     if (phoneChanged() && !$("me-pass").value) return err("Đổi số điện thoại cần nhập mật khẩu hiện tại.");
     try {
-      const d = (await cusApi("cus/me", { method: "PUT", body: JSON.stringify({ name, addr, phone, pass: $("me-pass").value }) })).me;
+      const d = (await cusApi("cus/me", { method: "PUT", body: JSON.stringify({ name, addr, phone, pass: $("me-pass").value, gender: document.querySelector('[name="me-gender"]:checked')?.value || "", geo: pinGeo.s }) })).me;
       memSet({ ...memGet(), ...d }); fillFromMem(); renderMember(); renderCai();
       $("me-ok").textContent = "Đã lưu thông tin.";
     } catch (ex) { err(ex.message); }
@@ -1869,6 +1917,70 @@ async function loadFeedback() {
     $("fb-list").innerHTML = items.length ? items.map(f => `<div class="cart-set"><small class="sub">${new Date(f.at).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}${f.name ? " · " + esc(f.name) : ""}${f.phone ? " · " + esc(f.phone) : ""}</small><div>${esc(f.text)}</div></div>`).join("") : `<p class="sub" style="margin:0">Chưa có góp ý.</p>`;
   } catch (_) {}
 }
+
+// Ghim nhà trên bản đồ (OpenStreetMap). a = đăng ký, s = cài đặt, f = đặt cơm
+const pinGeo = { a: null, s: null, f: null };
+const SHOP = [22.5006, 103.9668];
+function setPin(w, g) {
+  pinGeo[w] = g || null;
+  const st = $(w + "-geo-st"); if (st) st.textContent = g ? "✓ Đã ghim vị trí trên bản đồ" : "";
+  const b = document.querySelector(`[data-mappin="${w}"]`); if (b) b.textContent = g ? "📍 Sửa vị trí ghim" : "📍 Ghim nhà trên bản đồ";
+}
+let leafletP = null, lmap = null, lmark = null, mapFor = "", mapPick = null;
+function loadLeaflet() {
+  if (window.L) return Promise.resolve();
+  return leafletP ||= new Promise((ok, no) => {
+    const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "/leaflet/leaflet.css"; document.head.append(css);
+    const js = document.createElement("script"); js.src = "/leaflet/leaflet.js";
+    js.onload = ok; js.onerror = () => { leafletP = null; no(new Error("map")); }; document.head.append(js);
+  });
+}
+function placePin(lat, lng) {
+  mapPick = { lat: +lat.toFixed(6), lng: +lng.toFixed(6) };
+  if (lmap) { lmark ? lmark.setLatLng([lat, lng]) : (lmark = L.marker([lat, lng]).addTo(lmap)); }
+  $("map-ok").disabled = false; $("map-st").textContent = "Đã chọn vị trí. Bấm “Xong” để lưu.";
+}
+async function openMap(w) {
+  mapFor = w; mapPick = pinGeo[w]; $("map-ok").disabled = !mapPick; $("map-st").textContent = "";
+  $("mapbox").hidden = false;
+  try { await loadLeaflet(); } catch (_) { $("map-st").textContent = "Không tải được bản đồ. Bạn bấm “Vị trí của tôi” khi đang ở nhà, hoặc ghi rõ địa chỉ."; return; }
+  const c = mapPick ? [mapPick.lat, mapPick.lng] : SHOP;
+  if (!lmap) {
+    lmap = L.map("map").setView(c, 16);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(lmap);
+    lmap.on("click", e => placePin(e.latlng.lat, e.latlng.lng));
+  } else lmap.setView(c, 17);
+  if (lmark) { lmark.remove(); lmark = null; }
+  if (mapPick) lmark = L.marker(c).addTo(lmap);
+  setTimeout(() => lmap.invalidateSize(), 50);
+}
+$("map-me").onclick = () => {
+  if (!navigator.geolocation) { $("map-st").textContent = "Máy này không cho lấy vị trí."; return; }
+  $("map-st").textContent = "Đang lấy vị trí…";
+  navigator.geolocation.getCurrentPosition(p => { placePin(p.coords.latitude, p.coords.longitude); if (lmap) lmap.setView([p.coords.latitude, p.coords.longitude], 18); },
+    () => { $("map-st").textContent = "Chưa lấy được vị trí. Bạn cho phép vị trí, hoặc bấm vào bản đồ."; }, { enableHighAccuracy: true, timeout: 10000 });
+};
+$("map-ok").onclick = () => {
+  if (!mapPick) return;
+  setPin(mapFor, mapPick);
+  if (mapFor === "f") pinGeo.f = mapPick;
+  $("mapbox").hidden = true;
+};
+$("map-close").onclick = () => { $("mapbox").hidden = true; };
+document.addEventListener("click", e => { const b = e.target.closest("[data-mappin]"); if (b) openMap(b.dataset.mappin); });
+
+// Mở app: làm mờ trang, chào khách và mời chọn suất 35k / 40k / 50k
+function showWelcome() {
+  const k = memGet(), h = new Date().getHours();
+  const who = k?.member && k.name ? k.name : "bạn";
+  $("w-hi").textContent = `Chào ${who}! 👋`;
+  $("w-sub").textContent = `Cô Bích Quán chúc ${who === "bạn" ? "bạn" : "quý khách"} ${h < 11 ? "một ngày tốt lành và bữa trưa" : h < 15 ? "bữa trưa" : "bữa tối"} thật ngon miệng.`;
+  $("w-tiers").innerHTML = TIERS.map((t, i) => `<button type="button" class="tier" data-tier="${i}"><b>${k2(t.price)}</b><small>${t.picks} món</small></button>`).join("");
+  $("welcome").hidden = false;
+}
+const k2 = v => Math.round(v / 1000) + "k";
+$("w-skip").onclick = () => { $("welcome").hidden = true; };
+if (!location.hash && !cart.sets.length && tierIx < 0) showWelcome();
 
 $("chpin").onclick = () => {
   ["khach", "chu", "ship"].forEach(id => show(id, false)); $("cartbar").hidden = $("bnav").hidden = true; document.body.classList.remove("has-nav"); $("owner-tabs").hidden = true;

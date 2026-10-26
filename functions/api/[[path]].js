@@ -46,6 +46,12 @@ function soldMap(orders) {
   return sold;
 }
 const str = (v, max) => String(v ?? "").trim().slice(0, max);
+// Vị trí ghim trên bản đồ (chỉ nhận toạ độ trong khoảng Việt Nam)
+const geoOf = g => {
+  const lat = +g?.lat, lng = +g?.lng;
+  return lat > 8 && lat < 24 && lng > 102 && lng < 110 ? { lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6 } : null;
+};
+const genderOf = g => g === "nu" ? "nu" : g === "nam" ? "nam" : "";
 
 // Thông báo đẩy (Web Push, VAPID, không gửi nội dung): báo chủ quán khi có đơn mới, báo shipper khi đơn soạn xong.
 // Khoá VAPID tự tạo lần đầu và lưu trong D1.
@@ -106,7 +112,7 @@ async function pointsOf(db, key, olds = []) {
   }
   return { points, pending, orders: results.length };
 }
-const pubCus = c => ({ name: c.name, phone: c.phone, addr: c.addr, avatar: c.avatar || "" });
+const pubCus = c => ({ name: c.name, phone: c.phone, addr: c.addr, avatar: c.avatar || "", gender: c.gender || "", geo: c.geo || null });
 const cusPoints = (db, c) => pointsOf(db, c.phone, c.olds || []);
 
 export async function onRequest({ request, env, params, waitUntil }) {
@@ -212,7 +218,8 @@ export async function onRequest({ request, env, params, waitUntil }) {
         + Object.entries(extras).reduce((s, [id, q]) => s + q * (menu?.prices?.[id] || 0), 0);
       const no = orders.reduce((mx, o) => Math.max(mx, o.no || 0), 0) + 1;
       const id = crypto.randomUUID().slice(0, 12), at = Date.now();
-      const order = { no, at, name, phone, addr, time: str(body.time, 30) || "Càng sớm càng tốt",
+      const geo = geoOf(body.geo);
+      const order = { no, at, name, phone, addr, ...(geo ? { geo } : {}), time: str(body.time, 30) || "Càng sớm càng tốt",
         pay: body.pay === "Chuyển khoản" ? "Chuyển khoản" : "Tiền mặt", paid: false, note: str(body.note, 300), sets, extras, total };
       await db.prepare("INSERT INTO orders (id, no, day, at, st, data) VALUES (?, ?, ?, ?, 'moi', ?)").bind(id, no, vnDay(at), at, JSON.stringify(order)).run();
       later(sendPush(db, "owner"));
@@ -227,12 +234,14 @@ export async function onRequest({ request, env, params, waitUntil }) {
       if (pass.length < 6 || pass.length > 64) return bad("Mật khẩu từ 6 ký tự trở lên.");
       const cur = await getKV(db, "cus:" + phone);
       if (b === "register") {
-        const name = str(body.name, 80), addr = str(body.addr, 200);
-        if (!name) return bad("Vui lòng nhập họ tên.");
+        // Đăng ký gọn: số điện thoại, mật khẩu, giới tính, địa chỉ (tên sửa sau trong Cài đặt)
+        const gender = genderOf(body.gender), addr = str(body.addr, 200), geo = geoOf(body.geo);
+        const name = str(body.name, 80) || (gender === "nu" ? "Chị" : "Anh");
+        if (!gender) return bad("Vui lòng chọn giới tính.");
         if (addr.length < 8) return bad("Vui lòng nhập địa chỉ đầy đủ: số nhà, ngõ, đường, phường.");
         if (cur) return bad("Số điện thoại này đã có tài khoản. Bạn bấm “Đăng nhập” nhé.", 409);
         const salt = crypto.randomUUID();
-        const c = { phone, name, addr, salt, hash: await passHash(pass, salt), at: Date.now() };
+        const c = { phone, name, gender, addr, ...(geo ? { geo } : {}), salt, hash: await passHash(pass, salt), at: Date.now() };
         await putKV(db, "cus:" + phone, c);
         return json({ token: await newSession(db, phone), me: { ...pubCus(c), ...(await cusPoints(db, c)) } });
       }
@@ -263,6 +272,8 @@ export async function onRequest({ request, env, params, waitUntil }) {
           await db.prepare("DELETE FROM kv WHERE k = ?").bind("cus:" + old).run();
         }
         Object.assign(c, { name, addr });
+        if (body.gender != null && genderOf(body.gender)) c.gender = genderOf(body.gender);
+        if (body.geo !== undefined) { const g = geoOf(body.geo); if (g) c.geo = g; else delete c.geo; }
         await putKV(db, "cus:" + c.phone, c);
       }
       return json({ me: { ...pubCus(c), ...(await cusPoints(db, c)) } });

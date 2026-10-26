@@ -5,7 +5,7 @@ const removed = new Set();
 try { pin = localStorage.getItem(KEY) || ""; } catch (_) {}
 const menuState = () => ({ stock: { ...stock }, lastQty: { ...lastQty }, tiers: TIERS.map(t => ({ ...t })), today: [...todaySet],
   prices: Object.fromEntries(MENU.filter(m => m.price).map(m => [m.id, m.price])),
-  added: MENU.filter(m => m.added).map(({ id, cat, name, price }) => ({ id, cat, name, price })), removed: [...removed] });
+  added: MENU.filter(m => m.added).map(({ id, cat, name, price }) => ({ id, cat, name, price })), removed: [...removed], names: Object.fromEntries(MENU.filter(m => m.renamed).map(m => [m.id, m.name])) });
 function syncNote(text, bad) { const n = $("sync-note"); n.textContent = text; n.style.color = bad ? "var(--chili)" : ""; $("demo-note").hidden = !text; }
 function syncErr(e) { syncNote("Mất kết nối máy chủ, đang thử lại… (" + (e?.message || e) + ")", true); }
 async function api(path, opts = {}) {
@@ -37,6 +37,7 @@ function applyMenu(d, imgs) {
   Object.assign(stock, d.stock || {}); Object.assign(lastQty, d.lastQty || {}); if (Array.isArray(d.tiers) && d.tiers.length) TIERS.splice(0, TIERS.length, ...d.tiers); if (tierIx >= 0) Object.assign(SET, TIERS[tierIx] || {});
   todaySet.clear(); (d.today || []).forEach(id => byId[id] && todaySet.add(id));
   for (const [id, pr] of Object.entries(d.prices || {})) if (byId[id]) byId[id].price = pr;
+  for (const [id, nm] of Object.entries(d.names || {})) if (byId[id]) Object.assign(byId[id], { name: nm, renamed: true });
   for (const [id, v] of Object.entries(imgs || {})) if (byId[id]) byId[id].img = "/api/img/" + id + "?v=" + v;
 }
 async function pollMenu() {
