@@ -280,6 +280,7 @@ export async function onRequest({ request, env, params, waitUntil }) {
       if (!role) return bad("Cần mã PIN.", 401);
       const { st } = await request.json();
       if (!STATUSES.includes(st) || (role === "ship" && !SHIP_CAN.includes(st))) return bad("Không đổi được trạng thái này.", 403);
+      if (role === "owner" && st === "giao") return bad("Đơn đã giao do shipper xác nhận.", 403);
       await db.prepare("UPDATE orders SET st = ? WHERE id = ?").bind(st, b).run();
       if (st === "xong") later(sendPush(db, "ship"));
       return json({ ok: true });

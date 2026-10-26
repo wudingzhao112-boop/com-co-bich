@@ -291,7 +291,7 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 .ogroup { display: grid; gap: 2px; justify-items: center; padding: 8px 2px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--fg); font: inherit; cursor: pointer; }
 .ogroup b { font-size: 20px; line-height: 1.1; }
 .ogroup small { font-size: 11px; color: var(--muted); text-align: center; }
-.ogroup.gap b { color: var(--chili); }
+.ogroup.moi b { color: var(--red); }
 .ogroup[aria-pressed="true"] { border-color: var(--leaf); background: var(--yolk-soft); }
 /* Trang khách: lưới 3 ảnh một hàng, nhóm món, phóng to ảnh */
 :root { --red: #d0261b; }
@@ -337,9 +337,10 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 details.order > summary { list-style: none; cursor: pointer; display: grid; gap: 4px; }
 details.order > summary::-webkit-details-marker { display: none; }
 details.order[open] > summary { padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
-details.order[data-grp="do"] { --st: var(--red); background: color-mix(in srgb, var(--red) 6%, var(--surface)); }
-details.order[data-grp="vang"] { --st: var(--yolk); background: color-mix(in srgb, var(--yolk) 14%, var(--surface)); }
-details.order[data-grp="xanh"] { --st: #2e7d32; background: color-mix(in srgb, #2e7d32 7%, var(--surface)); }
+details.order { background: var(--surface); }
+details.order[data-grp="do"] { --st: var(--red); }
+details.order[data-grp="vang"] { --st: var(--yolk); }
+details.order[data-grp="xanh"] { --st: #2e7d32; }
 details.order[data-grp="do"] .pill { background: var(--red); color: #fff; border-color: var(--red); }
 details.order[data-grp="vang"] .pill { background: var(--yolk); color: #2a1708; border-color: var(--yolk); }
 details.order[data-grp="xanh"] .pill { background: #2e7d32; color: #fff; border-color: #2e7d32; }
@@ -797,8 +798,9 @@ function readImage(file, done) {
 const stock = { suon: 20, ga: 15, thitkho: 15, ca: 12, bo: 10, chalua: 12, dauphu: 10, trung: 20, ngo: 15, cakho: 12, muong: 25, cai: 15, susu: 0, dua: 30, bi: 25, cua: 15, chua: 0, comthem: 30, trada: 50, bohuc: 24, coca: 24, pepsi: 24, nchanh: 20, ncam: 15, bia: 24, nloc: 30 };
 for (const m of MENU) if (stock[m.id] === undefined) stock[m.id] = ["Bắp cải xào", "Đỗ xào", "Canh trứng cà chua", "Cà pháo muối"].includes(m.name) ? 12 : 0;
 const STATUS = { moi: "Mới, chưa soạn", xong: "Soạn xong, chờ shipper", nau: "Đang giao", giao: "Đã giao" };
-const NEXT = { moi: "xong", xong: "nau", nau: "giao" };
-const NEXT_LABEL = { moi: "Soạn xong", xong: "Shipper đã lấy", nau: "Đã giao xong" };
+// Chủ quán chỉ chuyển tới "đang giao"; "đã giao" do shipper bấm
+const NEXT = { moi: "xong", xong: "nau" };
+const NEXT_LABEL = { moi: "Soạn xong", xong: "Ship đã lấy" };
 // Giờ mẫu tính theo giờ hiện tại để demo luôn có đơn gấp, đơn trễ
 const NOW0 = Date.now(), MIN = 60000;
 const hm = t => { const d = new Date(Math.round(t / (5 * MIN)) * 5 * MIN); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
@@ -1164,7 +1166,7 @@ document.addEventListener("toggle", e => {
   d.open ? openOrders.add(+d.dataset.ono) : openOrders.delete(+d.dataset.ono);
 }, true);
 // Nhóm đơn cho chủ quán: gấp, chưa giao, đang giao, đã giao
-const OGROUPS = [["gap", "Đơn gấp"], ["chua", "Chưa giao"], ["nau", "Đang giao"], ["giao", "Đã giao"], ["all", "Tất cả"]];
+const OGROUPS = [["moi", "Đơn hàng"], ["xong", "Đã soạn"], ["nau", "Đang giao"], ["giao", "Đã giao"], ["all", "Tất cả"]];
 function inGroup(o, g) {
   if (g === "gap") return o.st !== "giao" && o.st !== "huy" && urgency(o).lv !== "thuong";
   if (g === "chua") return o.st === "moi" || o.st === "xong";
@@ -1178,7 +1180,7 @@ function renderOwner() {
   $("st-money").textContent = fmt(orders.reduce((s, o) => s + orderTotal(o), 0));
   const notDone = orders.filter(o => o.st !== "giao").length;
   updateBadge();
-  $("alert").className = "alert" + (notDone ? "" : " ok");
+  $("alert").classList.toggle("ok", !notDone);
   $("alert").innerHTML = notDone ? `<b>${notDone}</b><span>đơn <strong>chưa giao</strong>. Giao gấp kẻo khách chờ!</span>` : `<b>0</b><span>Đã giao hết đơn.</span>`;
   const paid = orders.filter(isPaid).reduce((s, o) => s + orderTotal(o), 0);
   const due = orders.filter(o => !isPaid(o) && o.st !== "giao").reduce((s, o) => s + orderTotal(o), 0);
@@ -1257,9 +1259,8 @@ function shipCard(o) {
   const u = urgency(o), gone = o.st === "giao", cash = !isPaid(o), waitBank = o.pay === "Chuyển khoản" && !o.paid;
   const tel = o.phone.replace(/[^0-9+]/g, ""), map = "https://www.google.com/maps/search/" + encodeURIComponent(o.addr + ", Lào Cai");
   const ex = Object.entries(o.extras).filter(([, q]) => q);
-  const btn = gone ? "" : o.st === "nau"
-    ? `<button type="button" class="btn-main" data-ship="${o.no}">Đã giao xong</button>`
-    : `<button type="button" class="btn-main" data-ship="${o.no}">Lấy đơn, đi giao</button>`;
+  const btn = o.st === "nau" ? `<button type="button" class="btn-main" data-ship="${o.no}">Đã giao xong</button>`
+    : o.st === "xong" ? `<button type="button" class="btn-main" data-ship="${o.no}">Đã nhận đơn, đi giao</button>` : "";
   return `<details class="order sorder" data-st="${o.st}" data-grp="${o.st === "giao" ? "xanh" : o.st === "nau" ? "vang" : "do"}" data-ono="${o.no}"${openOrders.has(o.no) ? " open" : ""}>
     <summary>
     <div class="s-top"><span class="s-time">${/^\d/.test(o.time) ? esc(o.time) : "Sớm nhất"}</span>${gone ? "" : `<span class="flag ${u.lv}">${u.text}</span>`}<span class="pill">${STATUS[o.st]}</span></div>
@@ -1364,7 +1365,7 @@ document.addEventListener("click", e => {
     refresh();
   }
   if (d.next) { const o = orders.find(x => x.no == d.next); o.st = NEXT[o.st]; pushOrder(o); refresh(); }
-  if (d.ship) { const o = orders.find(x => x.no == d.ship); o.st = o.st === "nau" ? "giao" : "nau"; pushOrder(o); refresh(); }
+  if (d.ship) { const o = orders.find(x => x.no == d.ship); if (o.st !== "xong" && o.st !== "nau") return; o.st = o.st === "nau" ? "giao" : "nau"; pushOrder(o); refresh(); }
   if (d.copy) {
     const o = orders.find(x => x.no == d.copy), old = t.textContent;
     try { navigator.clipboard.writeText(orderText(o)).then(() => { t.textContent = "Đã chép"; setTimeout(() => t.textContent = old, 1500); }, () => { t.textContent = "Không chép được"; }); } catch (_) { t.textContent = "Không chép được"; }
