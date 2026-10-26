@@ -72,8 +72,11 @@ rep('''  orders.push(o);
 function finishOrder(o) {
   $("ticket").textContent = orderText(o);''')
 rep('''    : `Quán sẽ giao đúng giờ. Bạn trả ${fmt(orderTotal(o))} tiền mặt khi nhận cơm.`;
+  $("done-title").textContent = `Cảm ơn ${o.name} đã đặt cơm Cô Bích Quán!`;
   showKhach("done");
 });''', '''    : `Quán sẽ giao đúng giờ. Bạn trả ${fmt(orderTotal(o))} tiền mặt khi nhận cơm.`;
+  $("done-title").textContent = `Cảm ơn ${o.name} đã đặt cơm Cô Bích Quán!`;
+  $("done-msg").textContent = "Chúc bạn ngon miệng! " + $("done-msg").textContent;
   showKhach("done");
 }''')
 

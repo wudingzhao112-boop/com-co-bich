@@ -314,7 +314,7 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
     </div>
 
     <div id="view-menu" style="display:grid;gap:16px">
-      <section class="panel">
+      <section class="panel" id="builder">
         <div class="picked-bar">
           <h2 id="build-title">Chọn món cho suất</h2>
           <div class="dots cust-only" id="dots" aria-hidden="true"></div>
@@ -322,8 +322,8 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
         <div class="tiers cust-only" id="tiers" role="group" aria-label="Chọn loại suất"></div>
         <p class="sub cust-only" id="pick-hint" style="font-size:13px"></p>
         <div id="dishes" style="display:grid;gap:10px"></div>
-        <div class="picked-bar cust-only" style="border-top:1px dashed var(--line);padding-top:12px">
-          <div class="stepper" aria-label="Số suất giống nhau">
+        <div class="picked-bar cust-only" id="build-foot" style="border-top:1px dashed var(--line);padding-top:12px">
+          <div class="stepper" id="bq-box" aria-label="Số suất giống nhau">
             <button class="btn-round" type="button" id="bq-dec" aria-label="Bớt 1 suất">−</button>
             <span class="qty" id="bq">1</span>
             <button class="btn-round add" type="button" id="bq-inc" aria-label="Thêm 1 suất">+</button>
@@ -331,16 +331,21 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
           </div>
           <button class="btn-main" type="button" id="add-set" disabled>Thêm vào giỏ</button>
         </div>
+        <button type="button" class="btn-ghost cust-only" id="back-mon" hidden>← Sửa lại món</button>
       </section>
 
       <section class="panel" id="extras-panel">
-        <h3>Đồ uống và gọi thêm</h3><p class="sub" style="font-size:13px;margin-top:-8px">Tính tiền riêng, ngoài giá suất.</p>
+        <h3>Bước cuối: chọn nước</h3><p class="sub" style="font-size:13px;margin-top:-8px">Đồ uống tính tiền riêng, ngoài giá suất. Không cần thì bấm thanh toán luôn.</p>
         <ul class="menu" id="extras"></ul>
       </section>
 
       <section class="panel" id="cart-panel" hidden>
         <h3>Giỏ của bạn</h3>
         <div id="cart-list"></div>
+        <div class="actions" id="cart-actions">
+          <button type="button" class="btn-main" id="pay-now">Thanh toán</button>
+          <button type="button" class="btn-ghost" id="more-set">+ Thêm suất khác</button>
+        </div>
       </section>
     </div>
 
@@ -384,7 +389,7 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 
     <section class="panel done" id="view-done" hidden>
       <div class="tick" aria-hidden="true">✓</div>
-      <h2>Quán đã nhận đơn của bạn</h2>
+      <h2 id="done-title">Quán đã nhận đơn của bạn</h2>
       <p class="sub" id="done-msg"></p>
       <pre class="ticket" id="ticket"></pre>
       <div class="actions" style="justify-content:center">
@@ -754,8 +759,13 @@ const cats = () => [...new Set(MENU.map(m => m.cat))].sort((a, b) => (a === EXTR
 // Mỗi suất chọn món nào thì trừ 1 phần món đó (nhân số suất)
 function usedBy(o, id) {
   if (isExtra(id)) return o.extras[id] || 0;
-  return o.sets.reduce((s, x) => s + (x.picks.includes(id) ? x.qty : 0), 0);
+  return o.sets.reduce((s, x) => s + (allPicks(x).includes(id) ? x.qty : 0), 0);
 }
+// Canh chọn riêng (miễn phí, kèm suất), không tính vào số món
+const CANH = "Canh";
+const allPicks = x => x.canh ? [...x.picks, x.canh] : x.picks;
+const canhToday = () => MENU.filter(m => m.cat === CANH && stock[m.id] > 0);
+let step = "mon", canhPick = "";
 const sold = id => orders.reduce((s, o) => s + usedBy(o, id), 0);
 const left = id => Math.max(0, (stock[id] || 0) - sold(id) - usedBy(cart, id));
 const setPrice = x => x.price || TIERS.find(t => t.picks === x.picks.length)?.price || 0;
@@ -790,7 +800,22 @@ function renderBuilder() {
     }).join("") || `<p class="sub">Hôm nay chưa bật món nào. Vào tab <a href="#chu-sp">Sửa sản phẩm</a> để bật món.</p>`;
     return;
   }
-  const groups = cats().filter(c => c !== EXTRA);
+  const isCanh = step === "canh";
+  $("tiers").hidden = isCanh; $("dots").hidden = isCanh; $("back-mon").hidden = !isCanh;
+  $("bq-box").hidden = tierIx < 0;
+  if (isCanh) {
+    $("build-title").textContent = "Chọn canh (kèm suất)";
+    $("pick-hint").textContent = "Mỗi suất được 1 bát canh. Bấm chọn 1 loại, hoặc bấm tiếp nếu không lấy canh.";
+    $("dishes").innerHTML = `<div class="dish-grid">${canhToday().map(m => {
+      const on = canhPick === m.id, rem = left(m.id);
+      return `<button type="button" class="dish" data-canh="${m.id}" aria-pressed="${on}" ${!on && rem < buildQty ? "disabled" : ""}><span class="thumb">${thumb(m)}</span><b>${esc(m.name)}</b><small>${rem ? `còn ${rem}` : "Hết"}</small></button>`;
+    }).join("")}</div>`;
+    $("bq").textContent = buildQty;
+    $("add-set").disabled = false;
+    $("add-set").textContent = canhPick ? "Tiếp: chọn nước →" : "Không lấy canh, tiếp →";
+    return;
+  }
+  const groups = cats().filter(c => c !== EXTRA && c !== CANH);
   $("dishes").innerHTML = groups.map(c => {
     const list = MENU.filter(m => m.cat === c && stock[m.id] > 0);
     if (!list.length) return "";
@@ -803,7 +828,7 @@ function renderBuilder() {
   }).join("") || `<p class="sub">Quán chưa đăng món hôm nay.</p>`;
   $("bq").textContent = buildQty;
   $("add-set").disabled = tierIx < 0 || build.size !== SET.picks;
-  $("add-set").textContent = tierIx >= 0 && build.size === SET.picks ? `Thêm ${buildQty} suất · ${fmt(buildQty * SET.price)}` : "Thêm vào giỏ";
+  $("add-set").textContent = tierIx >= 0 && build.size === SET.picks ? (canhToday().length ? "Tiếp: chọn canh →" : "Tiếp: chọn nước →") : "Chọn đủ món để tiếp";
 }
 function syncToday() { for (const m of MENU) if (stock[m.id] > 0) todaySet.add(m.id); }
 function renderEdit() {
@@ -836,7 +861,7 @@ function renderExtras() {
   }).join("");
 }
 function cartLinesHTML(editable) {
-  const sets = cart.sets.map((s, i) => `<div class="set-line"><b>Suất ${k(setPrice(s))}${s.qty > 1 ? ` × ${s.qty}` : ""}</b><div class="picks">${esc(picksText(s.picks))}</div>
+  const sets = cart.sets.map((s, i) => `<div class="set-line"><b>Suất ${k(setPrice(s))}${s.qty > 1 ? ` × ${s.qty}` : ""}</b><div class="picks">${esc(picksText(allPicks(s)))}</div>
     <div class="amt"><span>${fmt(s.qty * setPrice(s))}</span>${editable ? `<button type="button" class="btn-sm" data-rmset="${i}">Bỏ</button>` : ""}</div></div>`);
   const ex = Object.entries(cart.extras).filter(([, q]) => q).map(([id, q]) => `<div class="set-line"><b>${q} × ${esc(byId[id].name)}</b><div class="picks"></div><div class="amt"><span>${fmt(q * byId[id].price)}</span></div></div>`);
   return sets.concat(ex).join("");
@@ -850,7 +875,18 @@ function renderCart() {
   $("count-bar").textContent = n ? `${n} suất trong giỏ` : has ? "Chưa có suất cơm" : "Giỏ trống";
   $("go").disabled = !has;
 }
-function renderKhach() { renderBuilder(); renderExtras(); renderCart(); }
+function renderKhach() {
+  renderBuilder(); renderExtras(); renderCart();
+  if (editMode) return;
+  const has = cart.sets.length || Object.values(cart.extras).some(Boolean);
+  const nuoc = step === "nuoc";
+  $("builder").hidden = nuoc;
+  if (!nuoc) $("extras-panel").hidden = true;
+  else if (!has) { step = "mon"; return renderKhach(); }
+  $("cart-panel").hidden = !has || !nuoc;
+  $("go").textContent = nuoc ? "Thanh toán →" : "Đặt ngay";
+}
+function goStep(st) { step = st; renderKhach(); $("view-menu").scrollIntoView({ block: "start" }); }
 function fillTimes() {
   const slots = [];
   for (let t = 10 * 60 + 30; t <= 13 * 60 + 30; t += 15) slots.push(String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"));
@@ -897,7 +933,7 @@ function renderOwner() {
 
   const need = {};
   orders.filter(o => o.st === "moi").forEach(o => {
-    o.sets.forEach(x => x.picks.forEach(id => need[id] = (need[id] || 0) + x.qty));
+    o.sets.forEach(x => allPicks(x).forEach(id => need[id] = (need[id] || 0) + x.qty));
     Object.entries(o.extras).forEach(([id, q]) => { if (q) need[id] = (need[id] || 0) + q; });
   });
   const boxes = orders.filter(o => o.st === "moi").reduce((s, o) => s + setCount(o), 0);
@@ -916,7 +952,7 @@ function renderOwner() {
         <div class="row"><span class="k">Địa chỉ</span><span>${esc(o.addr)} · <a href="https://www.google.com/maps/search/${encodeURIComponent(o.addr + ", Lào Cai")}" target="_blank" rel="noopener">Xem bản đồ</a></span></div>
         <div class="row"><span class="k">Thu tiền</span>${o.pay === "Chuyển khoản" ? `<b class="paid">Đã thu tiền (chuyển khoản)</b>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} khi giao</b>`}</div>
       </div>
-      <div class="dishes-list">${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${s.picks.map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
+      <div class="dishes-list">${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
         ${Object.entries(o.extras).filter(([, q]) => q).length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${Object.entries(o.extras).filter(([, q]) => q).map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
       ${o.note ? `<div class="meta"><b>Ghi chú:</b> ${esc(o.note)}</div>` : ""}
       <div class="foot"><span><b>${fmt(orderTotal(o))}</b> · ${o.pay}</span>
@@ -946,7 +982,7 @@ ${groups.join("\n\n")}
 👉 Đặt cơm tại: [link trang đặt cơm]`;
 }
 function orderText(o) {
-  const sets = o.sets.map((s, i) => `Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` (x${s.qty} hộp)` : ""}:\n${s.picks.map(id => "- " + (byId[id]?.name ?? "?")).join("\n")}`).join("\n");
+  const sets = o.sets.map((s, i) => `Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` (x${s.qty} hộp)` : ""}:\n${allPicks(s).map(id => "- " + (byId[id]?.name ?? "?")).join("\n")}`).join("\n");
   const ex = Object.entries(o.extras).filter(([, q]) => q).map(([id, q]) => `+ ${q} x ${byId[id]?.name ?? "?"}`).join("\n");
   return `ĐƠN #${o.no} – giao lúc ${o.time}\nTên: ${o.name}\nSĐT: ${o.phone}\nĐịa chỉ: ${o.addr}\n${o.pay === "Chuyển khoản" ? "ĐÃ THU TIỀN (chuyển khoản)" : "THU TIỀN MẶT: " + fmt(orderTotal(o))}\n\n${sets}${ex ? "\n" + ex : ""}${o.note ? "\n\nGhi chú: " + o.note : ""}`;
 }
@@ -967,7 +1003,7 @@ function shipCard(o) {
     ${gone ? "" : `<div class="s-btns"><a href="tel:${tel}">Gọi khách</a><a href="${map}" target="_blank" rel="noopener">Chỉ đường</a></div>`}
     <div class="s-money">${cash ? `<span class="collect">Thu tiền mặt ${fmt(orderTotal(o))}</span>` : `<span class="paid">Đã thu tiền (chuyển khoản)</span>`}</div>
     <details><summary>${setCount(o)} hộp cơm${extrasCount(o) ? ` · ${extrasCount(o)} đồ uống/gọi thêm` : ""}. Bấm xem món</summary>
-      <div class="dishes-list" style="margin-top:6px">${o.sets.map((x, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(x))})${x.qty > 1 ? ` <span class="x">× ${x.qty} hộp</span>` : ""}</div><ul>${x.picks.map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
+      <div class="dishes-list" style="margin-top:6px">${o.sets.map((x, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(x))})${x.qty > 1 ? ` <span class="x">× ${x.qty} hộp</span>` : ""}</div><ul>${allPicks(x).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
       ${ex.length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${ex.map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div></details>
     ${o.note ? `<div class="meta"><b>Ghi chú:</b> ${esc(o.note)}</div>` : ""}
     ${o.st === "moi" ? `<div class="s-ready">Bếp đang soạn, chờ chủ quán bấm “Soạn xong” rồi lấy.</div>` : ""}
@@ -999,6 +1035,7 @@ function updateBadge() {
 let ownerPage = "";
 function setEdit(on, page = "mon") {
   editMode = on; ownerPage = on ? page : ""; build = new Set(); buildQty = 1;
+  step = "mon"; canhPick = ""; $("builder").hidden = false;
   $("edit-toggle").setAttribute("aria-pressed", on);
   $("edit-tools").hidden = !on;
   $("mon-tools").hidden = page !== "mon";
@@ -1036,7 +1073,11 @@ document.addEventListener("click", e => {
   if (!t) return;
   const d = t.dataset;
   if (d.tier) { tierIx = +d.tier; Object.assign(SET, TIERS[tierIx]); build = new Set([...build].slice(0, SET.picks)); renderBuilder(); }
-  if (d.pick && tierIx >= 0) { build.has(d.pick) ? build.delete(d.pick) : build.size < SET.picks && build.add(d.pick); renderBuilder(); }
+  if (d.pick && tierIx >= 0) {
+    build.has(d.pick) ? build.delete(d.pick) : build.size < SET.picks && build.add(d.pick); renderBuilder();
+    if (build.size === SET.picks && canhToday().length) setTimeout(() => { if (step === "mon" && build.size === SET.picks) goStep("canh"); }, 350);
+  }
+  if (d.canh) { canhPick = canhPick === d.canh ? "" : d.canh; renderBuilder(); }
   if (d.inc && left(d.inc) > 0) { cart.extras[d.inc] = (cart.extras[d.inc] || 0) + 1; renderKhach(); }
   if (d.dec) { cart.extras[d.dec] = Math.max(0, (cart.extras[d.dec] || 0) - 1); renderKhach(); }
   if (d.rmset) { cart.sets.splice(+d.rmset, 1); renderKhach(); }
@@ -1064,12 +1105,19 @@ document.addEventListener("click", e => {
 });
 $("bq-inc").onclick = () => { if ([...build].every(id => left(id) > buildQty)) buildQty++; renderBuilder(); };
 $("bq-dec").onclick = () => { buildQty = Math.max(1, buildQty - 1); renderBuilder(); };
+function commitSet() {
+  cart.sets.push({ picks: [...build], qty: buildQty, price: SET.price, ...(canhPick ? { canh: canhPick } : {}) });
+  build = new Set(); buildQty = 1; canhPick = ""; tierIx = -1; Object.assign(SET, { price: 0, picks: 0 });
+  goStep("nuoc");
+}
 $("add-set").onclick = () => {
+  if (step === "canh") return commitSet();
   if (tierIx < 0 || build.size !== SET.picks) return;
-  cart.sets.push({ picks: [...build], qty: buildQty, price: SET.price });
-  build = new Set(); buildQty = 1;
-  renderKhach();
+  if (canhToday().length) goStep("canh"); else commitSet();
 };
+$("back-mon").onclick = () => { canhPick = ""; goStep("mon"); };
+$("pay-now").onclick = () => $("go").click();
+$("more-set").onclick = () => goStep("mon");
 document.addEventListener("change", e => {
   const d = e.target.dataset || {};
   if (d.left) { const n = Math.max(0, parseInt(e.target.value, 10) || 0); stock[d.left] = sold(d.left) + n; if (!n) { lastQty[d.left] = stock[d.left]; } refresh(); }
@@ -1128,6 +1176,7 @@ $("form").addEventListener("submit", e => {
   $("done-msg").textContent = o.pay === "Chuyển khoản"
     ? "Đơn đã thanh toán bằng chuyển khoản. Quán sẽ giao đúng giờ, bạn không cần trả thêm."
     : `Quán sẽ giao đúng giờ. Bạn trả ${fmt(orderTotal(o))} tiền mặt khi nhận cơm.`;
+  $("done-title").textContent = `Cảm ơn ${o.name} đã đặt cơm Cô Bích Quán!`;
   showKhach("done");
 });
 function updateQR() {

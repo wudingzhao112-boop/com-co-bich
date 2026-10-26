@@ -40,7 +40,7 @@ function soldMap(orders) {
   const sold = {};
   for (const o of orders) {
     if (o.st === "huy") continue;
-    for (const s of o.sets || []) for (const id of s.picks || []) sold[id] = (sold[id] || 0) + (s.qty || 0);
+    for (const s of o.sets || []) for (const id of [...(s.picks || []), ...(s.canh ? [s.canh] : [])]) sold[id] = (sold[id] || 0) + (s.qty || 0);
     for (const [id, q] of Object.entries(o.extras || {})) sold[id] = (sold[id] || 0) + (q || 0);
   }
   return sold;
@@ -115,7 +115,8 @@ export async function onRequest({ request, env, params }) {
       const maxPicks = Math.max(...tiers.map(t => +t.picks || 0));
       const sets = (Array.isArray(body.sets) ? body.sets : []).slice(0, 30).map(s => {
         const picks = [...new Set((Array.isArray(s.picks) ? s.picks : []).slice(0, maxPicks).map(x => str(x, 40)))];
-        return { picks, qty: Math.max(1, Math.min(50, parseInt(s.qty, 10) || 1)), price: +tiers.find(t => +t.picks === picks.length)?.price || 0 };
+        const canh = s.canh ? str(s.canh, 40) : "";
+        return { picks, qty: Math.max(1, Math.min(50, parseInt(s.qty, 10) || 1)), price: +tiers.find(t => +t.picks === picks.length)?.price || 0, ...(canh ? { canh } : {}) };
       }).filter(s => s.picks.length);
       if (sets.some(s => !s.price)) return bad("Số món trong suất chưa đúng, bạn chọn lại giúp quán nhé.");
       const extras = {};
