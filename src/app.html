@@ -635,6 +635,13 @@ details.sorder { border-left-color: var(--st); }
       <p class="sub" style="font-size:13px;margin:0">Cộng dồn các đơn chưa soạn để múc một lượt cho nhanh.</p>
       <ul class="prep" id="prep"></ul>
     </section>
+    <section class="panel bc-only" id="rp-panel">
+      <h3>Xem báo cáo theo ngày</h3>
+      <div class="chips" id="rp-chips"><button type="button" data-rp="today" aria-pressed="true">Hôm nay</button><button type="button" data-rp="yest" aria-pressed="false">Hôm qua</button><button type="button" data-rp="week" aria-pressed="false">Tuần này</button><button type="button" data-rp="month" aria-pressed="false">Tháng này</button><button type="button" data-rp="pick" aria-pressed="false">📅 Chọn ngày</button></div>
+      <div class="row2" id="rp-pick" hidden><div class="field"><label for="rp-from">Từ ngày</label><input type="date" id="rp-from"></div><div class="field"><label for="rp-to">Đến ngày</label><input type="date" id="rp-to"></div></div>
+      <div class="stats" id="rp-stats"></div>
+      <div id="rp-days" style="display:grid;gap:0"></div>
+    </section>
     <section class="panel bc-only" id="fb-panel">
       <h3>Góp ý của khách</h3>
       <div id="fb-list" style="display:grid;gap:8px"><p class="sub" style="margin:0">Chưa có góp ý.</p></div>
@@ -1216,7 +1223,8 @@ $("bnav").addEventListener("click", e => {
   const b = e.target.closest("[data-nav]"); if (!b) return;
   const v = b.dataset.nav;
   if (v === "pts" || v === "cai") return showKhach(v);
-  if (v === "menu") { showKhach("menu"); return; }
+  // Trang chủ: về trang đầu (đang chọn canh hay xem giỏ thì quay về bước chọn món, món đã chọn vẫn giữ)
+  if (v === "menu") { if (step !== "mon") { step = "mon"; canhPick = ""; } $("zoom").hidden = true; showKhach("menu"); renderKhach(); window.scrollTo(0, 0); return; }
   // Nút + : về khung chọn món; chưa chọn suất thì nhấp nháy bước 1
   if (step === "gio") step = "mon";
   showKhach("menu"); renderKhach();
@@ -1512,6 +1520,7 @@ $("add-form").addEventListener("submit", e => {
 });
 $("q").addEventListener("input", renderCatalog);
 $("new-day").onclick = () => {
+  if (!confirm("Tắt hết món đang bán để sang ngày mới? (Đơn hàng không bị xoá)")) return;
   for (const key in stock) { if (stock[key]) lastQty[key] = stock[key]; stock[key] = 0; }
   todaySet.clear();
   catFilter = "all";

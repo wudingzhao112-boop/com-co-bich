@@ -371,3 +371,31 @@ function renderUse() {
 document.addEventListener("change", e => { const x = e.target.dataset?.use; if (x) { promoUse[x] = e.target.checked; renderUse(); } });
 
 if (!location.hash && !cart.sets.length && tierIx < 0) showWelcome();
+
+// Báo cáo theo ngày: hôm nay, hôm qua, tuần, tháng hoặc chọn ngày trên lịch
+const vnDate = (t = Date.now()) => new Date(t + 7 * 3600e3).toISOString().slice(0, 10);
+let rpMode = "today";
+function rpRange() {
+  const now = Date.now(), today = vnDate(now), dow = (new Date(now + 7 * 3600e3).getUTCDay() + 6) % 7;
+  if (rpMode === "yest") { const y = vnDate(now - 864e5); return [y, y]; }
+  if (rpMode === "week") return [vnDate(now - dow * 864e5), today];
+  if (rpMode === "month") return [today.slice(0, 8) + "01", today];
+  if (rpMode === "pick") { const f = $("rp-from").value || today, t = $("rp-to").value || f; return f <= t ? [f, t] : [t, f]; }
+  return [today, today];
+}
+const dmy = d => d.split("-").reverse().join("/");
+async function loadReport() {
+  if (!pin) return;
+  const [from, to] = rpRange();
+  document.querySelectorAll("#rp-chips [data-rp]").forEach(b => b.setAttribute("aria-pressed", b.dataset.rp === rpMode));
+  $("rp-pick").hidden = rpMode !== "pick";
+  try {
+    const d = await api(`report?from=${from}&to=${to}`);
+    $("rp-stats").innerHTML = `<div class="stat"><b>${d.orders}</b><small>đơn hàng</small></div><div class="stat"><b>${d.sets}</b><small>suất cơm</small></div><div class="stat"><b>${d.cust}</b><small>khách</small></div><div class="stat"><b>${fmt(d.money)}</b><small>tiền bán</small></div>`;
+    $("rp-days").innerHTML = `<p class="sub" style="margin:4px 0">${from === to ? "Ngày " + dmy(from) : `Từ ${dmy(from)} đến ${dmy(to)}`}</p>` + (d.days.length > 1 ? d.days.map(x => `<div class="promo-row" style="padding:8px 0"><span>${dmy(x.day)}</span><span>${x.orders} đơn · ${x.sets} suất · <b>${fmt(x.money)}</b></span></div>`).join("") : "");
+  } catch (e) { $("rp-days").innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+$("rp-chips").addEventListener("click", e => { const b = e.target.closest("[data-rp]"); if (!b) return; rpMode = b.dataset.rp; if (rpMode === "pick" && !$("rp-from").value) $("rp-from").value = $("rp-to").value = vnDate(); loadReport(); });
+$("rp-from").onchange = $("rp-to").onchange = loadReport;
+const _loadFeedback = loadFeedback;
+loadFeedback = async function () { loadReport(); return _loadFeedback(); };

@@ -366,6 +366,21 @@ export async function onRequest({ request, env, params, waitUntil }) {
     }
 
     // Chủ quán và shipper xem đơn hôm nay
+    // Báo cáo theo khoảng ngày (chủ quán): số đơn, số suất, tiền
+    if (a === "report" && m === "GET") {
+      if ((await roleOf(db, request)) !== "owner") return bad("Cần mã PIN chủ quán.", 401);
+      const q = new URL(request.url).searchParams, ok = d => /^\d{4}-\d{2}-\d{2}$/.test(d || "");
+      const from = ok(q.get("from")) ? q.get("from") : vnDay(), to = ok(q.get("to")) ? q.get("to") : from;
+      const { results } = await db.prepare("SELECT day, st, data FROM orders WHERE day BETWEEN ? AND ? AND st != 'huy'").bind(from, to).all();
+      const days = {}, tot = { orders: 0, sets: 0, money: 0, done: 0, cust: new Set() };
+      for (const r of results) {
+        const d = JSON.parse(r.data), n = (d.sets || []).reduce((t, x) => t + (x.qty || 0), 0), money = +d.total || 0;
+        const x = days[r.day] ||= { day: r.day, orders: 0, sets: 0, money: 0 };
+        x.orders++; x.sets += n; x.money += money;
+        tot.orders++; tot.sets += n; tot.money += money; if (r.st === "giao") tot.done++; tot.cust.add(phoneKey(d.phone));
+      }
+      return json({ from, to, orders: tot.orders, sets: tot.sets, money: tot.money, done: tot.done, cust: tot.cust.size, days: Object.values(days).sort((p, q2) => q2.day.localeCompare(p.day)) });
+    }
     if (a === "orders" && !b && m === "GET") {
       const role = await roleOf(db, request);
       if (!role) return bad("Cần mã PIN.", 401);
