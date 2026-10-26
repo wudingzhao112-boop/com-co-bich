@@ -399,3 +399,56 @@ $("rp-chips").addEventListener("click", e => { const b = e.target.closest("[data
 $("rp-from").onchange = $("rp-to").onchange = loadReport;
 const _loadFeedback = loadFeedback;
 loadFeedback = async function () { loadReport(); return _loadFeedback(); };
+
+// Khách huỷ đơn trong 5 phút sau khi đặt
+let cancelled = [];
+const LAST = "cobich-last";
+function saveLastOrder(r) { try { const my = JSON.parse(localStorage.getItem("cobich-my") || "[]"); my.unshift({ id: r.id, key: r.ckey }); localStorage.setItem("cobich-my", JSON.stringify(my.slice(0, 20))); } catch (_) {} try { localStorage.setItem(LAST, JSON.stringify({ id: r.id, key: r.ckey, no: r.no, at: r.at || Date.now() })); } catch (_) {} renderCancel(); }
+function lastOrderGet() { try { return JSON.parse(localStorage.getItem(LAST) || "null"); } catch (_) { return null; } }
+let cancelTimer = null, cancelMsg = "";
+function renderCancel() {
+  const L = lastOrderGet(), box = $("cancel-bar");
+  const left = L ? 5 * 60e3 - (Date.now() - L.at) : 0;
+  if (cancelMsg) { box.innerHTML = `<span>${cancelMsg}</span>`; box.hidden = false; return; }
+  if (!L || left <= 0 || mode !== "khach" || editMode) { box.hidden = true; if (L && left <= 0) try { localStorage.removeItem(LAST); } catch (_) {} clearInterval(cancelTimer); cancelTimer = null; return; }
+  const s = Math.ceil(left / 1000), mm = Math.floor(s / 60), ss = String(s % 60).padStart(2, "0");
+  box.innerHTML = `<span>Đơn #${L.no} vừa đặt. Muốn huỷ thì bấm trong <b>${mm}:${ss}</b></span><button type="button" id="cancel-go">Huỷ đơn</button>`;
+  box.hidden = false;
+  if (!cancelTimer) cancelTimer = setInterval(renderCancel, 1000);
+}
+document.addEventListener("click", async e => {
+  if (e.target.id !== "cancel-go") return;
+  const L = lastOrderGet(); if (!L) return;
+  if (!confirm(`Huỷ đơn #${L.no}?`)) return;
+  try {
+    await api(`orders/${L.id}/cancel`, { method: "POST", body: JSON.stringify({ key: L.key }) });
+    cancelMsg = `Đã huỷ đơn #${L.no}. Quán đã nhận được.`;
+  } catch (ex) { cancelMsg = esc(ex.message); }
+  try { localStorage.removeItem(LAST); } catch (_) {}
+  clearInterval(cancelTimer); cancelTimer = null; renderCancel();
+  setTimeout(() => { cancelMsg = ""; renderCancel(); }, 8000);
+  pollMenu();
+});
+renderCancel();
+
+// Trang Đơn hàng của khách: xem đơn đang ở bước nào
+const TRACK = [["moi", "Quán đã nhận"], ["xong", "Đã soạn xong"], ["nau", "Shipper đang giao"], ["giao", "Đã giao"]];
+const TRACK_NOW = { moi: "Quán đã nhận đơn, đang soạn cơm", xong: "Đã soạn xong, chờ shipper lấy", nau: "Shipper đang mang cơm đến bạn", giao: "Đã giao xong. Chúc ngon miệng!", huy: "Đơn đã huỷ" };
+let donTimer = null;
+async function renderDon() {
+  const box = $("don-body");
+  let my = []; try { my = JSON.parse(localStorage.getItem("cobich-my") || "[]"); } catch (_) {}
+  if (!box.innerHTML) box.innerHTML = `<p class="sub">Đang tải…</p>`;
+  try {
+    const { orders: list } = await cusApi("track", { method: "POST", body: JSON.stringify({ items: my }) });
+    box.innerHTML = list.length ? list.map(o => {
+      const ix = TRACK.findIndex(([k]) => k === o.st);
+      return `<div class="track${o.st === "huy" ? " huy" : ""}"><div class="hd"><span>Đơn #${o.no} · ${o.day === vnDate() ? "hôm nay" : dmy(o.day)}</span><span>${fmt(o.total || 0)}</span></div>
+        <span class="sub" style="margin:0">${o.sets} suất${o.drinks ? ` · ${o.drinks} nước` : ""} · nhận ${/^\d/.test(o.time) ? "lúc " + esc(o.time) : "sớm nhất"}</span>
+        ${o.st === "huy" ? "" : `<div class="steps">${TRACK.map(([, l], i) => `<span class="${i <= ix ? "on" : ""}">${l}</span>`).join("")}</div>`}
+        <span class="now">${TRACK_NOW[o.st] || ""}</span></div>`;
+    }).join("") : `<p class="sub" style="margin:0">Bạn chưa có đơn nào. Bấm “+ Chọn món” để đặt cơm nhé.</p>`;
+  } catch (e) { box.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+  clearTimeout(donTimer);
+  if (!$("view-don").hidden) donTimer = setTimeout(renderDon, 15000);
+}

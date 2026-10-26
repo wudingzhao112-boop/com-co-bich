@@ -75,7 +75,10 @@ function checkNew(list) {
 async function pollOrders() {
   if (!role) return;
   const v = orderVer;
-  try { const d = await api("orders"); if (v !== orderVer) return; checkNew(d.orders); orders = d.orders; render(); }
+  try { const d = await api("orders"); if (v !== orderVer) return;
+    // Đơn khách đã huỷ: không tính vào danh sách, chỉ báo cho chủ quán
+    cancelled = d.orders.filter(o => o.st === "huy"); const live = d.orders.filter(o => o.st !== "huy");
+    checkNew(live); orders = live; render(); }
   catch (e) { if (e.status === 401) { role = null; route(); } else syncErr(e); }
 }
 async function placeOrder(o) {

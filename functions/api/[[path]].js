@@ -265,12 +265,13 @@ export async function onRequest({ request, env, params, waitUntil }) {
       const no = orders.reduce((mx, o) => Math.max(mx, o.no || 0), 0) + 1;
       const id = crypto.randomUUID().slice(0, 12), at = Date.now();
       const geo = geoOf(body.geo);
-      const order = { no, at, name, phone, addr, ...(geo ? { geo } : {}), time: str(body.time, 30) || "Càng sớm càng tốt",
+      const ckey = crypto.randomUUID();
+      const order = { no, at, ckey, name, phone, addr, ...(geo ? { geo } : {}), time: str(body.time, 30) || "Càng sớm càng tốt",
         pay: body.pay === "Chuyển khoản" ? "Chuyển khoản" : "Tiền mặt", paid: false, note: str(body.note, 300), sets, extras,
         ...(discount ? { discount, promo } : {}), total: total - discount };
       await db.prepare("INSERT INTO orders (id, no, day, at, st, data) VALUES (?, ?, ?, ?, 'moi', ?)").bind(id, no, vnDay(at), at, JSON.stringify(order)).run();
       later(sendPush(db, "owner"));
-      return json({ ok: true, id, no, total: total - discount, discount });
+      return json({ ok: true, id, no, ckey, at, total: total - discount, discount });
     }
 
     // Tài khoản khách: đăng ký, đăng nhập, xem và sửa thông tin (tên, địa chỉ)
@@ -385,6 +386,31 @@ export async function onRequest({ request, env, params, waitUntil }) {
       const role = await roleOf(db, request);
       if (!role) return bad("Cần mã PIN.", 401);
       return json({ role, orders: await todayOrders(db) });
+    }
+    // Khách theo dõi đơn: đơn đặt trên máy này (id + mã) và đơn theo tài khoản đăng nhập
+    if (a === "track" && m === "POST") {
+      const body = await request.json(), c = await cusOf(db, request), out = new Map();
+      const pub = r => { const d = JSON.parse(r.data); return { id: r.id, no: d.no, at: r.at, day: r.day, st: r.st, time: d.time, total: d.total, sets: (d.sets || []).reduce((t, x) => t + (x.qty || 0), 0), drinks: Object.values(d.extras || {}).reduce((t, q) => t + q, 0), addr: d.addr }; };
+      for (const it of (Array.isArray(body.items) ? body.items : []).slice(0, 20)) {
+        const r = await db.prepare("SELECT id, day, at, st, data FROM orders WHERE id = ?").bind(str(it.id, 40)).first();
+        if (r && JSON.parse(r.data).ckey === it.key) out.set(r.id, pub(r));
+      }
+      if (c) {
+        const keys = [c.phone, ...(c.olds || [])].slice(0, 6);
+        const { results } = await db.prepare(`SELECT id, day, at, st, data FROM orders WHERE ${PHONE_SQL} IN (${keys.map(() => "?").join(",")}) ORDER BY at DESC LIMIT 20`).bind(...keys).all();
+        for (const r of results) out.set(r.id, pub(r));
+      }
+      return json({ orders: [...out.values()].sort((x, y) => y.at - x.at) });
+    }
+    // Khách tự huỷ đơn trong 5 phút sau khi đặt (cần mã huỷ trả về lúc đặt)
+    if (a === "orders" && b && path[2] === "cancel" && m === "POST") {
+      const { key } = await request.json();
+      const row = await db.prepare("SELECT st, at, data FROM orders WHERE id = ?").bind(b).first();
+      if (!row || !key || JSON.parse(row.data).ckey !== key) return bad("Không tìm thấy đơn.", 404);
+      if (Date.now() - row.at > 5 * 60e3 + 15e3) return bad("Đã quá 5 phút, không huỷ được nữa. Bạn gọi quán 035 456 3552 nhé.", 409);
+      if (!["moi", "xong"].includes(row.st)) return bad("Đơn đã giao cho shipper, không huỷ được. Bạn gọi quán 035 456 3552 nhé.", 409);
+      await db.prepare("UPDATE orders SET st = 'huy' WHERE id = ? AND st IN ('moi', 'xong')").bind(b).run();
+      return json({ ok: true });
     }
     // Chủ quán xác nhận đã nhận tiền chuyển khoản
     if (a === "orders" && b && path[2] === "paid" && m === "POST") {
