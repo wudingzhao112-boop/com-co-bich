@@ -328,10 +328,14 @@ export async function onRequest({ request, env, params, waitUntil }) {
     if (a === "orders" && b && m === "POST") {
       const role = await roleOf(db, request);
       if (!role) return bad("Cần mã PIN.", 401);
-      const { st } = await request.json();
+      const { st, from } = await request.json();
       if (!STATUSES.includes(st) || (role === "ship" && !SHIP_CAN.includes(st))) return bad("Không đổi được trạng thái này.", 403);
       if (role === "owner" && st === "giao") return bad("Đơn đã giao do shipper xác nhận.", 403);
-      await db.prepare("UPDATE orders SET st = ? WHERE id = ?").bind(st, b).run();
+      // Chỉ đổi khi đơn vẫn đang ở trạng thái máy này nhìn thấy: tránh máy khác (màn hình cũ) kéo đơn đã giao quay lại
+      const ok = { owner: { moi: ["xong", "huy"], xong: ["nau", "moi", "huy"], nau: ["xong"] }, ship: { xong: ["nau"], nau: ["giao"] } }[role];
+      if (!ok[from]?.includes(st)) return bad("Đơn này vừa được đổi trên máy khác. Trang đã cập nhật lại.", 409);
+      const r = await db.prepare("UPDATE orders SET st = ? WHERE id = ? AND st = ?").bind(st, b, from).run();
+      if (!(r.meta?.changes ?? r.changes)) return bad("Đơn này vừa được đổi trên máy khác. Trang đã cập nhật lại.", 409);
       if (st === "xong") later(sendPush(db, "ship"));
       return json({ ok: true });
     }

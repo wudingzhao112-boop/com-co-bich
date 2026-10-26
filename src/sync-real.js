@@ -22,7 +22,18 @@ function pushMenu() {
   menuSig = sig;
   menuQ = menuQ.then(() => api("menu", { method: "PUT", body: sig })).catch(syncErr);
 }
-function pushOrder(o) { api("orders/" + o.id, { method: "POST", body: JSON.stringify({ st: o.st }) }).then(pollOrders, syncErr); }
+// Gửi đổi trạng thái kèm trạng thái cũ; máy khác đổi trước thì máy chủ từ chối và trang tải lại
+let orderVer = 0;
+function pushOrder(o, from) {
+  orderVer++;
+  let clash = "";
+  api("orders/" + o.id, { method: "POST", body: JSON.stringify({ st: o.st, from }) })
+    .catch(e => { if (e.status === 409) clash = e.message; else syncErr(e); })
+    .finally(async () => {
+      orderVer++; await pollOrders();
+      if (clash) { syncNote(clash, true); setTimeout(() => syncNote(""), 6000); }
+    });
+}
 function uploadImg(id, url) {
   if (role !== "owner") return;
   api("img/" + id, { method: "PUT", body: JSON.stringify({ data: url }) }).catch(e => alert("Chưa lưu được ảnh: " + e.message));
@@ -62,7 +73,8 @@ function checkNew(list) {
 }
 async function pollOrders() {
   if (!role) return;
-  try { const d = await api("orders"); checkNew(d.orders); orders = d.orders; render(); }
+  const v = orderVer;
+  try { const d = await api("orders"); if (v !== orderVer) return; checkNew(d.orders); orders = d.orders; render(); }
   catch (e) { if (e.status === 401) { role = null; route(); } else syncErr(e); }
 }
 async function placeOrder(o) {

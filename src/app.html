@@ -1382,8 +1382,8 @@ document.addEventListener("click", e => {
     else stock[id] = lastQty[id] || 15;
     refresh();
   }
-  if (d.next) { const o = orders.find(x => x.no == d.next); o.st = NEXT[o.st]; pushOrder(o); refresh(); }
-  if (d.ship) { const o = orders.find(x => x.no == d.ship); if (o.st !== "xong" && o.st !== "nau") return; o.st = o.st === "nau" ? "giao" : "nau"; pushOrder(o); refresh(); }
+  if (d.next) { const o = orders.find(x => x.no == d.next), from = o.st; if (!NEXT[from]) return; o.st = NEXT[from]; pushOrder(o, from); refresh(); }
+  if (d.ship) { const o = orders.find(x => x.no == d.ship), from = o.st; if (from !== "xong" && from !== "nau") return; o.st = from === "nau" ? "giao" : "nau"; pushOrder(o, from); refresh(); }
   if (d.copy) {
     const o = orders.find(x => x.no == d.copy), old = t.textContent;
     try { navigator.clipboard.writeText(orderText(o)).then(() => { t.textContent = "Đã chép"; setTimeout(() => t.textContent = old, 1500); }, () => { t.textContent = "Không chép được"; }); } catch (_) { t.textContent = "Không chép được"; }
