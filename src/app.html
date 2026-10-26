@@ -231,7 +231,7 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 .dish small { font-size: 12px; color: var(--muted); }
 .dish[aria-pressed="true"] { border-color: var(--leaf); background: color-mix(in srgb, var(--leaf) 12%, var(--surface)); }
 .dish[aria-pressed="true"] b::before { content: "✓ "; color: var(--leaf); }
-.dish:disabled { opacity: .45; cursor: not-allowed; }
+.dish:disabled, .dish[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
 .group-label { font-size: 12px; font-weight: 600; letter-spacing: .06em; color: var(--muted); margin: 4px 0 -2px; }
 .picked-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .dots { display: flex; gap: 5px; }
@@ -291,12 +291,16 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --red: #ef5350; } }
 :root[data-theme="dark"] { --red: #ef5350; }
 .btn-red { background: var(--red) !important; color: #fff !important; }
-#view-menu:not(.editing) .dish-grid, .drink-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-#view-menu:not(.editing) .dish { padding: 6px; border-radius: 10px; position: relative; }
-#view-menu:not(.editing) .dish b { font-size: 13px; line-height: 1.25; }
+#view-menu:not(.editing) .dish-grid, .drink-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+@media (max-width: 340px) { #view-menu:not(.editing) .dish-grid, .drink-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+#view-menu:not(.editing) .dish { padding: 4px; border-radius: 10px; position: relative; }
+#view-menu:not(.editing) .dish b { font-size: 12px; line-height: 1.25; }
+#view-menu:not(.editing) .dish[aria-pressed="true"] b::before { content: ""; }
+#view-menu:not(.editing) .dish[aria-pressed="true"]::after { content: "✓"; position: absolute; top: 6px; left: 6px; width: 22px; height: 22px; border-radius: 50%; background: var(--leaf); color: var(--leaf-ink); display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+#view-menu:not(.editing) .dish .thumb, .drink .thumb { cursor: zoom-in; }
 #view-menu:not(.editing) .dish small { font-size: 11px; }
 #view-menu:not(.editing) .dish .thumb { aspect-ratio: 1 / 1; }
-.zoom-btn { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 50%; background: rgb(0 0 0 / .55); color: #fff; display: grid; place-items: center; font-size: 14px; cursor: zoom-in; }
+.zoom-btn { position: absolute; top: 7px; right: 7px; width: 22px; height: 22px; border-radius: 50%; background: rgb(0 0 0 / .5); color: #fff; display: grid; place-items: center; font-size: 11px; pointer-events: none; }
 .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
 .chips button { flex: none; font: inherit; font-size: 14px; font-weight: 600; border: 1.5px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
 .chips button[aria-pressed="true"] { background: var(--leaf); color: var(--leaf-ink); border-color: var(--leaf); }
@@ -321,6 +325,13 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 .cart-set .one { font-size: 14px; color: var(--muted); }
 .cart-actions { display: flex; justify-content: space-between; gap: 10px; }
 .cart-actions .btn-main { flex: 1; }
+#cart-actions { display: grid; grid-template-columns: 1fr 1fr; }
+#cart-actions .btn-ghost { white-space: nowrap; font-size: 15px; padding-inline: 8px; }
+#cart-actions .btn-main { grid-column: 1 / -1; min-height: 52px; font-size: 18px; }
+.cart-title { text-align: center; font-size: 22px; margin: 0 0 4px; }
+.cart-set .money, #cart-panel .total span:last-child { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cart-set li.ln { display: flex; justify-content: space-between; gap: 8px; }
+#cart-panel .total { font-size: 17px; font-weight: 700; }
 .time-pick { display: flex; align-items: center; gap: 8px; }
 .time-pick select { flex: 1; font-size: 18px; text-align: center; }
 .time-pick b { font-size: 20px; }
@@ -391,7 +402,7 @@ details.sorder { border-left-color: var(--st); }
         <div id="dishes" style="display:grid;gap:10px"></div>
         <div id="drinks-wrap" class="cust-only" hidden style="display:none;gap:8px">
           <h2 style="margin:8px 0 0">Bạn có muốn uống nước không?</h2>
-          <p class="sub" style="font-size:13px;margin:0">Đồ uống tính tiền riêng. Không cần thì bấm “Xong suất này” luôn.</p>
+          <p class="sub" style="font-size:13px;margin:0">Đồ uống tính tiền riêng. Không cần thì bấm “Xem đơn hàng” luôn.</p>
           <div class="dish-grid drink-grid" id="drinks"></div>
         </div>
         <div class="picked-bar cust-only" id="build-foot" style="border-top:1px dashed var(--line);padding-top:12px">
@@ -412,9 +423,11 @@ details.sorder { border-left-color: var(--st); }
       </section>
 
       <section class="panel" id="cart-panel" hidden>
-        <div class="order-head"><h3>Giỏ của bạn</h3><button type="button" class="btn-ghost" id="cart-back">← Quay lại</button></div>
+        <h3 class="cart-title">Đơn hàng của bạn</h3>
         <div id="cart-list"></div>
+        <div class="total"><span>Tổng cộng</span><span id="total-cart"></span></div>
         <div class="cart-actions" id="cart-actions">
+          <button type="button" class="btn-ghost" id="cart-back">← Quay lại</button>
           <button type="button" class="btn-ghost" id="more-set">+ Thêm suất khác</button>
           <button type="button" class="btn-main btn-red" id="pay-now">Thanh toán</button>
         </div>
@@ -887,7 +900,7 @@ function renderBuilder() {
   $("dots").innerHTML = Array.from({ length: SET.picks }, (_, i) => `<i class="${i < build.size ? "on" : ""}"></i>`).join("");
   const need = SET.picks - build.size;
   $("build-title").textContent = tierIx < 0 ? "Bước 1: chọn loại suất" : `Suất ${k(SET.price)}: chọn món (${build.size}/${SET.picks})`;
-  $("pick-hint").textContent = tierIx < 0 ? "Bấm chọn suất ở trên để bắt đầu chọn món. Món hôm nay của quán ở dưới." : need > 0 ? `Chọn thêm ${need} món nữa. Suất kèm cơm trắng.` : `Đủ ${SET.picks} món. Bấm “Thêm vào giỏ”.`;
+  $("pick-hint").textContent = tierIx < 0 ? "Bấm chọn suất ở trên để bắt đầu chọn món. Món hôm nay của quán ở dưới." : need > 0 ? `Chọn thêm ${need} món nữa. Suất kèm cơm trắng.` : `Đủ ${SET.picks} món. Bấm “Tiếp: chọn canh”.`;
   $("view-menu").classList.toggle("editing", editMode);
   if (editMode) {
     syncToday();
@@ -909,7 +922,7 @@ function renderBuilder() {
   $("tiers").hidden = isCanh; $("dots").hidden = isCanh; $("back-mon").hidden = !isCanh;
   $("bq-box").hidden = tierIx < 0;
   $("drinks-wrap").hidden = !isCanh; $("drinks-wrap").style.display = isCanh ? "grid" : "none";
-  const zb = id => `<span class="zoom-btn" data-zoom="${id}" role="button" aria-label="Xem ảnh to">🔍</span>`;
+  const zb = () => `<span class="zoom-btn" aria-hidden="true">🔍</span>`;
   if (isCanh) {
     $("chips").hidden = true;
     const canh = canhToday();
@@ -917,12 +930,12 @@ function renderBuilder() {
     $("pick-hint").textContent = canh.length ? "Mỗi suất được 1 bát canh. Bấm chọn 1 loại, không lấy canh thì bỏ qua." : "";
     $("dishes").innerHTML = canh.length ? `<div class="dish-grid">${canh.map(m => {
       const on = canhPick === m.id, rem = left(m.id);
-      return `<button type="button" class="dish" data-canh="${m.id}" aria-pressed="${on}" ${!on && rem < buildQty ? "disabled" : ""}><span class="thumb">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${rem ? `còn ${rem}` : "Hết"}</small></button>`;
+      return `<button type="button" class="dish" data-canh="${m.id}" aria-pressed="${on}" ${!on && rem < buildQty ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${rem ? `còn ${rem}` : "Hết"}</small></button>`;
     }).join("")}</div>` : "";
     renderDrinks();
     $("bq").textContent = buildQty;
     $("add-set").disabled = false;
-    $("add-set").textContent = "Xong suất này →";
+    $("add-set").textContent = "Xem đơn hàng →";
     return;
   }
   // Chưa chọn suất: cho xem tổng quan cả món mặn, rau, canh, nước hôm nay
@@ -938,9 +951,9 @@ function renderBuilder() {
     return `<div class="group-label">${label}</div><div class="dish-grid">${list.map(m => {
       const on = build.has(m.id), rem = left(m.id);
       const info = rem === 0 && !on ? "Hết" : c === EXTRA ? fmt(m.price) : rem <= 5 ? `<span style="color:var(--chili)">còn ${rem}</span>` : `còn ${rem}`;
-      if (browse) return `<button type="button" class="dish" data-browse="1"><span class="thumb">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${info}</small></button>`;
+      if (browse) return `<button type="button" class="dish" data-browse="1"><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${info}</small></button>`;
       const out = !on && (rem < buildQty || build.size >= SET.picks);
-      return `<button type="button" class="dish" data-pick="${m.id}" aria-pressed="${on}" ${out ? "disabled" : ""}><span class="thumb">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${info}</small></button>`;
+      return `<button type="button" class="dish" data-pick="${m.id}" aria-pressed="${on}" ${out ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${info}</small></button>`;
     }).join("")}</div>`;
   }).join("") || `<p class="sub">Quán chưa đăng món hôm nay.</p>`;
   $("bq").textContent = buildQty;
@@ -953,7 +966,7 @@ function renderDrinks() {
   const list = MENU.filter(m => isExtra(m.id) && stock[m.id] > 0);
   $("drinks").innerHTML = list.map(m => {
     const q = cart.extras[m.id] || 0, rem = left(m.id);
-    return `<div class="drink${q ? " on" : ""}"><span class="thumb">${thumb(m)}</span><b>${esc(m.name)}</b><span class="pr">${fmt(m.price)}</span>
+    return `<div class="drink${q ? " on" : ""}"><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span><b>${esc(m.name)}</b><span class="pr">${fmt(m.price)}</span>
       <div class="st"><button type="button" data-dec="${m.id}" aria-label="Bớt ${esc(m.name)}" ${q ? "" : "disabled"}>−</button><b>${q}</b><button type="button" class="add" data-inc="${m.id}" aria-label="Thêm ${esc(m.name)}" ${rem ? "" : "disabled"}>+</button></div></div>`;
   }).join("") || `<p class="sub">Hôm nay quán chưa có đồ uống.</p>`;
 }
@@ -989,10 +1002,10 @@ function renderExtras() {
 }
 // Giỏ: mỗi suất một khối, mỗi món một dòng (trang xác nhận gộp món thành một dòng)
 function cartLinesHTML(editable) {
-  const sets = cart.sets.map((s, i) => `<div class="cart-set"><div class="hd"><span>Suất ${k(setPrice(s))}${s.qty > 1 ? ` (${s.qty} hộp)` : ""}</span><span>${fmt(s.qty * setPrice(s))}${editable ? ` <button type="button" class="btn-sm" data-editset="${i}">Sửa</button> <button type="button" class="btn-sm" data-rmset="${i}">Bỏ</button>` : ""}</span></div>
+  const sets = cart.sets.map((s, i) => `<div class="cart-set"><div class="hd"><span>Suất ${k(setPrice(s))}${s.qty > 1 ? ` (${s.qty} hộp)` : ""}</span><span class="money">${fmt(s.qty * setPrice(s))}</span></div>
     ${editable ? `<ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul>` : `<div class="one">${esc(picksText(allPicks(s)))}</div>`}</div>`);
   const ex = Object.entries(cart.extras).filter(([, q]) => q);
-  const exHTML = ex.length ? [`<div class="cart-set"><div class="hd"><span>Đồ uống</span></div><ul>${ex.map(([id, q]) => `<li style="display:flex;justify-content:space-between;gap:8px"><span>${esc(byId[id].name)} × ${q}</span><span>${fmt(q * byId[id].price)}</span></li>`).join("")}</ul></div>`] : [];
+  const exHTML = ex.length ? [`<div class="cart-set"><div class="hd"><span>Đồ uống</span></div><ul>${ex.map(([id, q]) => `<li class="ln"><span>${esc(byId[id].name)} × ${q}</span><span class="money">${fmt(q * byId[id].price)}</span></li>`).join("")}</ul></div>`] : [];
   return sets.concat(exHTML).join("");
 }
 function renderCart() {
@@ -1000,7 +1013,7 @@ function renderCart() {
   $("cart-panel").hidden = !has;
   $("cart-list").innerHTML = cartLinesHTML(true);
   const total = orderTotal(cart), n = setCount(cart);
-  $("total-bar").textContent = fmt(total);
+  $("total-bar").textContent = $("total-cart").textContent = fmt(total);
   $("count-bar").textContent = n ? `${n} suất trong giỏ` : has ? "Chưa có suất cơm" : "Giỏ trống";
 }
 function renderKhach() {
@@ -1015,9 +1028,14 @@ function renderKhach() {
   const full = step === "mon" && tierIx >= 0 && build.size === SET.picks;
   const go = $("go");
   go.classList.toggle("btn-red", gio);
-  go.textContent = gio ? "Thanh toán" : step === "canh" ? "Xong suất này →" : full ? "Tiếp: chọn canh →" : has ? "Xem giỏ hàng" : "Đặt ngay";
+  go.textContent = gio ? "Thanh toán" : step === "canh" ? "Xem đơn hàng →" : full ? "Tiếp: chọn canh →" : has ? "Xem đơn hàng" : "Đặt ngay";
   go.disabled = !(gio || step === "canh" || full || has);
-  if (!gio && tierIx >= 0) $("count-bar").textContent = `Đang chọn suất ${k(SET.price)}${has ? " · giỏ có " + setCount(cart) + " suất" : ""}`;
+  // Tổng tiền luôn tính cả suất đang chọn dở
+  if (!gio && tierIx >= 0) {
+    const n = setCount(cart) + buildQty, drinks = Object.values(cart.extras).reduce((a, q) => a + q, 0);
+    $("total-bar").textContent = fmt(orderTotal(cart) + SET.price * buildQty);
+    $("count-bar").textContent = `${n} suất${drinks ? ` · ${drinks} nước` : ""}${step === "canh" ? " · bấm xem đơn" : ""}`;
+  }
 }
 function goStep(st) { step = st; renderKhach(); $(st === "gio" ? "cart-panel" : "builder").scrollIntoView({ block: "start" }); }
 function goHome() {
@@ -1229,12 +1247,13 @@ document.addEventListener("click", e => {
   const t = e.target.closest("button");
   if (!t) return;
   const d = t.dataset;
-  if (d.tier) { tierIx = +d.tier; Object.assign(SET, TIERS[tierIx]); build = new Set([...build].slice(0, SET.picks)); renderBuilder(); }
+  if (d.tier) { tierIx = +d.tier; Object.assign(SET, TIERS[tierIx]); build = new Set([...build].slice(0, SET.picks)); renderKhach(); }
+  if ((d.pick || d.canh) && t.getAttribute("aria-disabled") === "true") return;
   if (d.pick && tierIx >= 0) {
     build.has(d.pick) ? build.delete(d.pick) : build.size < SET.picks && build.add(d.pick); renderBuilder();
     renderKhach();
   }
-  if (d.canh) { canhPick = canhPick === d.canh ? "" : d.canh; renderBuilder(); }
+  if (d.canh) { canhPick = canhPick === d.canh ? "" : d.canh; renderKhach(); }
   if (d.dcat) { dishCat = d.dcat; renderBuilder(); }
   if (d.browse) { $("tiers").scrollIntoView({ block: "center", behavior: "smooth" }); $("tiers").classList.remove("need"); void $("tiers").offsetWidth; $("tiers").classList.add("need"); }
   if (d.inc && left(d.inc) > 0) { cart.extras[d.inc] = (cart.extras[d.inc] || 0) + 1; renderKhach(); }
@@ -1264,8 +1283,8 @@ document.addEventListener("click", e => {
     refresh();
   }
 });
-$("bq-inc").onclick = () => { if ([...build].every(id => left(id) > buildQty)) buildQty++; renderBuilder(); };
-$("bq-dec").onclick = () => { buildQty = Math.max(1, buildQty - 1); renderBuilder(); };
+$("bq-inc").onclick = () => { if ([...build].every(id => left(id) > buildQty)) buildQty++; renderKhach(); };
+$("bq-dec").onclick = () => { buildQty = Math.max(1, buildQty - 1); renderKhach(); };
 function commitSet() {
   cart.sets.push({ picks: [...build], qty: buildQty, price: SET.price, ...(canhPick ? { canh: canhPick } : {}) });
   build = new Set(); buildQty = 1; canhPick = ""; tierIx = -1; Object.assign(SET, { price: 0, picks: 0 });
@@ -1341,10 +1360,11 @@ function openZoom(id) {
   const m = byId[id]; if (!m) return;
   $("zoom").dataset.id = id;
   $("zoom-img").innerHTML = thumb(m); $("zoom-name").textContent = m.name;
-  const rem = left(id), isC = m.cat === CANH, on = isC ? canhPick === id : build.has(id);
-  $("zoom-info").textContent = rem ? `Hôm nay còn ${rem} phần` : "Đã hết";
-  const can = on || (isC ? step === "canh" && rem >= buildQty : tierIx >= 0 && step === "mon" && rem >= buildQty && build.size < SET.picks);
-  $("zoom-pick").textContent = on ? "Bỏ chọn món này" : tierIx < 0 && !isC ? "Chọn loại suất trước" : "Chọn món này";
+  const rem = left(id), isC = m.cat === CANH, isX = m.cat === EXTRA, on = isX ? false : isC ? canhPick === id : build.has(id);
+  $("zoom-info").textContent = isX ? `${fmt(m.price)} · ${rem ? `còn ${rem}` : "Đã hết"}` : rem ? `Hôm nay còn ${rem} phần` : "Đã hết";
+  const can = isX ? step === "canh" && rem > 0 : on || (isC ? step === "canh" && rem >= buildQty : tierIx >= 0 && step === "mon" && rem >= buildQty && build.size < SET.picks);
+  $("zoom-pick").hidden = isX && step !== "canh";
+  $("zoom-pick").textContent = isX ? `Thêm 1 ${m.name}` : on ? "Bỏ chọn món này" : tierIx < 0 ? "Chọn loại suất trước" : isC && step !== "canh" ? "Chọn canh ở bước sau" : "Chọn món này";
   $("zoom-pick").disabled = !can;
   $("zoom").hidden = false;
 }
@@ -1352,7 +1372,7 @@ $("zoom-close").onclick = () => { $("zoom").hidden = true; };
 $("zoom").addEventListener("click", e => { if (e.target.id === "zoom") $("zoom").hidden = true; });
 $("zoom-pick").onclick = () => {
   const id = $("zoom").dataset.id; $("zoom").hidden = true;
-  const btn = document.querySelector(`[data-pick="${id}"],[data-canh="${id}"]`); if (btn) btn.click();
+  const btn = document.querySelector(`[data-pick="${id}"],[data-canh="${id}"],#drinks [data-inc="${id}"]`); if (btn) btn.click();
 };
 document.addEventListener("click", e => {
   const z = e.target.closest("[data-zoom]");
