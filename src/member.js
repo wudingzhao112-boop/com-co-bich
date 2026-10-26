@@ -205,7 +205,7 @@ $("fb-form").addEventListener("submit", async e => {
   if (text.length < 3) { $("fb-err").textContent = "Bạn viết góp ý giúp quán nhé."; $("fb-err").hidden = false; return; }
   try {
     await cusApi("feedback", { method: "POST", body: JSON.stringify({ text, name: memGet()?.name || "" }) });
-    $("fb-text").value = ""; $("fb-ok").textContent = "Cảm ơn quý khách đã góp ý! Quán sẽ đọc và sửa.";
+    $("fb-text").value = ""; setTimeout(() => { $("fb-wrap").open = false; $("fb-ok").textContent = ""; }, 4000); $("fb-ok").textContent = "Cảm ơn quý khách đã góp ý! Quán sẽ đọc và sửa.";
   } catch (ex) { $("fb-err").textContent = ex.message; $("fb-err").hidden = false; }
 });
 // Chủ quán xem góp ý (tab Báo cáo)
