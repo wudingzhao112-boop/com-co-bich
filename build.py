@@ -53,7 +53,7 @@ rep('''  mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";''',
   $("nav").hidden = role !== "owner" || r === "khach";
   if (!allowed) { showLogin(r); return; }
   $("login").hidden = true;
-  $("mem-top").hidden = r !== "khach" || !memGet()?.phone;''')
+  $("mem-top").hidden = r !== "khach" || !memGet()?.member;''')
 
 # Đặt đơn: gửi lên máy chủ, chờ số đơn
 rep('''  orders.push(o);
@@ -63,20 +63,21 @@ rep('''  orders.push(o);
     $("submit-btn").disabled = false; $("submit-btn").textContent = "Đặt cơm";
     if (!r.ok) { $("err").textContent = r.error; $("err").hidden = false; return; }
     o.no = r.no; o.id = r.id;
-    try { localStorage.setItem("cobich-khach", JSON.stringify({ name: o.name, phone: o.phone, addr: o.addr })); } catch (_) {}
+    try { localStorage.setItem("cobich-khach", JSON.stringify({ ...(memGet() || {}), name: o.name, phone: o.phone, addr: o.addr })); } catch (_) {}
     cart.sets = []; cart.extras = {}; pollMenu();
     finishOrder(o); renderMember();
-    $("done-msg").textContent += ` Đơn này được +${setCount(o)} điểm khi giao xong (tích theo số ${o.phone}).`;
+
   });
 });
 function finishOrder(o) {
   $("ticket").textContent = orderText(o);''')
 rep('''    : `Quán sẽ giao đúng giờ. Bạn trả ${fmt(orderTotal(o))} tiền mặt khi nhận cơm.`;
-  $("done-title").textContent = `Cảm ơn ${o.name} đã đặt cơm Cô Bích Quán!`;
+  $("done-title").textContent = "Chúc quý khách ngon miệng!";
   showKhach("done");
 });''', '''    : `Quán sẽ giao đúng giờ. Bạn trả ${fmt(orderTotal(o))} tiền mặt khi nhận cơm.`;
-  $("done-title").textContent = `Cảm ơn ${o.name} đã đặt cơm Cô Bích Quán!`;
-  $("done-msg").textContent = "Chúc bạn ngon miệng! " + $("done-msg").textContent;
+  $("done-title").textContent = "Chúc quý khách ngon miệng!";
+  $("done-msg").textContent = `Cảm ơn ${o.name} đã đặt cơm Cô Bích Quán. ` + $("done-msg").textContent;
+  showMemDone(o);
   showKhach("done");
 }''')
 

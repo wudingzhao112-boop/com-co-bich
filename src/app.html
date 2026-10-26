@@ -285,6 +285,61 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 .ogroup small { font-size: 11px; color: var(--muted); text-align: center; }
 .ogroup.gap b { color: var(--chili); }
 .ogroup[aria-pressed="true"] { border-color: var(--leaf); background: var(--yolk-soft); }
+/* Trang khách: lưới 3 ảnh một hàng, nhóm món, phóng to ảnh */
+:root { --red: #d0261b; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --red: #ef5350; } }
+:root[data-theme="dark"] { --red: #ef5350; }
+.btn-red { background: var(--red) !important; color: #fff !important; }
+#view-menu:not(.editing) .dish-grid, .drink-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+#view-menu:not(.editing) .dish { padding: 6px; border-radius: 10px; position: relative; }
+#view-menu:not(.editing) .dish b { font-size: 13px; line-height: 1.25; }
+#view-menu:not(.editing) .dish small { font-size: 11px; }
+#view-menu:not(.editing) .dish .thumb { aspect-ratio: 1 / 1; }
+.zoom-btn { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 50%; background: rgb(0 0 0 / .55); color: #fff; display: grid; place-items: center; font-size: 14px; cursor: zoom-in; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chips button { flex: none; font: inherit; font-size: 14px; font-weight: 600; border: 1.5px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--leaf); color: var(--leaf-ink); border-color: var(--leaf); }
+.drink { border: 1.5px solid var(--line); border-radius: 10px; padding: 6px; display: grid; gap: 4px; background: var(--surface); min-width: 0; }
+.drink.on { border-color: var(--leaf); }
+.drink .thumb { aspect-ratio: 1 / 1; margin: 0; }
+.drink b { font-size: 13px; line-height: 1.25; }
+.drink .pr { font-size: 12px; color: var(--leaf); font-weight: 600; }
+.drink .st { display: flex; align-items: center; justify-content: space-between; }
+.drink .st button { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--leaf); background: var(--surface); color: var(--leaf); font-size: 18px; line-height: 1; cursor: pointer; padding: 0; }
+.drink .st button.add { background: var(--leaf); color: var(--leaf-ink); }
+.drink .st button:disabled { opacity: .4; }
+.zoom { position: fixed; inset: 0; z-index: 20; background: rgb(0 0 0 / .75); display: grid; place-items: center; padding: 16px; }
+.zoom[hidden] { display: none; }
+.zoom-card { background: var(--surface); color: var(--fg); border-radius: 16px; padding: 12px; width: min(100%, 460px); display: grid; gap: 10px; }
+.zoom-card .thumb { aspect-ratio: 1 / 1; margin: 0; border-radius: 12px; }
+.zoom-card h3 { margin: 0; font-size: 20px; }
+.cart-set { padding: 10px 0; border-bottom: 1px dashed var(--line); display: grid; gap: 2px; }
+.cart-set:last-child { border-bottom: 0; }
+.cart-set .hd { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-weight: 700; }
+.cart-set ul { margin: 2px 0 0; padding-left: 18px; font-size: 15px; }
+.cart-set .one { font-size: 14px; color: var(--muted); }
+.cart-actions { display: flex; justify-content: space-between; gap: 10px; }
+.cart-actions .btn-main { flex: 1; }
+.time-pick { display: flex; align-items: center; gap: 8px; }
+.time-pick select { flex: 1; font-size: 18px; text-align: center; }
+.time-pick b { font-size: 20px; }
+.brand { cursor: pointer; }
+#ticket { font-size: 15px; line-height: 1.6; }
+/* Đơn của chủ quán: thu gọn, bấm mở chi tiết; đỏ = chưa giao/gấp, vàng = đang giao, xanh = đã giao */
+details.order > summary { list-style: none; cursor: pointer; display: grid; gap: 4px; }
+details.order > summary::-webkit-details-marker { display: none; }
+details.order[open] > summary { padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
+details.order[data-grp="do"] { --st: var(--red); background: color-mix(in srgb, var(--red) 6%, var(--surface)); }
+details.order[data-grp="vang"] { --st: var(--yolk); background: color-mix(in srgb, var(--yolk) 14%, var(--surface)); }
+details.order[data-grp="xanh"] { --st: #2e7d32; background: color-mix(in srgb, #2e7d32 7%, var(--surface)); }
+details.order[data-grp="do"] .pill { background: var(--red); color: #fff; border-color: var(--red); }
+details.order[data-grp="vang"] .pill { background: var(--yolk); color: #2a1708; border-color: var(--yolk); }
+details.order[data-grp="xanh"] .pill { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+.sum-who { font-size: 16px; }
+.sum-addr { font-size: 14px; color: var(--muted); }
+.sum-money { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.sum-money .more { margin-left: auto; font-size: 13px; color: var(--leaf); font-weight: 600; }
+details.order[open] .sum-money .more { visibility: hidden; }
 </style>
 
 <div class="wrap">
@@ -320,8 +375,14 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
           <div class="dots cust-only" id="dots" aria-hidden="true"></div>
         </div>
         <div class="tiers cust-only" id="tiers" role="group" aria-label="Chọn loại suất"></div>
+        <div class="chips cust-only" id="chips" role="group" aria-label="Nhóm món"></div>
         <p class="sub cust-only" id="pick-hint" style="font-size:13px"></p>
         <div id="dishes" style="display:grid;gap:10px"></div>
+        <div id="drinks-wrap" class="cust-only" hidden style="display:none;gap:8px">
+          <h2 style="margin:8px 0 0">Bạn có muốn uống nước không?</h2>
+          <p class="sub" style="font-size:13px;margin:0">Đồ uống tính tiền riêng. Không cần thì bấm “Xong suất này” luôn.</p>
+          <div class="dish-grid drink-grid" id="drinks"></div>
+        </div>
         <div class="picked-bar cust-only" id="build-foot" style="border-top:1px dashed var(--line);padding-top:12px">
           <div class="stepper" id="bq-box" aria-label="Số suất giống nhau">
             <button class="btn-round" type="button" id="bq-dec" aria-label="Bớt 1 suất">−</button>
@@ -331,7 +392,7 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
           </div>
           <button class="btn-main" type="button" id="add-set" disabled>Thêm vào giỏ</button>
         </div>
-        <button type="button" class="btn-ghost cust-only" id="back-mon" hidden>← Sửa lại món</button>
+        <button type="button" class="btn-ghost cust-only" id="back-mon" hidden>← Quay lại sửa món</button>
       </section>
 
       <section class="panel" id="extras-panel">
@@ -342,9 +403,9 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
       <section class="panel" id="cart-panel" hidden>
         <h3>Giỏ của bạn</h3>
         <div id="cart-list"></div>
-        <div class="actions" id="cart-actions">
-          <button type="button" class="btn-main" id="pay-now">Thanh toán</button>
+        <div class="cart-actions" id="cart-actions">
           <button type="button" class="btn-ghost" id="more-set">+ Thêm suất khác</button>
+          <button type="button" class="btn-main btn-red" id="pay-now">Thanh toán</button>
         </div>
       </section>
     </div>
@@ -359,7 +420,9 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
           <div class="field"><label for="f-phone">Số điện thoại</label><input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xx xxx xxx"></div>
         </div>
         <div class="field"><label for="f-addr">Địa chỉ giao</label><input id="f-addr" autocomplete="street-address" placeholder="Số nhà, ngõ, đường, toà/văn phòng"></div>
-        <div class="field"><label for="f-time">Giờ muốn nhận</label><select id="f-time"></select></div>
+        <div class="field"><label for="f-hour">Giờ muốn nhận</label>
+          <div class="time-pick"><select id="f-hour" aria-label="Giờ"></select><b>:</b><select id="f-min" aria-label="Phút"></select></div>
+          <input type="hidden" id="f-time"></div>
         <div class="field">
           <label>Thanh toán</label>
           <div class="radios">
@@ -378,10 +441,10 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
           </div>
           <p class="sub" style="font-size:12px;margin:0;grid-column:1/-1">Mở app ngân hàng, quét mã để chuyển. Đây là mã QR ví dụ. Bản thật dùng tài khoản của quán, quét là tự điền sẵn số tiền và nội dung.</p>
         </div>
-        <div class="field"><label for="f-note">Ghi chú cho quán</label><textarea id="f-note" placeholder="VD: ít cơm, nhiều rau, không hành…"></textarea></div>
+        <div class="field"><label for="f-note">Đóng góp cho quán</label><textarea id="f-note" placeholder="Quý khách có yêu cầu gì (ít cơm, không hành…) hay góp ý cho quán, xin ghi ở đây."></textarea></div>
         <p class="err" id="err" hidden></p>
         <div class="actions">
-          <button type="button" class="btn-ghost" id="back">Chọn thêm</button>
+          <button type="button" class="btn-ghost" id="back">← Quay lại</button>
           <button type="submit" class="btn-main" id="submit-btn">Đặt cơm</button>
         </div>
       </form>
@@ -391,9 +454,11 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
       <div class="tick" aria-hidden="true">✓</div>
       <h2 id="done-title">Quán đã nhận đơn của bạn</h2>
       <p class="sub" id="done-msg"></p>
+      <p class="sub" id="mem-done-msg" hidden style="color:var(--leaf);font-weight:600"></p>
       <pre class="ticket" id="ticket"></pre>
       <div class="actions" style="justify-content:center">
-        <button type="button" class="btn-main" id="again">Đặt đơn mới</button>
+        <button type="button" class="btn-main" id="mem-done">Đăng nhập để tích điểm</button>
+        <button type="button" class="linkish" id="again">Đặt đơn mới</button>
         <a class="btn-ghost" href="#chu" id="see-owner" style="text-decoration:none">Xem bên chủ quán (demo)</a>
       </div>
     </section>
@@ -478,6 +543,17 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
   </div>
 </div>
 
+<div class="zoom" id="zoom" hidden role="dialog" aria-modal="true" aria-labelledby="zoom-name">
+  <div class="zoom-card">
+    <span class="thumb" id="zoom-img"></span>
+    <h3 id="zoom-name"></h3>
+    <p class="sub" id="zoom-info" style="margin:0"></p>
+    <div class="cart-actions">
+      <button type="button" class="btn-ghost" id="zoom-close">Đóng</button>
+      <button type="button" class="btn-main" id="zoom-pick">Chọn món này</button>
+    </div>
+  </div>
+</div>
 <script>
 const EXTRA = "Đồ uống & gọi thêm";
 // Các loại suất: khách chọn loại trước rồi mới chọn món. SET = loại đang chọn.
@@ -803,32 +879,49 @@ function renderBuilder() {
   const isCanh = step === "canh";
   $("tiers").hidden = isCanh; $("dots").hidden = isCanh; $("back-mon").hidden = !isCanh;
   $("bq-box").hidden = tierIx < 0;
+  $("drinks-wrap").hidden = !isCanh; $("drinks-wrap").style.display = isCanh ? "grid" : "none";
+  const zb = id => `<span class="zoom-btn" data-zoom="${id}" role="button" aria-label="Xem ảnh to">🔍</span>`;
   if (isCanh) {
-    $("build-title").textContent = "Chọn canh (kèm suất)";
-    $("pick-hint").textContent = "Mỗi suất được 1 bát canh. Bấm chọn 1 loại, hoặc bấm tiếp nếu không lấy canh.";
-    $("dishes").innerHTML = `<div class="dish-grid">${canhToday().map(m => {
+    $("chips").hidden = true;
+    const canh = canhToday();
+    $("build-title").textContent = canh.length ? "Chọn canh (kèm suất)" : "Chọn nước";
+    $("pick-hint").textContent = canh.length ? "Mỗi suất được 1 bát canh. Bấm chọn 1 loại, không lấy canh thì bỏ qua." : "";
+    $("dishes").innerHTML = canh.length ? `<div class="dish-grid">${canh.map(m => {
       const on = canhPick === m.id, rem = left(m.id);
-      return `<button type="button" class="dish" data-canh="${m.id}" aria-pressed="${on}" ${!on && rem < buildQty ? "disabled" : ""}><span class="thumb">${thumb(m)}</span><b>${esc(m.name)}</b><small>${rem ? `còn ${rem}` : "Hết"}</small></button>`;
-    }).join("")}</div>`;
+      return `<button type="button" class="dish" data-canh="${m.id}" aria-pressed="${on}" ${!on && rem < buildQty ? "disabled" : ""}><span class="thumb">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${rem ? `còn ${rem}` : "Hết"}</small></button>`;
+    }).join("")}</div>` : "";
+    renderDrinks();
     $("bq").textContent = buildQty;
     $("add-set").disabled = false;
-    $("add-set").textContent = canhPick ? "Tiếp: chọn nước →" : "Không lấy canh, tiếp →";
+    $("add-set").textContent = "Xong suất này →";
     return;
   }
-  const groups = cats().filter(c => c !== EXTRA && c !== CANH);
-  $("dishes").innerHTML = groups.map(c => {
+  const groups = cats().filter(c => c !== EXTRA && c !== CANH && MENU.some(m => m.cat === c && stock[m.id] > 0));
+  if (dishCat !== "all" && !groups.includes(dishCat)) dishCat = "all";
+  $("chips").hidden = tierIx < 0 || groups.length < 2;
+  $("chips").innerHTML = [["all", "Tất cả"], ...groups.map(c => [c, c])].map(([key, l]) => `<button type="button" data-dcat="${esc(key)}" aria-pressed="${dishCat === key}">${esc(l)}</button>`).join("");
+  $("dishes").innerHTML = groups.filter(c => dishCat === "all" || c === dishCat).map(c => {
     const list = MENU.filter(m => m.cat === c && stock[m.id] > 0);
-    if (!list.length) return "";
     return `<div class="group-label">${c.toUpperCase()}</div><div class="dish-grid">${list.map(m => {
       const on = build.has(m.id), rem = left(m.id);
       const out = !on && (tierIx < 0 || rem < buildQty || build.size >= SET.picks);
       const info = rem === 0 && !on ? "Hết" : rem <= 5 ? `<span style="color:var(--chili)">còn ${rem}</span>` : `còn ${rem}`;
-      return `<button type="button" class="dish" data-pick="${m.id}" aria-pressed="${on}" ${out ? "disabled" : ""}><span class="thumb">${thumb(m)}</span><b>${esc(m.name)}</b><small>${m.hot ? "Bán chạy · " : ""}${info}</small></button>`;
+      return `<button type="button" class="dish" data-pick="${m.id}" aria-pressed="${on}" ${out ? "disabled" : ""}><span class="thumb">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b><small>${info}</small></button>`;
     }).join("")}</div>`;
   }).join("") || `<p class="sub">Quán chưa đăng món hôm nay.</p>`;
   $("bq").textContent = buildQty;
-  $("add-set").disabled = tierIx < 0 || build.size !== SET.picks;
-  $("add-set").textContent = tierIx >= 0 && build.size === SET.picks ? (canhToday().length ? "Tiếp: chọn canh →" : "Tiếp: chọn nước →") : "Chọn đủ món để tiếp";
+  const full = tierIx >= 0 && build.size === SET.picks;
+  $("add-set").disabled = !full;
+  $("add-set").textContent = full ? "Tiếp: chọn canh →" : "Chọn đủ món để tiếp";
+}
+let dishCat = "all";
+function renderDrinks() {
+  const list = MENU.filter(m => isExtra(m.id) && stock[m.id] > 0);
+  $("drinks").innerHTML = list.map(m => {
+    const q = cart.extras[m.id] || 0, rem = left(m.id);
+    return `<div class="drink${q ? " on" : ""}"><span class="thumb">${thumb(m)}</span><b>${esc(m.name)}</b><span class="pr">${fmt(m.price)}</span>
+      <div class="st"><button type="button" data-dec="${m.id}" aria-label="Bớt ${esc(m.name)}" ${q ? "" : "disabled"}>−</button><b>${q}</b><button type="button" class="add" data-inc="${m.id}" aria-label="Thêm ${esc(m.name)}" ${rem ? "" : "disabled"}>+</button></div></div>`;
+  }).join("") || `<p class="sub">Hôm nay quán chưa có đồ uống.</p>`;
 }
 function syncToday() { for (const m of MENU) if (stock[m.id] > 0) todaySet.add(m.id); }
 function renderEdit() {
@@ -860,11 +953,13 @@ function renderExtras() {
     return `<li class="item"><div class="name"><span class="xthumb">${thumb(m)}</span>${esc(m.name)}</div><div class="price">${fmt(m.price)}</div><div class="ctrl">${ctrl}</div></li>`;
   }).join("");
 }
+// Giỏ: mỗi suất một khối, mỗi món một dòng (trang xác nhận gộp món thành một dòng)
 function cartLinesHTML(editable) {
-  const sets = cart.sets.map((s, i) => `<div class="set-line"><b>Suất ${k(setPrice(s))}${s.qty > 1 ? ` × ${s.qty}` : ""}</b><div class="picks">${esc(picksText(allPicks(s)))}</div>
-    <div class="amt"><span>${fmt(s.qty * setPrice(s))}</span>${editable ? `<button type="button" class="btn-sm" data-rmset="${i}">Bỏ</button>` : ""}</div></div>`);
-  const ex = Object.entries(cart.extras).filter(([, q]) => q).map(([id, q]) => `<div class="set-line"><b>${q} × ${esc(byId[id].name)}</b><div class="picks"></div><div class="amt"><span>${fmt(q * byId[id].price)}</span></div></div>`);
-  return sets.concat(ex).join("");
+  const sets = cart.sets.map((s, i) => `<div class="cart-set"><div class="hd"><span>Suất ${k(setPrice(s))}${s.qty > 1 ? ` (${s.qty} hộp)` : ""}</span><span>${fmt(s.qty * setPrice(s))}${editable ? ` <button type="button" class="btn-sm" data-rmset="${i}">Bỏ</button>` : ""}</span></div>
+    ${editable ? `<ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul>` : `<div class="one">${esc(picksText(allPicks(s)))}</div>`}</div>`);
+  const ex = Object.entries(cart.extras).filter(([, q]) => q);
+  const exHTML = ex.length ? [`<div class="cart-set"><div class="hd"><span>Đồ uống</span></div><ul>${ex.map(([id, q]) => `<li style="display:flex;justify-content:space-between;gap:8px"><span>${esc(byId[id].name)} × ${q}</span><span>${fmt(q * byId[id].price)}</span></li>`).join("")}</ul></div>`] : [];
+  return sets.concat(exHTML).join("");
 }
 function renderCart() {
   const has = cart.sets.length || Object.values(cart.extras).some(Boolean);
@@ -873,27 +968,40 @@ function renderCart() {
   const total = orderTotal(cart), n = setCount(cart);
   $("total-bar").textContent = fmt(total);
   $("count-bar").textContent = n ? `${n} suất trong giỏ` : has ? "Chưa có suất cơm" : "Giỏ trống";
-  $("go").disabled = !has;
 }
 function renderKhach() {
   renderBuilder(); renderExtras(); renderCart();
   if (editMode) return;
   const has = cart.sets.length || Object.values(cart.extras).some(Boolean);
-  const nuoc = step === "nuoc";
-  $("builder").hidden = nuoc;
-  if (!nuoc) $("extras-panel").hidden = true;
-  else if (!has) { step = "mon"; return renderKhach(); }
-  $("cart-panel").hidden = !has || !nuoc;
-  $("go").textContent = nuoc ? "Thanh toán →" : "Đặt ngay";
+  const gio = step === "gio";
+  if (gio && !has) { step = "mon"; return renderKhach(); }
+  $("builder").hidden = gio;
+  $("extras-panel").hidden = true;
+  $("cart-panel").hidden = !gio;
+  const full = step === "mon" && tierIx >= 0 && build.size === SET.picks;
+  const go = $("go");
+  go.classList.toggle("btn-red", gio);
+  go.textContent = gio ? "Thanh toán" : step === "canh" ? "Xong suất này →" : full ? "Tiếp: chọn canh →" : has ? "Xem giỏ hàng" : "Đặt ngay";
+  go.disabled = !(gio || step === "canh" || full || has);
+  if (!gio && tierIx >= 0) $("count-bar").textContent = `Đang chọn suất ${k(SET.price)}${has ? " · giỏ có " + setCount(cart) + " suất" : ""}`;
 }
-function goStep(st) { step = st; renderKhach(); $("view-menu").scrollIntoView({ block: "start" }); }
+function goStep(st) { step = st; renderKhach(); $(st === "gio" ? "cart-panel" : "builder").scrollIntoView({ block: "start" }); }
+function goHome() {
+  if (mode !== "khach" || editMode) return;
+  step = "mon"; tierIx = -1; build = new Set(); buildQty = 1; canhPick = ""; dishCat = "all"; Object.assign(SET, { price: 0, picks: 0 });
+  $("zoom").hidden = true; renderKhach(); showKhach("menu");
+}
 function fillTimes() {
-  const slots = [];
-  for (let t = 10 * 60 + 30; t <= 13 * 60 + 30; t += 15) slots.push(String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"));
-  const nowM = new Date().getHours() * 60 + new Date().getMinutes() + 20;
-  const later = slots.filter(x => +x.slice(0, 2) * 60 + +x.slice(3) >= nowM);
-  $("f-time").innerHTML = ["Càng sớm càng tốt", ...(later.length ? later : slots)].map(o => `<option>${o}</option>`).join("");
+  $("f-hour").innerHTML = `<option value="">Sớm nhất</option>` + Array.from({ length: 16 }, (_, i) => i + 6).map(x => `<option value="${x}">${String(x).padStart(2, "0")} giờ</option>`).join("");
+  $("f-min").innerHTML = Array.from({ length: 12 }, (_, i) => i * 5).map(x => `<option value="${x}">${String(x).padStart(2, "0")} phút</option>`).join("");
+  syncTime();
 }
+function syncTime() {
+  const hh = $("f-hour").value;
+  $("f-min").disabled = !hh;
+  $("f-time").value = hh ? `${hh.padStart(2, "0")}:${$("f-min").value.padStart(2, "0")}` : "Càng sớm càng tốt";
+}
+$("f-hour").onchange = $("f-min").onchange = syncTime;
 function showKhach(view) {
   const vm = view === "menu" && ownerPage !== "sp";
   $("view-menu").hidden = !vm;
@@ -905,6 +1013,12 @@ function showKhach(view) {
 }
 
 /* ---------- Chủ quán ---------- */
+// Đơn đang mở xem chi tiết (giữ nguyên khi trang tự cập nhật)
+const openOrders = new Set();
+document.addEventListener("toggle", e => {
+  const d = e.target; if (!d.dataset || !d.dataset.ono) return;
+  d.open ? openOrders.add(+d.dataset.ono) : openOrders.delete(+d.dataset.ono);
+}, true);
 // Nhóm đơn cho chủ quán: gấp, chưa giao, đang giao, đã giao
 const OGROUPS = [["gap", "Đơn gấp"], ["chua", "Chưa giao"], ["nau", "Đang giao"], ["giao", "Đã giao"], ["all", "Tất cả"]];
 function inGroup(o, g) {
@@ -944,12 +1058,15 @@ function renderOwner() {
   const pending = orders.filter(o => o.st !== "giao").sort(byDue), doneO = orders.filter(o => o.st === "giao").reverse();
   const shown = pending.concat(doneO).filter(o => inGroup(o, filter));
   $("orders").innerHTML = shown.length ? shown.map(o => `
-    <article class="order" data-st="${o.st}">
-      <div class="order-head"><span class="sub">Đơn #${o.no} · giao lúc ${esc(o.time)} ${o.st !== "giao" ? `<span class="flag ${urgency(o).lv}">${urgency(o).text}</span>` : ""}</span><span class="pill">${STATUS[o.st]}</span></div>
+    <details class="order" data-st="${o.st}" data-grp="${o.st === "giao" ? "xanh" : o.st === "nau" ? "vang" : "do"}" data-ono="${o.no}"${openOrders.has(o.no) ? " open" : ""}>
+      <summary>
+        <div class="order-head"><span class="sub">Đơn #${o.no} · giao lúc ${esc(o.time)} ${o.st !== "giao" ? `<span class="flag ${urgency(o).lv}">${urgency(o).text}</span>` : ""}</span><span class="pill">${STATUS[o.st]}</span></div>
+        <div class="sum-who"><b>${esc(o.name)}</b> · <span class="tel">${esc(o.phone)}</span></div>
+        <div class="sum-addr">${esc(o.addr)}</div>
+        <div class="sum-money"><b>${fmt(orderTotal(o))}</b> · ${o.pay}<span class="more">Xem chi tiết ▾</span></div>
+      </summary>
       <div class="ship">
-        <div class="who">${esc(o.name)}</div>
-        <div class="row"><span class="k">SĐT</span><b class="tel">${esc(o.phone)}</b></div>
-        <div class="row"><span class="k">Địa chỉ</span><span>${esc(o.addr)} · <a href="https://www.google.com/maps/search/${encodeURIComponent(o.addr + ", Lào Cai")}" target="_blank" rel="noopener">Xem bản đồ</a></span></div>
+        <div class="row"><span class="k">Bản đồ</span><a href="https://www.google.com/maps/search/${encodeURIComponent(o.addr + ", Lào Cai")}" target="_blank" rel="noopener">Xem đường đến ${esc(o.addr)}</a></div>
         <div class="row"><span class="k">Thu tiền</span>${o.pay === "Chuyển khoản" ? `<b class="paid">Đã thu tiền (chuyển khoản)</b>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} khi giao</b>`}</div>
       </div>
       <div class="dishes-list">${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
@@ -960,7 +1077,7 @@ function renderOwner() {
           <button type="button" class="btn-sm" data-copy="${o.no}">Chép gửi shipper</button>
           ${NEXT[o.st] ? `<button type="button" class="btn-sm" style="background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-next="${o.no}">${NEXT_LABEL[o.st]}</button>` : ""}
         </span></div>
-    </article>`).join("") : `<p class="sub">Chưa có đơn nào ở mục này.</p>`;
+    </details>`).join("") : `<p class="sub">Chưa có đơn nào ở mục này.</p>`;
 
 }
 function renderAnn() {
@@ -1075,9 +1192,10 @@ document.addEventListener("click", e => {
   if (d.tier) { tierIx = +d.tier; Object.assign(SET, TIERS[tierIx]); build = new Set([...build].slice(0, SET.picks)); renderBuilder(); }
   if (d.pick && tierIx >= 0) {
     build.has(d.pick) ? build.delete(d.pick) : build.size < SET.picks && build.add(d.pick); renderBuilder();
-    if (build.size === SET.picks && canhToday().length) setTimeout(() => { if (step === "mon" && build.size === SET.picks) goStep("canh"); }, 350);
+    renderKhach();
   }
   if (d.canh) { canhPick = canhPick === d.canh ? "" : d.canh; renderBuilder(); }
+  if (d.dcat) { dishCat = d.dcat; renderBuilder(); }
   if (d.inc && left(d.inc) > 0) { cart.extras[d.inc] = (cart.extras[d.inc] || 0) + 1; renderKhach(); }
   if (d.dec) { cart.extras[d.dec] = Math.max(0, (cart.extras[d.dec] || 0) - 1); renderKhach(); }
   if (d.rmset) { cart.sets.splice(+d.rmset, 1); renderKhach(); }
@@ -1108,15 +1226,15 @@ $("bq-dec").onclick = () => { buildQty = Math.max(1, buildQty - 1); renderBuilde
 function commitSet() {
   cart.sets.push({ picks: [...build], qty: buildQty, price: SET.price, ...(canhPick ? { canh: canhPick } : {}) });
   build = new Set(); buildQty = 1; canhPick = ""; tierIx = -1; Object.assign(SET, { price: 0, picks: 0 });
-  goStep("nuoc");
+  goStep("gio");
 }
 $("add-set").onclick = () => {
   if (step === "canh") return commitSet();
   if (tierIx < 0 || build.size !== SET.picks) return;
-  if (canhToday().length) goStep("canh"); else commitSet();
+  goStep("canh");
 };
 $("back-mon").onclick = () => { canhPick = ""; goStep("mon"); };
-$("pay-now").onclick = () => $("go").click();
+$("pay-now").onclick = () => openCheckout();
 $("more-set").onclick = () => goStep("mon");
 document.addEventListener("change", e => {
   const d = e.target.dataset || {};
@@ -1156,7 +1274,36 @@ $("copy-ann").onclick = () => {
   const fail = () => { $("ann").focus(); $("ann").select(); $("toast-ann").textContent = "Máy chưa cho sao chép tự động, bạn nhấn giữ vào chữ để sao chép."; };
   try { navigator.clipboard.writeText($("ann").value).then(() => { $("toast-ann").textContent = "Đã sao chép."; }, fail); } catch (_) { fail(); }
 };
-$("go").onclick = () => { setTimeout(updateQR); $("cart-lines").innerHTML = cartLinesHTML(false); $("total-co").textContent = fmt(orderTotal(cart)); showKhach("checkout"); };
+function openCheckout() { setTimeout(updateQR); $("cart-lines").innerHTML = cartLinesHTML(false); $("total-co").textContent = fmt(orderTotal(cart)); showKhach("checkout"); }
+$("go").onclick = () => {
+  if (step === "gio") return openCheckout();
+  if (step === "canh") return commitSet();
+  if (tierIx >= 0 && build.size === SET.picks) return goStep("canh");
+  goStep("gio");
+};
+document.querySelector("#khach-head .brand").onclick = goHome;
+function openZoom(id) {
+  const m = byId[id]; if (!m) return;
+  $("zoom").dataset.id = id;
+  $("zoom-img").innerHTML = thumb(m); $("zoom-name").textContent = m.name;
+  const rem = left(id), isC = m.cat === CANH, on = isC ? canhPick === id : build.has(id);
+  $("zoom-info").textContent = rem ? `Hôm nay còn ${rem} phần` : "Đã hết";
+  const can = on || (isC ? step === "canh" && rem >= buildQty : tierIx >= 0 && step === "mon" && rem >= buildQty && build.size < SET.picks);
+  $("zoom-pick").textContent = on ? "Bỏ chọn món này" : tierIx < 0 && !isC ? "Chọn loại suất trước" : "Chọn món này";
+  $("zoom-pick").disabled = !can;
+  $("zoom").hidden = false;
+}
+$("zoom-close").onclick = () => { $("zoom").hidden = true; };
+$("zoom").addEventListener("click", e => { if (e.target.id === "zoom") $("zoom").hidden = true; });
+$("zoom-pick").onclick = () => {
+  const id = $("zoom").dataset.id; $("zoom").hidden = true;
+  const btn = document.querySelector(`[data-pick="${id}"],[data-canh="${id}"]`); if (btn) btn.click();
+};
+document.addEventListener("click", e => {
+  const z = e.target.closest("[data-zoom]");
+  if (z) { e.stopPropagation(); e.preventDefault(); openZoom(z.dataset.zoom); }
+}, true);
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("zoom").hidden = true; });
 $("back").onclick = () => { renderKhach(); showKhach("menu"); };
 
 $("form").addEventListener("submit", e => {
@@ -1176,7 +1323,7 @@ $("form").addEventListener("submit", e => {
   $("done-msg").textContent = o.pay === "Chuyển khoản"
     ? "Đơn đã thanh toán bằng chuyển khoản. Quán sẽ giao đúng giờ, bạn không cần trả thêm."
     : `Quán sẽ giao đúng giờ. Bạn trả ${fmt(orderTotal(o))} tiền mặt khi nhận cơm.`;
-  $("done-title").textContent = `Cảm ơn ${o.name} đã đặt cơm Cô Bích Quán!`;
+  $("done-title").textContent = "Chúc quý khách ngon miệng!";
   showKhach("done");
 });
 function updateQR() {
@@ -1189,7 +1336,7 @@ function updateQR() {
 }
 document.querySelectorAll('input[name="pay"]').forEach(r => r.addEventListener("change", updateQR));
 $("f-phone").addEventListener("input", () => { if ($("pay-bank").checked) updateQR(); });
-$("again").onclick = () => { $("form").reset(); $("qr-box").hidden = true; renderKhach(); showKhach("menu"); };
+$("again").onclick = () => { $("form").reset(); syncTime(); $("qr-box").hidden = true; goHome(); };
 
 load(); fillTimes(); route();
 window.addEventListener("hashchange", route);
