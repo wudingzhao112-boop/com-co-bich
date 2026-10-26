@@ -509,7 +509,7 @@ details.sorder { border-left-color: var(--st); }
           <div class="field"><label for="f-name">Tên của bạn</label><input id="f-name" autocomplete="name" placeholder="VD: Chị Lan"></div>
           <div class="field"><label for="f-phone">Số điện thoại</label><input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xx xxx xxx"></div>
         </div>
-        <div class="field"><label for="f-addr">Địa chỉ cụ thể</label><input id="f-addr" autocomplete="street-address" placeholder="Số nhà, ngõ, đường, toà/văn phòng"><button type="button" class="btn-ghost pin-btn" data-mappin="f">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="f-geo-st"></small></div>
+        <div class="field"><label for="f-addr">Địa chỉ cụ thể</label><input id="f-addr" autocomplete="street-address" placeholder="Vị trí: số nhà, ngõ, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="f">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="f-geo-st"></small></div>
         <div class="field"><label for="f-hour">Giờ muốn nhận</label>
           <div class="time-pick"><select id="f-hour" aria-label="Giờ"></select><b>:</b><select id="f-min" aria-label="Phút"></select></div>
           <input type="hidden" id="f-time"></div>
@@ -691,7 +691,7 @@ details.sorder { border-left-color: var(--st); }
     <div class="field acct-reg acct-login"><label for="a-pass">Mật khẩu</label><input id="a-pass" type="password" autocomplete="current-password" placeholder="Từ 6 ký tự trở lên"></div>
     <div class="field acct-reg"><label for="a-pass2">Nhập lại mật khẩu</label><input id="a-pass2" type="password" autocomplete="new-password"></div>
     <div class="field acct-reg acct-me"><span class="lbl">Giới tính</span><div class="radios" id="a-gender"><label><input type="radio" name="a-gender" value="nam"> Anh (nam)</label><label><input type="radio" name="a-gender" value="nu"> Chị (nữ)</label></div></div>
-    <div class="field acct-reg acct-me"><label for="a-addr">Địa chỉ cụ thể</label><input id="a-addr" autocomplete="street-address" placeholder="Số nhà, ngõ/ngách, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="a">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="a-geo-st"></small><small class="sub" style="font-size:12px">Ghi đầy đủ để shipper tìm đúng nhà, VD: 12 ngõ 3 Hoàng Liên, Cốc Lếu.</small></div>
+    <div class="field acct-reg acct-me"><label for="a-addr">Địa chỉ cụ thể</label><input id="a-addr" autocomplete="street-address" placeholder="Vị trí: số nhà, ngõ, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="a">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="a-geo-st"></small><small class="sub" style="font-size:12px">Ghi đầy đủ để shipper tìm đúng nhà, VD: 12 ngõ 3 Hoàng Liên, Cốc Lếu.</small></div>
     <p class="sub acct-me" id="acct-pts" style="margin:0;font-weight:600;color:var(--leaf)"></p>
     <p class="err" id="acct-err" hidden></p>
     <button type="submit" class="btn-main" id="acct-go">Đăng ký</button>
