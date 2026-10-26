@@ -124,7 +124,7 @@ function renderCai() {
     <form id="me-form" novalidate style="display:grid;gap:10px">
       <div class="field"><label for="me-name">Họ tên</label><input id="me-name" autocomplete="name" value="${esc(k.name || "")}"></div>
       <div class="field"><span class="lbl">Giới tính</span><div class="radios"><label><input type="radio" name="me-gender" value="nam"${k.gender === "nam" ? " checked" : ""}> Anh (nam)</label><label><input type="radio" name="me-gender" value="nu"${k.gender === "nu" ? " checked" : ""}> Chị (nữ)</label></div></div>
-      <div class="field"><label for="me-addr">Địa chỉ giao cơm</label><input id="me-addr" autocomplete="street-address" value="${esc(k.addr || "")}" placeholder="Số nhà, ngõ/ngách, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="s">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="s-geo-st"></small></div>
+      <div class="field"><label for="me-addr">Địa chỉ cụ thể</label><input id="me-addr" autocomplete="street-address" value="${esc(k.addr || "")}" placeholder="Số nhà, ngõ/ngách, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="s">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="s-geo-st"></small></div>
       <div class="field"><label for="me-phone">Số điện thoại (tên đăng nhập)</label><input id="me-phone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(k.phone || "")}"></div>
       <div class="field" id="me-pass-w" hidden><label for="me-pass">Mật khẩu hiện tại (để đổi số điện thoại)</label><input id="me-pass" type="password" autocomplete="current-password"></div>
       <p class="err" id="me-err" hidden></p><p class="toast" id="me-ok" aria-live="polite"></p>

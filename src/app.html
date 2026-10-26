@@ -372,6 +372,7 @@ body.has-nav .wrap { padding-bottom: 200px; }
 .w-hi { margin: 0; font-family: var(--font-display); font-size: 24px; }
 .welcome .tier { padding: 16px 6px; }
 .welcome .tier b { font-size: 30px; }
+i.no { font-style: normal; display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; margin-right: 4px; border-radius: 9px; background: var(--fg); color: var(--surface); font-size: 11px; font-weight: 700; vertical-align: 1px; }
 .pick-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; flex-wrap: wrap; }
 .pick-chip { background: var(--chili); color: #fff; font-weight: 700; font-size: 12px; border-radius: 999px; padding: 3px 9px; line-height: 1.3; }
 .pick-chip.on { background: var(--leaf); color: var(--leaf-ink); }
@@ -503,7 +504,7 @@ details.sorder { border-left-color: var(--st); }
           <div class="field"><label for="f-name">Tên của bạn</label><input id="f-name" autocomplete="name" placeholder="VD: Chị Lan"></div>
           <div class="field"><label for="f-phone">Số điện thoại</label><input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xx xxx xxx"></div>
         </div>
-        <div class="field"><label for="f-addr">Địa chỉ giao</label><input id="f-addr" autocomplete="street-address" placeholder="Số nhà, ngõ, đường, toà/văn phòng"><button type="button" class="btn-ghost pin-btn" data-mappin="f">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="f-geo-st"></small></div>
+        <div class="field"><label for="f-addr">Địa chỉ cụ thể</label><input id="f-addr" autocomplete="street-address" placeholder="Số nhà, ngõ, đường, toà/văn phòng"><button type="button" class="btn-ghost pin-btn" data-mappin="f">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="f-geo-st"></small></div>
         <div class="field"><label for="f-hour">Giờ muốn nhận</label>
           <div class="time-pick"><select id="f-hour" aria-label="Giờ"></select><b>:</b><select id="f-min" aria-label="Phút"></select></div>
           <input type="hidden" id="f-time"></div>
@@ -685,7 +686,7 @@ details.sorder { border-left-color: var(--st); }
     <div class="field acct-reg acct-login"><label for="a-pass">Mật khẩu</label><input id="a-pass" type="password" autocomplete="current-password" placeholder="Từ 6 ký tự trở lên"></div>
     <div class="field acct-reg"><label for="a-pass2">Nhập lại mật khẩu</label><input id="a-pass2" type="password" autocomplete="new-password"></div>
     <div class="field acct-reg acct-me"><span class="lbl">Giới tính</span><div class="radios" id="a-gender"><label><input type="radio" name="a-gender" value="nam"> Anh (nam)</label><label><input type="radio" name="a-gender" value="nu"> Chị (nữ)</label></div></div>
-    <div class="field acct-reg acct-me"><label for="a-addr">Địa chỉ giao cơm</label><input id="a-addr" autocomplete="street-address" placeholder="Số nhà, ngõ/ngách, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="a">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="a-geo-st"></small><small class="sub" style="font-size:12px">Ghi đầy đủ để shipper tìm đúng nhà, VD: 12 ngõ 3 Hoàng Liên, Cốc Lếu.</small></div>
+    <div class="field acct-reg acct-me"><label for="a-addr">Địa chỉ cụ thể</label><input id="a-addr" autocomplete="street-address" placeholder="Số nhà, ngõ/ngách, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="a">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="a-geo-st"></small><small class="sub" style="font-size:12px">Ghi đầy đủ để shipper tìm đúng nhà, VD: 12 ngõ 3 Hoàng Liên, Cốc Lếu.</small></div>
     <p class="sub acct-me" id="acct-pts" style="margin:0;font-weight:600;color:var(--leaf)"></p>
     <p class="err" id="acct-err" hidden></p>
     <button type="submit" class="btn-main" id="acct-go">Đăng ký</button>
@@ -1021,6 +1022,7 @@ function renderBuilder() {
   if (editMode) {
     syncToday();
     $("build-title").textContent = "Sửa món hôm nay";
+    const NO = dishNos();
     $("dishes").innerHTML = cats().map(c => {
       const list = MENU.filter(m => m.cat === c && todaySet.has(m.id));
       if (!list.length) return "";
@@ -1028,14 +1030,14 @@ function renderBuilder() {
         const on = stock[m.id] > 0, s = sold(m.id), rem = on ? Math.max(0, stock[m.id] - s) : 0;
         return `<div class="dish edit${on ? "" : " off"}"><span class="thumb">${thumb(m)}</span>
           <button type="button" class="switch sw-mini" data-toggle="${m.id}" aria-pressed="${on}" aria-label="Bán ${esc(m.name)}"></button>
-          <b class="e-name">${esc(m.name)}</b>
+          <b class="e-name">${noTag(NO, m.id)}${esc(m.name)}</b>
           <small class="sub e-sold">Đã bán ${s}</small>
           ${on ? `<label class="left-in">Còn <input class="num" type="number" inputmode="numeric" min="0" id="left-${m.id}" data-left="${m.id}" value="${rem}" aria-label="Số suất còn lại ${esc(m.name)}"></label>` : `<b style="color:var(--chili);font-size:12px">Đã tắt</b>`}</div>`;
       }).join("")}</div>`;
     }).join("") || `<p class="sub">Hôm nay chưa bật món nào. Vào tab <a href="#chu-sp">Sửa sản phẩm</a> để bật món.</p>`;
     return;
   }
-  const isCanh = step === "canh";
+  const isCanh = step === "canh", NO = dishNos();
   $("tiers").hidden = isCanh; $("dots").hidden = isCanh; $("back-mon").hidden = !isCanh;
   $("bq-box").hidden = tierIx < 0;
   $("drinks-wrap").hidden = !isCanh; $("drinks-wrap").style.display = isCanh ? "grid" : "none";
@@ -1047,7 +1049,7 @@ function renderBuilder() {
     $("pick-hint").textContent = canh.length ? "Mỗi suất được 1 bát canh. Bấm chọn 1 loại, không lấy canh thì bỏ qua." : "";
     $("dishes").innerHTML = canh.length ? `<div class="dish-grid">${canh.map(m => {
       const on = canhPick === m.id, rem = left(m.id);
-      return `<button type="button" class="dish" data-canh="${m.id}" aria-pressed="${on}" ${!on && rem < buildQty ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b>${pickRow(rem ? `còn ${rem}` : "Hết", on, !on && rem < buildQty)}</button>`;
+      return `<button type="button" class="dish" data-canh="${m.id}" aria-pressed="${on}" ${!on && rem < buildQty ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${noTag(NO, m.id)}${esc(m.name)}</b>${pickRow(rem ? `còn ${rem}` : "Hết", on, !on && rem < buildQty)}</button>`;
     }).join("")}</div>` : "";
     renderDrinks();
     $("bq").textContent = buildQty;
@@ -1068,9 +1070,9 @@ function renderBuilder() {
     return `<div class="group-label">${label}</div><div class="dish-grid">${list.map(m => {
       const on = build.has(m.id), rem = left(m.id);
       const info = rem === 0 && !on ? "Hết" : c === EXTRA ? fmt(m.price) : rem <= 5 ? `<span style="color:var(--chili)">còn ${rem}</span>` : `còn ${rem}`;
-      if (browse) return `<button type="button" class="dish" data-browse="${c === EXTRA || c === CANH ? "1" : m.id}" ${rem === 0 ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b>${c === EXTRA || c === CANH ? `<small>${info}</small>` : pickRow(info, false, rem === 0)}</button>`;
+      if (browse) return `<button type="button" class="dish" data-browse="${c === EXTRA || c === CANH ? "1" : m.id}" ${rem === 0 ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${noTag(NO, m.id)}${esc(m.name)}</b>${c === EXTRA || c === CANH ? `<small>${info}</small>` : pickRow(info, false, rem === 0)}</button>`;
       const out = !on && (rem < buildQty || build.size >= SET.picks);
-      return `<button type="button" class="dish" data-pick="${m.id}" aria-pressed="${on}" ${out ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${esc(m.name)}</b>${pickRow(info, on, out)}</button>`;
+      return `<button type="button" class="dish" data-pick="${m.id}" aria-pressed="${on}" ${out ? 'aria-disabled="true"' : ""}><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span>${zb(m.id)}<b>${noTag(NO, m.id)}${esc(m.name)}</b>${pickRow(info, on, out)}</button>`;
     }).join("")}</div>`;
   }).join("") || `<p class="sub">Quán chưa đăng món hôm nay.</p>`;
   $("bq").textContent = buildQty;
@@ -1079,6 +1081,13 @@ function renderBuilder() {
   $("add-set").textContent = full ? "Tiếp: chọn canh →" : "Chọn đủ món để tiếp";
 }
 let dishCat = "all";
+// Số thứ tự món hôm nay (1, 2, 3…), giống nhau ở mọi màn hình; đồ uống không đánh số
+function dishNos() {
+  const no = {}; let i = 0;
+  for (const c of cats()) if (c !== EXTRA) for (const m of MENU) if (m.cat === c && stock[m.id] > 0) no[m.id] = ++i;
+  return no;
+}
+const noTag = (no, id) => no[id] ? `<i class="no">${no[id]}</i>` : "";
 // Dòng dưới tên món: "còn 12" bên trái, nút đỏ "Chọn" bên phải (bấm ảnh là xem to, bấm nút là chọn)
 const pickRow = (info, on, out) => `<span class="pick-row"><small>${info}</small>${out && !on ? "" : `<span class="pick-chip${on ? " on" : ""}">${on ? "✓ Bỏ" : "Chọn"}</span>`}</span>`;
 function renderDrinks() {
