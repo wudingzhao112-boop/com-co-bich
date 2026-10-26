@@ -434,7 +434,7 @@ details.sorder { border-left-color: var(--st); }
       </section>
 
       <section class="panel" id="cart-panel" hidden>
-        <h3>Giỏ của bạn</h3>
+        <div class="order-head"><h3>Giỏ của bạn</h3><button type="button" class="btn-ghost" id="cart-back">← Quay lại</button></div>
         <div id="cart-list"></div>
         <div class="cart-actions" id="cart-actions">
           <button type="button" class="btn-ghost" id="more-set">+ Thêm suất khác</button>
@@ -1101,7 +1101,7 @@ function renderExtras() {
 }
 // Giỏ: mỗi suất một khối, mỗi món một dòng (trang xác nhận gộp món thành một dòng)
 function cartLinesHTML(editable) {
-  const sets = cart.sets.map((s, i) => `<div class="cart-set"><div class="hd"><span>Suất ${k(setPrice(s))}${s.qty > 1 ? ` (${s.qty} hộp)` : ""}</span><span>${fmt(s.qty * setPrice(s))}${editable ? ` <button type="button" class="btn-sm" data-rmset="${i}">Bỏ</button>` : ""}</span></div>
+  const sets = cart.sets.map((s, i) => `<div class="cart-set"><div class="hd"><span>Suất ${k(setPrice(s))}${s.qty > 1 ? ` (${s.qty} hộp)` : ""}</span><span>${fmt(s.qty * setPrice(s))}${editable ? ` <button type="button" class="btn-sm" data-editset="${i}">Sửa</button> <button type="button" class="btn-sm" data-rmset="${i}">Bỏ</button>` : ""}</span></div>
     ${editable ? `<ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul>` : `<div class="one">${esc(picksText(allPicks(s)))}</div>`}</div>`);
   const ex = Object.entries(cart.extras).filter(([, q]) => q);
   const exHTML = ex.length ? [`<div class="cart-set"><div class="hd"><span>Đồ uống</span></div><ul>${ex.map(([id, q]) => `<li style="display:flex;justify-content:space-between;gap:8px"><span>${esc(byId[id].name)} × ${q}</span><span>${fmt(q * byId[id].price)}</span></li>`).join("")}</ul></div>`] : [];
@@ -1354,6 +1354,7 @@ document.addEventListener("click", e => {
   if (d.dcat) { dishCat = d.dcat; renderBuilder(); }
   if (d.inc && left(d.inc) > 0) { cart.extras[d.inc] = (cart.extras[d.inc] || 0) + 1; renderKhach(); }
   if (d.dec) { cart.extras[d.dec] = Math.max(0, (cart.extras[d.dec] || 0) - 1); renderKhach(); }
+  if (d.editset) return editSet(+d.editset, "mon");
   if (d.rmset) { cart.sets.splice(+d.rmset, 1); renderKhach(); }
   if (d.filter) { filter = d.filter; refresh(); }
   if (d.sfilter) { shipFilter = d.sfilter; renderShip(); }
@@ -1393,6 +1394,18 @@ $("add-set").onclick = () => {
 $("back-mon").onclick = () => { canhPick = ""; goStep("mon"); };
 $("pay-now").onclick = () => openCheckout();
 $("more-set").onclick = () => goStep("mon");
+// Sửa lại một suất trong giỏ: lấy suất ra, đưa về bước chọn món (hoặc bước canh/nước)
+function editSet(i, st) {
+  const x = cart.sets[i]; if (!x) return;
+  cart.sets.splice(i, 1);
+  const ix = TIERS.findIndex(t => t.price === setPrice(x) && t.picks === x.picks.length);
+  tierIx = ix >= 0 ? ix : TIERS.findIndex(t => t.picks === x.picks.length);
+  if (tierIx < 0) { tierIx = -1; return goStep("mon"); }
+  Object.assign(SET, TIERS[tierIx]);
+  build = new Set(x.picks); buildQty = x.qty; canhPick = x.canh || "";
+  goStep(st);
+}
+$("cart-back").onclick = () => cart.sets.length ? editSet(cart.sets.length - 1, "canh") : goStep("mon");
 document.addEventListener("change", e => {
   const d = e.target.dataset || {};
   if (d.left) { const n = Math.max(0, parseInt(e.target.value, 10) || 0); stock[d.left] = sold(d.left) + n; if (!n) { lastQty[d.left] = stock[d.left]; } refresh(); }
