@@ -381,6 +381,11 @@ body.has-nav .wrap { padding-bottom: 200px; }
 .welcome .tier { padding: 16px 6px; }
 .welcome .tier b { font-size: 30px; }
 i.no { font-style: normal; display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; margin-right: 4px; border-radius: 9px; background: var(--fg); color: var(--surface); font-size: 11px; font-weight: 700; vertical-align: 1px; }
+.mem-top.join { background: var(--chili); color: #fff; font-weight: 700; font-size: 15px; padding: 12px 14px; box-shadow: 0 3px 10px rgb(200 60 30 / .35); }
+.mem-top.join .pts { color: #fff; white-space: nowrap; text-decoration: underline; }
+@media (prefers-reduced-motion: no-preference) { .mem-top.join { animation: joinGlow 1.6s ease-in-out infinite; } @keyframes joinGlow { 50% { transform: scale(1.02); box-shadow: 0 4px 16px rgb(200 60 30 / .55); } } }
+.btn-green { background: #2e7d32 !important; color: #fff !important; }
+.done-ok { display: block; text-align: center; background: #2e7d32; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px; }
 .pick-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; flex-wrap: wrap; }
 .pick-chip { background: var(--chili); color: #fff; font-weight: 700; font-size: 12px; border-radius: 999px; padding: 3px 9px; line-height: 1.3; }
 .pick-chip.on { background: var(--leaf); color: var(--leaf-ink); }
@@ -1448,7 +1453,7 @@ function shipCard(o) {
   const u = urgency(o), gone = o.st === "giao", cash = !isPaid(o), waitBank = o.pay === "Chuyển khoản" && !o.paid;
   const tel = o.phone.replace(/[^0-9+]/g, ""), map = mapUrl(o);
   const ex = Object.entries(o.extras).filter(([, q]) => q);
-  const btn = o.st === "nau" ? `<button type="button" class="btn-main" data-ship="${o.no}">Đã giao xong</button>`
+  const btn = o.st === "nau" ? `<button type="button" class="btn-main btn-green" data-ship="${o.no}">✓ Đã giao xong</button>`
     : o.st === "xong" ? `<button type="button" class="btn-main" data-ship="${o.no}">Đã nhận đơn, đi giao</button>` : "";
   return `<details class="order sorder" data-st="${o.st}" data-grp="${o.st === "giao" ? "xanh" : o.st === "nau" ? "vang" : "do"}" data-ono="${o.no}"${openOrders.has(o.no) ? " open" : ""}>
     <summary>
@@ -1464,7 +1469,7 @@ function shipCard(o) {
       ${ex.length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${ex.map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
     ${o.note ? `<div class="meta"><b>Ghi chú:</b> ${esc(o.note)}</div>` : ""}
     ${o.st === "moi" ? `<div class="s-ready">Bếp đang soạn, chờ chủ quán bấm “Soạn xong” rồi lấy.</div>` : ""}
-    ${btn}
+    ${gone ? `<span class="done-ok">✓ Đã giao xong</span>` : btn}
   </details>`;
 }
 let shipFilter = "chua";
@@ -1777,7 +1782,8 @@ async function renderMember() {
   ["ask", "guest"].forEach(s => $("mem-" + s).hidden = true);
   $("mem-in").hidden = !on; $("member").hidden = !on;
   $("mem-top").hidden = mode !== "khach" || editMode;
-  if (!on) { $("mem-top-hi").textContent = "Đăng ký / đăng nhập tích điểm"; $("mem-top-pts").textContent = "›"; return; }
+  $("mem-top").classList.toggle("join", !on);
+  if (!on) { $("mem-top-hi").textContent = "⭐ Đăng ký / đăng nhập để tích điểm"; $("mem-top-pts").textContent = "Bấm vào đây ›"; return; }
   $("mem-hi").textContent = $("mem-top-hi").textContent = `Chào ${k.name || "bạn"}`;
   $("mem-sub").textContent = n ? `Đơn này được +${n} điểm khi giao xong.` : "Mỗi suất cơm = 1 điểm, dùng đổi quà tri ân của quán.";
   try {
