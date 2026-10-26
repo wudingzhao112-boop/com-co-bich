@@ -72,5 +72,14 @@ async function startSync() {
   setInterval(() => { if (role) pollOrders(); }, 10000);
   setInterval(pollMenu, 30000);
 }
+const isPaid = o => o.pay === "Chuyển khoản" && !!o.paid;
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-paid]");
+  if (!b || role !== "owner") return;
+  const o = orders.find(x => x.no == b.dataset.paid);
+  if (!o) return;
+  b.disabled = true; o.paid = true; render();
+  api("orders/" + o.id + "/paid", { method: "POST", body: JSON.stringify({ paid: true }) }).then(pollOrders, syncErr);
+});
 function save() {}
 function load() {}

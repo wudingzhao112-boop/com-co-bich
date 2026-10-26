@@ -242,6 +242,14 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 .set-line .amt { grid-column: 2; grid-row: 1 / span 2; text-align: right; font-variant-numeric: tabular-nums; display: grid; gap: 4px; justify-items: end; }
 .price-tag { display: inline-flex; align-items: baseline; gap: 6px; background: var(--yolk); color: #3b2a00; border-radius: 10px; padding: 4px 12px; font-weight: 600; width: fit-content; }
 .price-tag b { font-family: var(--font-display); font-size: 22px; }
+.member { border: 1.5px solid var(--yolk); background: var(--yolk-soft); border-radius: 12px; padding: 14px; }
+.member h3 { margin: 0; }
+.mem-top { display: flex; justify-content: space-between; gap: 8px; background: var(--yolk-soft); border-radius: 10px; padding: 8px 12px; font-size: 14px; }
+.mem-top .pts { color: var(--leaf); }
+.member .sub { margin: 4px 0 0; }
+.mem-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mem-row .pts { color: var(--leaf); }
+.linkish { font: inherit; font-size: 14px; background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 4px; }
 .setup-row { background: var(--surface); display: flex; gap: 8px; align-items: center; padding: 8px 12px; }
 .setup-row span { flex: 1; min-width: 0; }
 .thumb { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; margin-bottom: 4px; }
@@ -303,6 +311,7 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
       <div class="hours"><span>206 Duyên Hà, Cốc Lếu, Lào Cai</span><span>035 456 3552</span></div>
       <div class="price-tag"><b id="set-price-k">40k</b><span id="set-rule">1 suất, chọn 5 món</span></div>
     </header>
+    <div class="mem-top" id="mem-top" hidden><span id="mem-top-hi"></span><b class="pts" id="mem-top-pts"></b></div>
     <div class="edit-bar" hidden>
       <div><b>Chủ quán sửa món</b><small class="sub">Bật để tắt món hết, sửa số suất ngay trên thực đơn. Bản thật chỉ chủ quán đăng nhập mới thấy nút này.</small></div>
       <button type="button" class="switch" id="edit-toggle" aria-pressed="false" aria-label="Chế độ chủ quán sửa món"></button>
@@ -342,6 +351,21 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
       <h2>Xác nhận đơn</h2>
       <div id="cart-lines"></div>
       <div class="total"><span>Tổng cộng</span><span id="total-co"></span></div>
+      <div class="member" id="member">
+        <div id="mem-ask">
+          <h3 id="mem-ask-title">Tích điểm cho đơn này</h3>
+          <p class="sub">Đăng nhập bằng số điện thoại: mỗi suất cơm được 1 điểm, đổi quà tri ân của quán. Lần sau đặt nhanh, không phải gõ lại.</p>
+          <div style="display:grid;gap:10px;margin-top:12px">
+            <div class="field"><label for="m-phone">Số điện thoại</label><input id="m-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xx xxx xxx"></div>
+            <div class="field"><label for="m-name">Tên của bạn</label><input id="m-name" autocomplete="name" placeholder="VD: Chị Lan"></div>
+            <p class="err" id="m-err" hidden></p>
+            <button type="button" class="btn-main" id="m-go">Đăng nhập và tích điểm</button>
+            <button type="button" class="linkish" id="m-skip">Đặt không cần đăng nhập</button>
+          </div>
+        </div>
+        <div id="mem-in" class="mem-row" hidden><div><b id="mem-hi"></b> · <b id="mem-pts" class="pts"></b><small class="sub" id="mem-sub" style="display:block"></small></div><button type="button" class="linkish" id="m-out">Đổi số</button></div>
+        <div id="mem-guest" class="mem-row" hidden><span>Đăng nhập số điện thoại để <b>tích điểm</b> cho đơn này.</span><button type="button" class="btn-sm" id="m-login">Đăng nhập</button></div>
+      </div>
       <form id="form" novalidate style="display:grid;gap:14px">
         <div class="row2">
           <div class="field"><label for="f-name">Tên của bạn</label><input id="f-name" autocomplete="name" placeholder="VD: Chị Lan"></div>
@@ -728,6 +752,15 @@ async function startSync() {
   setInterval(() => { if (role) pollOrders(); }, 10000);
   setInterval(pollMenu, 30000);
 }
+const isPaid = o => o.pay === "Chuyển khoản" && !!o.paid;
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-paid]");
+  if (!b || role !== "owner") return;
+  const o = orders.find(x => x.no == b.dataset.paid);
+  if (!o) return;
+  b.disabled = true; o.paid = true; render();
+  api("orders/" + o.id + "/paid", { method: "POST", body: JSON.stringify({ paid: true }) }).then(pollOrders, syncErr);
+});
 function save() {}
 function load() {}
 // Hạn giao: giờ khách chọn, hoặc 30 phút sau lúc đặt nếu chọn "càng sớm càng tốt"
@@ -876,9 +909,10 @@ function renderOwner() {
   updateBadge();
   $("alert").className = "alert" + (notDone ? "" : " ok");
   $("alert").innerHTML = notDone ? `<b>${notDone}</b><span>đơn <strong>chưa giao</strong>. Giao gấp kẻo khách chờ!</span>` : `<b>0</b><span>Đã giao hết đơn.</span>`;
-  const paid = orders.filter(o => o.pay === "Chuyển khoản").reduce((s, o) => s + orderTotal(o), 0);
-  const due = orders.filter(o => o.pay !== "Chuyển khoản" && o.st !== "giao").reduce((s, o) => s + orderTotal(o), 0);
-  $("st-paid").innerHTML = `<span class="paid">Đã thu ${fmt(paid)}</span> · <span class="collect">Cần thu ${fmt(due)}</span>`;
+  const paid = orders.filter(isPaid).reduce((s, o) => s + orderTotal(o), 0);
+  const due = orders.filter(o => !isPaid(o) && o.st !== "giao").reduce((s, o) => s + orderTotal(o), 0);
+  const wait = orders.filter(o => o.pay === "Chuyển khoản" && !o.paid);
+  $("st-paid").innerHTML = `<span class="paid">Đã thu ${fmt(paid)}</span> · <span class="collect">Cần thu ${fmt(due)}</span>${wait.length ? ` · <span class="collect">${wait.length} đơn chờ xác nhận chuyển khoản</span>` : ""}`;
 
 
   const counts = { all: orders.length, moi: 0, xong: 0, nau: 0, giao: 0 };
@@ -905,7 +939,7 @@ function renderOwner() {
         <div class="who">${esc(o.name)}</div>
         <div class="row"><span class="k">SĐT</span><b class="tel">${esc(o.phone)}</b></div>
         <div class="row"><span class="k">Địa chỉ</span><span>${esc(o.addr)} · <a href="https://www.google.com/maps/search/${encodeURIComponent(o.addr + ", Lào Cai")}" target="_blank" rel="noopener">Xem bản đồ</a></span></div>
-        <div class="row"><span class="k">Thu tiền</span>${o.pay === "Chuyển khoản" ? `<b class="paid">Đã thu tiền (chuyển khoản)</b>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} khi giao</b>`}</div>
+        <div class="row"><span class="k">Thu tiền</span>${isPaid(o) ? `<b class="paid">Đã nhận tiền (chuyển khoản)</b>` : o.pay === "Chuyển khoản" ? `<span><b class="collect">Chờ xác nhận chuyển khoản ${fmt(orderTotal(o))}</b><br><small class="sub">Nội dung: COBICH ${esc(o.phone.replace(/\D/g, ""))}</small><br><button type="button" class="btn-sm" style="margin-top:4px;background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-paid="${o.no}">Đã nhận tiền</button></span>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} khi giao</b>`}</div>
       </div>
       <div class="dishes-list">${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1}${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${s.picks.map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
         ${Object.entries(o.extras).filter(([, q]) => q).length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${Object.entries(o.extras).filter(([, q]) => q).map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
@@ -939,13 +973,13 @@ ${groups.join("\n\n")}
 function orderText(o) {
   const sets = o.sets.map((s, i) => `Suất ${i + 1}${s.qty > 1 ? ` (x${s.qty} hộp)` : ""}:\n${s.picks.map(id => "- " + (byId[id]?.name ?? "?")).join("\n")}`).join("\n");
   const ex = Object.entries(o.extras).filter(([, q]) => q).map(([id, q]) => `+ ${q} x ${byId[id]?.name ?? "?"}`).join("\n");
-  return `ĐƠN #${o.no} – giao lúc ${o.time}\nTên: ${o.name}\nSĐT: ${o.phone}\nĐịa chỉ: ${o.addr}\n${o.pay === "Chuyển khoản" ? "ĐÃ THU TIỀN (chuyển khoản)" : "THU TIỀN MẶT: " + fmt(orderTotal(o))}\n\n${sets}${ex ? "\n" + ex : ""}${o.note ? "\n\nGhi chú: " + o.note : ""}`;
+  return `ĐƠN #${o.no} – giao lúc ${o.time}\nTên: ${o.name}\nSĐT: ${o.phone}\nĐịa chỉ: ${o.addr}\n${isPaid(o) ? "ĐÃ THU TIỀN (chuyển khoản)" : o.pay === "Chuyển khoản" ? "CHUYỂN KHOẢN CHƯA XÁC NHẬN: hỏi chủ quán trước khi thu " + fmt(orderTotal(o)) : "THU TIỀN MẶT: " + fmt(orderTotal(o))}\n\n${sets}${ex ? "\n" + ex : ""}${o.note ? "\n\nGhi chú: " + o.note : ""}`;
 }
 
 /* ---------- Shipper ---------- */
 const extrasCount = o => Object.values(o.extras).reduce((s, q) => s + q, 0);
 function shipCard(o) {
-  const u = urgency(o), gone = o.st === "giao", cash = o.pay !== "Chuyển khoản";
+  const u = urgency(o), gone = o.st === "giao", cash = !isPaid(o), waitBank = o.pay === "Chuyển khoản" && !o.paid;
   const tel = o.phone.replace(/[^0-9+]/g, ""), map = "https://www.google.com/maps/search/" + encodeURIComponent(o.addr + ", Lào Cai");
   const ex = Object.entries(o.extras).filter(([, q]) => q);
   const btn = gone ? "" : o.st === "nau"
@@ -956,7 +990,7 @@ function shipCard(o) {
     <div class="who">#${o.no} · ${esc(o.name)}</div>
     <div class="s-addr">${esc(o.addr)}</div>
     ${gone ? "" : `<div class="s-btns"><a href="tel:${tel}">Gọi khách</a><a href="${map}" target="_blank" rel="noopener">Chỉ đường</a></div>`}
-    <div class="s-money">${cash ? `<span class="collect">Thu tiền mặt ${fmt(orderTotal(o))}</span>` : `<span class="paid">Đã thu tiền (chuyển khoản)</span>`}</div>
+    <div class="s-money">${waitBank ? `<span class="collect">Khách chọn chuyển khoản, quán CHƯA xác nhận tiền. Gọi chủ quán trước khi thu ${fmt(orderTotal(o))}.</span>` : cash ? `<span class="collect">Thu tiền mặt ${fmt(orderTotal(o))}</span>` : `<span class="paid">Đã thu tiền (chuyển khoản)</span>`}</div>
     <details><summary>${setCount(o)} hộp cơm${extrasCount(o) ? ` · ${extrasCount(o)} đồ uống/gọi thêm` : ""}. Bấm xem món</summary>
       <div class="dishes-list" style="margin-top:6px">${o.sets.map((x, i) => `<div class="set"><div class="set-h">Suất ${i + 1}${x.qty > 1 ? ` <span class="x">× ${x.qty} hộp</span>` : ""}</div><ul>${x.picks.map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
       ${ex.length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${ex.map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div></details>
@@ -968,7 +1002,7 @@ function shipCard(o) {
 function renderShip() {
   const list = orders.filter(o => o.st !== "giao").sort(byDue), done = orders.filter(o => o.st === "giao").reverse();
   const urgent = list.filter(o => urgency(o).lv !== "thuong").length;
-  const cash = list.filter(o => o.pay !== "Chuyển khoản").reduce((s, o) => s + orderTotal(o), 0);
+  const cash = list.filter(o => !isPaid(o)).reduce((s, o) => s + orderTotal(o), 0);
   $("ship-sub").textContent = `Xếp theo giờ khách cần nhận, đơn gấp lên đầu. Cập nhật lúc ${new Date().toTimeString().slice(0, 5)}.`;
   $("ship-stats").innerHTML = `<div class="stat"><b style="color:${list.length ? "var(--chili)" : "inherit"}">${list.length}</b><small>đơn chưa giao</small></div>
     <div class="stat"><b style="color:${urgent ? "var(--chili)" : "inherit"}">${urgent}</b><small>đơn gấp hoặc trễ</small></div>
@@ -1001,6 +1035,7 @@ function route() {
   $("nav").hidden = role !== "owner" || r === "khach";
   if (!allowed) { showLogin(r); return; }
   $("login").hidden = true;
+  $("mem-top").hidden = r !== "khach" || !memGet()?.phone;
   [["m-khach", "khach"], ["m-chu", "chu"], ["m-ship", "shipper"]].forEach(([id, m]) => {
     if (m === "chu" ? r.startsWith("chu") : m === r) $(id).setAttribute("aria-current", "page"); else $(id).removeAttribute("aria-current");
   });
@@ -1115,13 +1150,14 @@ $("form").addEventListener("submit", e => {
     o.no = r.no; o.id = r.id;
     try { localStorage.setItem("cobich-khach", JSON.stringify({ name: o.name, phone: o.phone, addr: o.addr })); } catch (_) {}
     cart.sets = []; cart.extras = {}; pollMenu();
-    finishOrder(o);
+    finishOrder(o); renderMember();
+    $("done-msg").textContent += ` Đơn này được +${setCount(o)} điểm khi giao xong (tích theo số ${o.phone}).`;
   });
 });
 function finishOrder(o) {
   $("ticket").textContent = orderText(o);
   $("done-msg").textContent = o.pay === "Chuyển khoản"
-    ? "Đơn đã thanh toán bằng chuyển khoản. Quán sẽ giao đúng giờ, bạn không cần trả thêm."
+    ? "Quán sẽ xác nhận khi nhận được tiền chuyển khoản, rồi giao đúng giờ. Nhớ ghi đúng nội dung chuyển khoản nhé."
     : `Quán sẽ giao đúng giờ. Bạn trả ${fmt(orderTotal(o))} tiền mặt khi nhận cơm.`;
   showKhach("done");
 }
@@ -1166,6 +1202,41 @@ $("login-form").addEventListener("submit", async e => {
 });
 const logout = () => { pin = ""; role = null; orders = []; try { localStorage.removeItem(KEY); } catch (_) {} location.hash = ""; route(); };
 $("logout").onclick = logout; $("logout2").onclick = logout;
+// Thành viên: khách đăng nhập bằng số điện thoại để tích điểm (1 suất đã giao = 1 điểm).
+// Lời mời hiện lúc khách bấm "Đặt ngay", kèm số điểm đơn này sẽ được.
+const MEM = "cobich-khach";
+function memGet() { try { return JSON.parse(localStorage.getItem(MEM) || "null"); } catch (_) { return null; } }
+const memSet = v => { try { if (v) localStorage.setItem(MEM, JSON.stringify(v)); else localStorage.removeItem(MEM); } catch (_) {} };
+let guest = false;
+try { guest = sessionStorage.getItem("cobich-guest") === "1"; } catch (_) {}
+async function renderMember() {
+  const k = memGet(), n = setCount(cart);
+  const state = k?.phone ? "in" : guest ? "guest" : "ask";
+  ["ask", "in", "guest"].forEach(s => $("mem-" + s).hidden = s !== state);
+  $("mem-ask-title").textContent = n ? `Đơn này được +${n} điểm. Tích ngay!` : "Tích điểm nhận quà tri ân";
+  $("mem-top").hidden = mode !== "khach" || editMode || !k?.phone;
+  if (state !== "in") return;
+  $("mem-hi").textContent = $("mem-top-hi").textContent = `Chào ${k.name || "bạn"}`;
+  $("mem-sub").textContent = n ? `Đơn này được +${n} điểm khi giao xong.` : "Mỗi suất cơm = 1 điểm, dùng đổi quà tri ân của quán.";
+  try {
+    const d = await api("me?phone=" + encodeURIComponent(k.phone));
+    $("mem-pts").textContent = $("mem-top-pts").textContent = `${d.points} điểm`;
+  } catch (_) { $("mem-pts").textContent = $("mem-top-pts").textContent = ""; }
+}
+$("m-go").onclick = () => {
+  const phone = $("m-phone").value.trim(), name = $("m-name").value.trim();
+  if (!/^[0-9 +.]{9,14}$/.test(phone)) { $("m-err").textContent = "Số điện thoại chưa đúng."; $("m-err").hidden = false; return; }
+  $("m-err").hidden = true;
+  memSet({ name, phone, addr: memGet()?.addr || "" });
+  $("f-phone").value = phone; if (name) $("f-name").value = name;
+  renderMember();
+};
+$("m-skip").onclick = () => { guest = true; try { sessionStorage.setItem("cobich-guest", "1"); } catch (_) {} renderMember(); };
+$("m-login").onclick = () => { guest = false; try { sessionStorage.removeItem("cobich-guest"); } catch (_) {} renderMember(); $("m-phone").focus(); };
+$("m-out").onclick = () => { memSet(null); $("f-name").value = $("f-phone").value = $("f-addr").value = ""; $("m-phone").value = $("m-name").value = ""; renderMember(); };
+$("go").addEventListener("click", renderMember);
+renderMember();
+
 $("chpin").onclick = () => {
   ["khach", "chu", "ship"].forEach(id => show(id, false)); $("cartbar").hidden = true; $("owner-tabs").hidden = true;
   $("login").hidden = false; $("login").dataset.setup = "1";

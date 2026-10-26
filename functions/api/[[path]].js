@@ -46,6 +46,7 @@ function soldMap(orders) {
   return sold;
 }
 const str = (v, max) => String(v ?? "").trim().slice(0, max);
+const phoneKey = v => String(v ?? "").replace(/[\s.]/g, "");
 
 export async function onRequest({ request, env, params }) {
   const db = env.DB;
@@ -129,9 +130,22 @@ export async function onRequest({ request, env, params }) {
       const no = orders.reduce((mx, o) => Math.max(mx, o.no || 0), 0) + 1;
       const id = crypto.randomUUID().slice(0, 12), at = Date.now();
       const order = { no, at, name, phone, addr, time: str(body.time, 30) || "Càng sớm càng tốt",
-        pay: body.pay === "Chuyển khoản" ? "Chuyển khoản" : "Tiền mặt", note: str(body.note, 300), sets, extras, total };
+        pay: body.pay === "Chuyển khoản" ? "Chuyển khoản" : "Tiền mặt", paid: false, note: str(body.note, 300), sets, extras, total };
       await db.prepare("INSERT INTO orders (id, no, day, at, st, data) VALUES (?, ?, ?, ?, 'moi', ?)").bind(id, no, vnDay(at), at, JSON.stringify(order)).run();
       return json({ ok: true, id, no, total });
+    }
+
+    // Khách tích điểm theo số điện thoại: 1 suất đã giao = 1 điểm
+    if (a === "me" && m === "GET") {
+      const key = phoneKey(new URL(request.url).searchParams.get("phone"));
+      if (!/^\+?\d{9,13}$/.test(key)) return bad("Số điện thoại không hợp lệ.");
+      const { results } = await db.prepare("SELECT data, st FROM orders WHERE REPLACE(REPLACE(json_extract(data, '$.phone'), ' ', ''), '.', '') = ? AND st != 'huy'").bind(key).all();
+      let points = 0, pending = 0;
+      for (const r of results) {
+        const n = (JSON.parse(r.data).sets || []).reduce((t, x) => t + (x.qty || 0), 0);
+        if (r.st === "giao") points += n; else pending += n;
+      }
+      return json({ points, pending, orders: results.length });
     }
 
     // Chủ quán và shipper xem đơn hôm nay
@@ -139,6 +153,13 @@ export async function onRequest({ request, env, params }) {
       const role = await roleOf(db, request);
       if (!role) return bad("Cần mã PIN.", 401);
       return json({ role, orders: await todayOrders(db) });
+    }
+    // Chủ quán xác nhận đã nhận tiền chuyển khoản
+    if (a === "orders" && b && path[2] === "paid" && m === "POST") {
+      if ((await roleOf(db, request)) !== "owner") return bad("Cần mã PIN chủ quán.", 401);
+      const { paid } = await request.json();
+      await db.prepare("UPDATE orders SET data = json_set(data, '$.paid', json(?)) WHERE id = ?").bind(paid ? "true" : "false", b).run();
+      return json({ ok: true });
     }
     // Đổi trạng thái đơn
     if (a === "orders" && b && m === "POST") {
