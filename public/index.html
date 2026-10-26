@@ -386,6 +386,7 @@ i.no { font-style: normal; display: inline-grid; place-items: center; min-width:
 @media (prefers-reduced-motion: no-preference) { .mem-top.join { animation: joinGlow 1.6s ease-in-out infinite; } @keyframes joinGlow { 50% { transform: scale(1.02); box-shadow: 0 4px 16px rgb(200 60 30 / .55); } } }
 .btn-green { background: #2e7d32 !important; color: #fff !important; }
 .done-ok { display: block; text-align: center; background: #2e7d32; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px; }
+@media (prefers-reduced-motion: no-preference) { .blink-soft { animation: blinkSoft 1.4s ease-in-out infinite; } @keyframes blinkSoft { 50% { opacity: .55; } } }
 .pick-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; flex-wrap: wrap; }
 .pick-chip { background: var(--chili); color: #fff; font-weight: 700; font-size: 12px; border-radius: 999px; padding: 3px 9px; line-height: 1.3; }
 .pick-chip.on { background: var(--leaf); color: var(--leaf-ink); }
@@ -585,7 +586,7 @@ details.sorder { border-left-color: var(--st); }
       <p class="sub" id="mem-done-msg" hidden style="color:var(--leaf);font-weight:600"></p>
       <pre class="ticket" id="ticket"></pre>
       <div class="actions" style="justify-content:center">
-        <button type="button" class="btn-main" id="mem-done">Đăng ký để tích điểm</button>
+        <button type="button" class="btn-main btn-red blink-soft" id="mem-done">ĐĂNG KÝ để tích điểm</button>
         <button type="button" class="linkish" id="again">Đặt đơn mới</button>
         
       </div>
@@ -722,7 +723,7 @@ details.sorder { border-left-color: var(--st); }
 <div class="zoom" id="acct" hidden role="dialog" aria-modal="true" aria-labelledby="acct-title">
   <form class="zoom-card" id="acct-form" novalidate style="max-height:92vh;overflow:auto">
     <div class="order-head"><h3 id="acct-title">Đăng ký tích điểm</h3><button type="button" class="linkish" id="acct-close">Đóng</button></div>
-    <div class="chips" id="acct-tabs"><button type="button" data-acct="reg" aria-pressed="true">Đăng ký</button><button type="button" data-acct="login" aria-pressed="false">Đăng nhập</button><button type="button" data-acct="me" aria-pressed="false" hidden>Tài khoản</button></div>
+    <div class="chips" id="acct-tabs"><button type="button" data-acct="reg" aria-pressed="true">ĐĂNG KÝ</button><button type="button" data-acct="login" aria-pressed="false">ĐĂNG NHẬP</button><button type="button" data-acct="me" aria-pressed="false" hidden>Tài khoản</button></div>
     <p class="sub" id="acct-sub" style="margin:0">Mỗi suất cơm giao xong được 1 điểm, đổi quà tri ân của quán. Lần sau đặt không phải gõ lại.</p>
     <div class="field acct-me"><label for="a-uname">Họ tên</label><input id="a-uname" autocomplete="name" placeholder="VD: Chị Lan"></div>
     <div class="field acct-reg acct-login"><label for="a-phone">Tên tài khoản (số điện thoại)</label><input id="a-phone" type="tel" inputmode="tel" autocomplete="username" placeholder="09xx xxx xxx"></div>
@@ -1783,7 +1784,7 @@ async function renderMember() {
   $("mem-in").hidden = !on; $("member").hidden = !on;
   $("mem-top").hidden = mode !== "khach" || editMode;
   $("mem-top").classList.toggle("join", !on);
-  if (!on) { $("mem-top-hi").textContent = "⭐ Đăng ký / đăng nhập để tích điểm"; $("mem-top-pts").textContent = "Bấm vào đây ›"; return; }
+  if (!on) { $("mem-top-hi").innerHTML = "⭐ <b class=\"blink-soft\">ĐĂNG KÝ / ĐĂNG NHẬP</b> để tích điểm"; $("mem-top-pts").textContent = "Bấm vào đây ›"; return; }
   $("mem-hi").textContent = $("mem-top-hi").textContent = `Chào ${k.name || "bạn"}`;
   $("mem-sub").textContent = n ? `Đơn này được +${n} điểm khi giao xong.` : "Mỗi suất cơm = 1 điểm, dùng đổi quà tri ân của quán.";
   try {
@@ -1814,7 +1815,7 @@ function renderAcct() {
   document.querySelectorAll("#acct-form .field, #acct-form .acct-me").forEach(el => { el.hidden = !el.classList.contains("acct-" + acctMode); });
   $("acct-title").textContent = me ? "Tài khoản của bạn" : acctMode === "login" ? "Đăng nhập tích điểm" : "Đăng ký tích điểm";
   $("acct-sub").hidden = me;
-  $("acct-go").textContent = me ? "Lưu thông tin" : acctMode === "login" ? "Đăng nhập" : "Đăng ký";
+  $("acct-go").textContent = me ? "Lưu thông tin" : acctMode === "login" ? "ĐĂNG NHẬP" : "ĐĂNG KÝ";
   if (me) { const k = memGet(); $("acct-pts").textContent = `Tài khoản ${k.phone} · ${k.points ?? 0} điểm`; }
 }
 $("acct-tabs").addEventListener("click", e => { const b = e.target.closest("[data-acct]"); if (b) { acctMode = b.dataset.acct; $("acct-err").hidden = true; renderAcct(); } });
@@ -1867,7 +1868,7 @@ $("mem-done").onclick = () => { const o = lastOrder || {}; openAcct("reg", { nam
 // Thanh menu dưới: trang Tích điểm và Cài đặt
 const loggedIn = () => { const k = memGet(); return !!(k?.member && k?.token); };
 const avHTML = k => k?.avatar ? `<img src="${esc(k.avatar)}" alt="">` : "👤";
-const joinBtns = `<div class="cart-actions"><button type="button" class="btn-main" data-acctgo="reg" style="flex:1">Đăng ký</button><button type="button" class="btn-ghost" data-acctgo="login" style="flex:1">Đăng nhập</button></div>`;
+const joinBtns = `<div class="cart-actions"><button type="button" class="btn-main btn-red blink-soft" data-acctgo="reg" style="flex:1">ĐĂNG KÝ</button><button type="button" class="btn-ghost blink-soft" data-acctgo="login" style="flex:1;font-weight:700">ĐĂNG NHẬP</button></div>`;
 async function renderPts() {
   const box = $("pts-body");
   if (!loggedIn()) {

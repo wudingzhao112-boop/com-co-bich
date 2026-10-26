@@ -16,7 +16,7 @@ async function renderMember() {
   $("mem-in").hidden = !on; $("member").hidden = !on;
   $("mem-top").hidden = mode !== "khach" || editMode;
   $("mem-top").classList.toggle("join", !on);
-  if (!on) { $("mem-top-hi").textContent = "⭐ Đăng ký / đăng nhập để tích điểm"; $("mem-top-pts").textContent = "Bấm vào đây ›"; return; }
+  if (!on) { $("mem-top-hi").innerHTML = "⭐ <b class=\"blink-soft\">ĐĂNG KÝ / ĐĂNG NHẬP</b> để tích điểm"; $("mem-top-pts").textContent = "Bấm vào đây ›"; return; }
   $("mem-hi").textContent = $("mem-top-hi").textContent = `Chào ${k.name || "bạn"}`;
   $("mem-sub").textContent = n ? `Đơn này được +${n} điểm khi giao xong.` : "Mỗi suất cơm = 1 điểm, dùng đổi quà tri ân của quán.";
   try {
@@ -47,7 +47,7 @@ function renderAcct() {
   document.querySelectorAll("#acct-form .field, #acct-form .acct-me").forEach(el => { el.hidden = !el.classList.contains("acct-" + acctMode); });
   $("acct-title").textContent = me ? "Tài khoản của bạn" : acctMode === "login" ? "Đăng nhập tích điểm" : "Đăng ký tích điểm";
   $("acct-sub").hidden = me;
-  $("acct-go").textContent = me ? "Lưu thông tin" : acctMode === "login" ? "Đăng nhập" : "Đăng ký";
+  $("acct-go").textContent = me ? "Lưu thông tin" : acctMode === "login" ? "ĐĂNG NHẬP" : "ĐĂNG KÝ";
   if (me) { const k = memGet(); $("acct-pts").textContent = `Tài khoản ${k.phone} · ${k.points ?? 0} điểm`; }
 }
 $("acct-tabs").addEventListener("click", e => { const b = e.target.closest("[data-acct]"); if (b) { acctMode = b.dataset.acct; $("acct-err").hidden = true; renderAcct(); } });
@@ -100,7 +100,7 @@ $("mem-done").onclick = () => { const o = lastOrder || {}; openAcct("reg", { nam
 // Thanh menu dưới: trang Tích điểm và Cài đặt
 const loggedIn = () => { const k = memGet(); return !!(k?.member && k?.token); };
 const avHTML = k => k?.avatar ? `<img src="${esc(k.avatar)}" alt="">` : "👤";
-const joinBtns = `<div class="cart-actions"><button type="button" class="btn-main" data-acctgo="reg" style="flex:1">Đăng ký</button><button type="button" class="btn-ghost" data-acctgo="login" style="flex:1">Đăng nhập</button></div>`;
+const joinBtns = `<div class="cart-actions"><button type="button" class="btn-main btn-red blink-soft" data-acctgo="reg" style="flex:1">ĐĂNG KÝ</button><button type="button" class="btn-ghost blink-soft" data-acctgo="login" style="flex:1;font-weight:700">ĐĂNG NHẬP</button></div>`;
 async function renderPts() {
   const box = $("pts-body");
   if (!loggedIn()) {
