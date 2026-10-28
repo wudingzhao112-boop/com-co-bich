@@ -42,8 +42,44 @@ function soldMap(orders) {
     if (o.st === "huy") continue;
     for (const s of o.sets || []) for (const id of [...(s.picks || []), ...(s.canh ? [s.canh] : [])]) sold[id] = (sold[id] || 0) + (s.qty || 0);
     for (const [id, q] of Object.entries(o.extras || {})) sold[id] = (sold[id] || 0) + (q || 0);
+    for (const [id, q] of Object.entries(o.tray?.items || {})) sold[id] = (sold[id] || 0) + (q || 0) * (o.tray.per || 2);
   }
   return sold;
+}
+// Món trong đơn: suất (theo loại suất), đồ uống, mâm (theo đĩa). Tính tiền ở máy chủ.
+function parseItems(body, menu) {
+  const tiers = Array.isArray(menu?.tiers) && menu.tiers.length ? menu.tiers
+    : [{ price: 35000, picks: 3 }, { price: 40000, picks: 4 }, { price: 50000, picks: 5 }];
+  const maxPicks = Math.max(...tiers.map(t => +t.picks || 0));
+  const sets = (Array.isArray(body.sets) ? body.sets : []).slice(0, 30).map(s => {
+    const picks = [...new Set((Array.isArray(s.picks) ? s.picks : []).slice(0, maxPicks).map(x => str(x, 40)))];
+    return { picks, qty: Math.max(1, Math.min(50, parseInt(s.qty, 10) || 1)), price: +tiers.find(t => +t.picks === picks.length)?.price || 0 };
+  }).filter(s => s.picks.length);
+  if (sets.some(s => !s.price)) return { error: "Số món trong suất chưa đúng, bạn chọn lại giúp quán nhé." };
+  const extras = {};
+  for (const [id, q] of Object.entries(body.extras || {})) { const n = Math.min(50, parseInt(q, 10) || 0); if (n > 0) extras[str(id, 40)] = n; }
+  let tray = null;
+  if (body.tray) {
+    const T = menu?.tray || {};
+    if (!T.on) return { error: "Quán chưa nhận đặt mâm hôm nay." };
+    const items = {}, rau = new Set(Object.entries(menu?.cats || {}).filter(([, c]) => c === "Rau").map(([id]) => id));
+    for (const [id, q] of Object.entries(body.tray.items || {}).slice(0, 40)) { const n = Math.min(20, parseInt(q, 10) || 0); if (n > 0) items[str(id, 40)] = n; }
+    const people = Math.max(1, Math.min(50, parseInt(body.tray.people, 10) || 1));
+    if (Object.keys(items).length) {
+      const per = Math.max(1, parseInt(T.per, 10) || 2);
+      const price = people * (+T.person || 0) + Object.entries(items).reduce((t, [id, q]) => t + q * (rau.has(id) ? +T.rau || 0 : +T.man || 0), 0);
+      tray = { people, items, per, price };
+    }
+  }
+  if (!sets.length && !Object.keys(extras).length && !tray) return { error: "Giỏ hàng trống." };
+  const total = (tray?.price || 0) + sets.reduce((t, x) => t + x.qty * x.price, 0)
+    + Object.entries(extras).reduce((t, [id, q]) => t + q * (menu?.prices?.[id] || 0), 0);
+  return { sets, extras, ...(tray ? { tray } : {}), total };
+}
+function outOf(menu, sold, items) {
+  if (!menu) return [];
+  const need = soldMap([items]);
+  return Object.entries(need).filter(([id, q]) => (menu.stock?.[id] || 0) - (sold[id] || 0) < q).map(([id]) => id);
 }
 const str = (v, max) => String(v ?? "").trim().slice(0, max);
 // Vị trí ghim trên bản đồ (chỉ nhận toạ độ trong khoảng Việt Nam)
@@ -225,27 +261,14 @@ export async function onRequest({ request, env, params, waitUntil }) {
       const name = str(body.name, 80), phone = str(body.phone, 20), addr = str(body.addr, 200);
       if (!name || !/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, "")) || !addr) return bad("Vui lòng điền tên, số điện thoại và địa chỉ.");
       const menu = await getKV(db, "menu");
-      const tiers = Array.isArray(menu?.tiers) && menu.tiers.length ? menu.tiers
-        : [{ price: 35000, picks: 3 }, { price: 40000, picks: 4 }, { price: 50000, picks: 5 }];
-      const maxPicks = Math.max(...tiers.map(t => +t.picks || 0));
-      const sets = (Array.isArray(body.sets) ? body.sets : []).slice(0, 30).map(s => {
-        const picks = [...new Set((Array.isArray(s.picks) ? s.picks : []).slice(0, maxPicks).map(x => str(x, 40)))];
-        const canh = s.canh ? str(s.canh, 40) : "";
-        return { picks, qty: Math.max(1, Math.min(50, parseInt(s.qty, 10) || 1)), price: +tiers.find(t => +t.picks === picks.length)?.price || 0, ...(canh ? { canh } : {}) };
-      }).filter(s => s.picks.length);
-      if (sets.some(s => !s.price)) return bad("Số món trong suất chưa đúng, bạn chọn lại giúp quán nhé.");
-      const extras = {};
-      for (const [id, q] of Object.entries(body.extras || {})) { const n = Math.min(50, parseInt(q, 10) || 0); if (n > 0) extras[str(id, 40)] = n; }
-      if (!sets.length && !Object.keys(extras).length) return bad("Giỏ hàng trống.");
+      const it = parseItems(body, menu);
+      if (it.error) return bad(it.error);
+      const { sets, extras, tray } = it;
+      let total = it.total;
 
       const orders = await todayOrders(db), sold = soldMap(orders);
-      if (menu) {
-        const need = soldMap([{ sets, extras }]);
-        const out = Object.entries(need).filter(([id, q]) => (menu.stock?.[id] || 0) - (sold[id] || 0) < q).map(([id]) => id);
-        if (out.length) return json({ error: "Có món vừa hết, bạn chọn lại giúp quán nhé.", out }, 409);
-      }
-      let total = sets.reduce((s, x) => s + x.qty * x.price, 0)
-        + Object.entries(extras).reduce((s, [id, q]) => s + q * (menu?.prices?.[id] || 0), 0);
+      const out = outOf(menu, sold, it);
+      if (out.length) return json({ error: "Có món vừa hết, bạn chọn lại giúp quán nhé.", out }, 409);
       // Ưu đãi: đổi điểm lấy 1 suất miễn phí, phiếu mời bạn
       let discount = 0; const promo = {};
       if (body.use?.free || body.use?.ref) {
@@ -254,6 +277,7 @@ export async function onRequest({ request, env, params, waitUntil }) {
         const pr = await promoOf(db), pts = await pointsOf(db, c.phone, c.olds || []);
         if (body.use.free) {
           if (!pr.free.on || pts.points < pr.free.points || !sets.length) return bad("Chưa đủ điểm để đổi suất miễn phí.", 409);
+          if (!sets.length) return bad("Đổi suất miễn phí cần có ít nhất 1 suất cơm.", 409);
           discount += Math.min(...sets.map(x => x.price)); promo.points = pr.free.points;
         }
         if (body.use.ref) {
@@ -267,7 +291,7 @@ export async function onRequest({ request, env, params, waitUntil }) {
       const geo = geoOf(body.geo);
       const ckey = crypto.randomUUID();
       const order = { no, at, ckey, name, phone, addr, ...(geo ? { geo } : {}), time: str(body.time, 30) || "Càng sớm càng tốt",
-        pay: body.pay === "Chuyển khoản" ? "Chuyển khoản" : "Tiền mặt", paid: false, note: str(body.note, 300), sets, extras,
+        pay: body.pay === "Chuyển khoản" ? "Chuyển khoản" : "Tiền mặt", paid: false, note: str(body.note, 300), sets, extras, ...(tray ? { tray } : {}),
         ...(discount ? { discount, promo } : {}), total: total - discount };
       await db.prepare("INSERT INTO orders (id, no, day, at, st, data) VALUES (?, ?, ?, ?, 'moi', ?)").bind(id, no, vnDay(at), at, JSON.stringify(order)).run();
       later(sendPush(db, "owner"));
@@ -390,7 +414,9 @@ export async function onRequest({ request, env, params, waitUntil }) {
     // Khách theo dõi đơn: đơn đặt trên máy này (id + mã) và đơn theo tài khoản đăng nhập
     if (a === "track" && m === "POST") {
       const body = await request.json(), c = await cusOf(db, request), out = new Map();
-      const pub = r => { const d = JSON.parse(r.data); return { id: r.id, no: d.no, at: r.at, day: r.day, st: r.st, time: d.time, total: d.total, sets: (d.sets || []).reduce((t, x) => t + (x.qty || 0), 0), drinks: Object.values(d.extras || {}).reduce((t, q) => t + q, 0), addr: d.addr }; };
+      const pub = r => { const d = JSON.parse(r.data); return { id: r.id, no: d.no, at: r.at, day: r.day, st: r.st, time: d.time, total: d.total, sets: (d.sets || []).reduce((t, x) => t + (x.qty || 0), 0), drinks: Object.values(d.extras || {}).reduce((t, q) => t + q, 0), addr: d.addr,
+        tray: d.tray ? d.tray.people : 0, edited: d.edited || 0, discount: d.discount || 0,
+        detail: { name: d.name, phone: d.phone, addr: d.addr, geo: d.geo || null, time: d.time, note: d.note, sets: (d.sets || []).map(x => ({ picks: x.picks, qty: x.qty, price: x.price })), extras: d.extras || {}, tray: d.tray || null } }; };
       for (const it of (Array.isArray(body.items) ? body.items : []).slice(0, 20)) {
         const r = await db.prepare("SELECT id, day, at, st, data FROM orders WHERE id = ?").bind(str(it.id, 40)).first();
         if (r && JSON.parse(r.data).ckey === it.key) out.set(r.id, pub(r));
@@ -410,6 +436,42 @@ export async function onRequest({ request, env, params, waitUntil }) {
       if (Date.now() - row.at > 5 * 60e3 + 15e3) return bad("Đã quá 5 phút, không huỷ được nữa. Bạn gọi quán 035 456 3552 nhé.", 409);
       if (!["moi", "xong"].includes(row.st)) return bad("Đơn đã giao cho shipper, không huỷ được. Bạn gọi quán 035 456 3552 nhé.", 409);
       await db.prepare("UPDATE orders SET st = 'huy' WHERE id = ? AND st IN ('moi', 'xong')").bind(b).run();
+      return json({ ok: true });
+    }
+    // Khách sửa đơn trong 5 phút sau khi đặt (giữ số đơn, quán thấy “Khách đã sửa”)
+    if (a === "orders" && b && path[2] === "edit" && m === "POST") {
+      const body = await request.json();
+      const row = await db.prepare("SELECT st, at, data FROM orders WHERE id = ?").bind(b).first();
+      const old = row ? JSON.parse(row.data) : null;
+      if (!row || !body.key || old.ckey !== body.key) return bad("Không tìm thấy đơn.", 404);
+      if (Date.now() - row.at > 5 * 60e3 + 15e3) return bad("Đã quá 5 phút, không sửa được nữa. Bạn gọi quán 035 456 3552 nhé.", 409);
+      if (row.st !== "moi") return bad("Quán đã soạn xong đơn này, không sửa được nữa. Bạn gọi quán 035 456 3552 nhé.", 409);
+      const name = str(body.name, 80), phone = str(body.phone, 20), addr = str(body.addr, 200);
+      if (!name || !/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, "")) || !addr) return bad("Vui lòng điền tên, số điện thoại và địa chỉ.");
+      const menu = await getKV(db, "menu");
+      const it = parseItems(body, menu);
+      if (it.error) return bad(it.error);
+      const others = (await todayOrders(db)).filter(o => o.id !== b);
+      const out = outOf(menu, soldMap(others), it);
+      if (out.length) return json({ error: "Có món vừa hết, bạn chọn lại giúp quán nhé.", out }, 409);
+      if (old.promo?.points && !it.sets.length) return bad("Đơn có đổi suất miễn phí nên cần giữ ít nhất 1 suất cơm.", 409);
+      const discount = Math.min(old.discount || 0, it.total), geo = geoOf(body.geo);
+      const order = { ...old, name, phone, addr, time: str(body.time, 30) || "Càng sớm càng tốt", note: str(body.note, 300),
+        sets: it.sets, extras: it.extras, total: it.total - discount, edited: Date.now(), ...(discount ? { discount } : {}) };
+      delete order.tray; if (it.tray) order.tray = it.tray;
+      delete order.geo; if (geo) order.geo = geo;
+      const r = await db.prepare("UPDATE orders SET data = ? WHERE id = ? AND st = 'moi'").bind(JSON.stringify(order), b).run();
+      if (!(r.meta?.changes ?? r.changes)) return bad("Quán vừa soạn xong đơn này, không sửa được nữa.", 409);
+      later(sendPush(db, "owner"));
+      return json({ ok: true, id: b, no: old.no, ckey: old.ckey, at: row.at, total: order.total, discount });
+    }
+    // Khách bật báo khi shipper lấy hàng (không cần đăng nhập, cần mã của đơn)
+    if (a === "push" && b === "cus" && m === "POST") {
+      const { id, key, sub } = await request.json();
+      const row = await db.prepare("SELECT data FROM orders WHERE id = ?").bind(str(id, 40)).first();
+      if (!row || !key || JSON.parse(row.data).ckey !== key) return bad("Không tìm thấy đơn.", 404);
+      if (!sub || typeof sub.endpoint !== "string" || !/^https:\/\//.test(sub.endpoint)) return bad("Đăng ký thông báo không hợp lệ.");
+      await putKV(db, `push:cus:${str(id, 40)}:${(await sha(sub.endpoint)).slice(0, 20)}`, { sub, at: Date.now() });
       return json({ ok: true });
     }
     // Chủ quán xác nhận đã nhận tiền chuyển khoản
@@ -432,6 +494,9 @@ export async function onRequest({ request, env, params, waitUntil }) {
       const r = await db.prepare("UPDATE orders SET st = ? WHERE id = ? AND st = ?").bind(st, b, from).run();
       if (!(r.meta?.changes ?? r.changes)) return bad("Đơn này vừa được đổi trên máy khác. Trang đã cập nhật lại.", 409);
       if (st === "xong") later(sendPush(db, "ship"));
+      // Shipper đã lấy hàng: báo cho khách đã bật thông báo; giao xong thì xoá đăng ký
+      if (st === "nau") later(sendPush(db, "cus:" + b));
+      if (st === "giao" || st === "huy") later(db.prepare("DELETE FROM kv WHERE k LIKE ?").bind(`push:cus:${b}:%`).run());
       return json({ ok: true });
     }
     return bad("Không tìm thấy", 404);

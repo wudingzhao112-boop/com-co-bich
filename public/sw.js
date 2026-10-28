@@ -3,6 +3,7 @@ const ROLE = new URL(self.location.href).searchParams.get("r") || "chu";
 const TEXT = {
   chu: { title: "Cô Bích Quán: có đơn mới!", body: "Bấm để xem đơn và soạn cơm.", url: "/#chu" },
   ship: { title: "Có đơn soạn xong, đi giao!", body: "Bấm để xem địa chỉ và lấy đơn.", url: "/#shipper" },
+  khach: { title: "🛵 Shipper đang mang cơm đến bạn!", body: "Cô Bích Quán: shipper đã lấy cơm, bạn chuẩn bị nhận nhé.", url: "/?don=1" },
 };
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));

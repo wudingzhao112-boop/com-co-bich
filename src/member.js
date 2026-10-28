@@ -403,7 +403,7 @@ loadFeedback = async function () { loadReport(); return _loadFeedback(); };
 // Khách huỷ đơn trong 5 phút sau khi đặt
 let cancelled = [];
 const LAST = "cobich-last";
-function saveLastOrder(r) { try { const my = JSON.parse(localStorage.getItem("cobich-my") || "[]"); my.unshift({ id: r.id, key: r.ckey }); localStorage.setItem("cobich-my", JSON.stringify(my.slice(0, 20))); } catch (_) {} try { localStorage.setItem(LAST, JSON.stringify({ id: r.id, key: r.ckey, no: r.no, at: r.at || Date.now() })); } catch (_) {} renderCancel(); }
+function saveLastOrder(r) { try { const my = JSON.parse(localStorage.getItem("cobich-my") || "[]").filter(x => x.id !== r.id); my.unshift({ id: r.id, key: r.ckey }); localStorage.setItem("cobich-my", JSON.stringify(my.slice(0, 20))); } catch (_) {} try { localStorage.setItem(LAST, JSON.stringify({ id: r.id, key: r.ckey, no: r.no, at: r.at || Date.now() })); } catch (_) {} renderCancel(); }
 function lastOrderGet() { try { return JSON.parse(localStorage.getItem(LAST) || "null"); } catch (_) { return null; } }
 let cancelTimer = null, cancelMsg = "";
 function renderCancel() {
@@ -449,15 +449,131 @@ async function renderDon() {
   if (!box.innerHTML) box.innerHTML = `<p class="sub">Đang tải…</p>`;
   try {
     const { orders: list } = await cusApi("track", { method: "POST", body: JSON.stringify({ items: my }) });
+    DON = list; noteChanges(list);
     box.innerHTML = list.length ? list.map(o => {
       const ix = TRACK.findIndex(([k]) => k === o.st);
       return `<div class="track${o.st === "huy" ? " huy" : ""}"><div class="hd"><span>Đơn #${o.no} · ${o.day === vnDate() ? "hôm nay" : dmy(o.day)}</span><span>${fmt(o.total || 0)}</span></div>
-        <span class="sub" style="margin:0">${o.sets} suất${o.drinks ? ` · ${o.drinks} nước` : ""} · nhận ${/^\d/.test(o.time) ? "lúc " + esc(o.time) : "sớm nhất"}</span>
+        <span class="sub" style="margin:0">${o.tray ? `Mâm ${o.tray} người · ` : ""}${o.sets} suất${o.drinks ? ` · ${o.drinks} nước` : ""} · nhận ${/^\d/.test(o.time) ? "lúc " + esc(o.time) : "sớm nhất"}</span>
         ${o.st === "huy" ? "" : `<div class="steps">${TRACK.map(([, l], i) => `<span class="${i <= ix ? "on" : ""}">${l}</span>`).join("")}</div>`}
         <span class="now">${TRACK_NOW[o.st] || ""}</span>
-        ${canCancel(o, my) ? `<button type="button" class="btn-ghost" data-cancel="${o.id}" data-no="${o.no}" style="color:var(--danger);border-color:var(--danger);font-weight:700">Huỷ đơn (còn ${cancelLeft(o)})</button>` : ""}</div>`;
+        ${o.edited ? `<span class="sub" style="margin:0">✏️ Đã sửa lúc ${new Date(o.edited).toTimeString().slice(0, 5)}</span>` : ""}
+        <div class="cart-actions" style="flex-wrap:wrap">
+        ${canCancel(o, my) && o.st === "moi" ? `<button type="button" class="btn-ghost" data-editorder="${o.id}" style="font-weight:700">✏️ Sửa đơn</button>` : ""}
+        ${canCancel(o, my) ? `<button type="button" class="btn-ghost" data-cancel="${o.id}" data-no="${o.no}" style="color:var(--danger);border-color:var(--danger);font-weight:700">Huỷ đơn (còn ${cancelLeft(o)})</button>` : ""}
+        ${["moi", "xong"].includes(o.st) && my.some(x => x.id === o.id) ? notifyBtnHTML(o.id) : ""}
+        ${o.detail ? `<button type="button" class="btn-ghost" data-reorder="${o.id}">🔁 Đặt lại đơn này</button>` : ""}
+        </div></div>`;
     }).join("") : `<p class="sub" style="margin:0">Bạn chưa có đơn nào. Bấm “+ Chọn món” để đặt cơm nhé.</p>`;
   } catch (e) { box.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
   clearTimeout(donTimer);
   if (!$("view-don").hidden) donTimer = setTimeout(renderDon, box.querySelector("[data-cancel]") ? 5000 : 15000);
 }
+
+
+// Đơn của khách (từ trang Đơn hàng): dùng để sửa đơn, đặt lại
+let DON = [];
+const myOrders = () => { try { return JSON.parse(localStorage.getItem("cobich-my") || "[]"); } catch (_) { return []; } };
+// Đưa món của đơn cũ vào giỏ (món hôm nay không còn thì bỏ qua)
+function loadIntoCart(d) {
+  const ok = id => byId[id] && stock[id] > 0;
+  let dropped = 0;
+  cart.sets = (d.sets || []).filter(x => x.picks.every(ok) || (dropped++, false)).map(x => ({ picks: [...x.picks], qty: x.qty, price: TIERS.find(t => t.picks === x.picks.length)?.price || x.price }));
+  cart.extras = Object.fromEntries(Object.entries(d.extras || {}).filter(([id]) => ok(id) || (dropped++, false)));
+  delete cart.tray;
+  if (d.tray && TRAY.on) { const items = Object.fromEntries(Object.entries(d.tray.items).filter(([id]) => ok(id) || (dropped++, false))); if (Object.keys(items).length) cart.tray = { people: d.tray.people, items }; }
+  return dropped;
+}
+// Sửa đơn: lấy đơn ra giỏ, khách sửa món, giờ, ghi chú rồi bấm “Lưu đơn đã sửa”
+let editing = null;
+function startEdit(o) {
+  const it = myOrders().find(x => x.id === o.id); if (!it || !o.detail) return;
+  const d = o.detail;
+  // Trong lúc sửa, món của đơn cũ vẫn tính là của mình (không bị báo hết)
+  editing = { id: o.id, key: it.key, no: o.no, own: soldMapOf(d) };
+  loadIntoCart(d);
+  $("f-name").value = d.name || ""; $("f-phone").value = d.phone || ""; $("f-addr").value = d.addr || ""; if (d.geo) setPin("f", d.geo);
+  const tm = /^(\d{2}):(\d{2})$/.exec(d.time || ""); fillTimes();
+  if (tm) { $("f-hour").value = String(+tm[1]); fillTimes(); $("f-min").value = String(+tm[2]); syncTime(); }
+  qnote.clear(); const rest = (d.note || "").split(", ").filter(x => QNOTES.includes(x) ? (qnote.add(x), false) : true); $("f-note").value = rest.join(", ");
+  step = "gio"; trayMode = false; showKhach("menu"); renderKhach(); renderEditBar();
+}
+function soldMapOf(d) {
+  const m = {};
+  for (const x of d.sets || []) for (const id of x.picks) m[id] = (m[id] || 0) + x.qty;
+  for (const [id, q] of Object.entries(d.extras || {})) m[id] = (m[id] || 0) + q;
+  for (const [id, q] of Object.entries(d.tray?.items || {})) m[id] = (m[id] || 0) + q * (d.tray.per || TRAY.per);
+  return m;
+}
+function endEdit() { editing = null; renderEditBar(); }
+function renderEditBar() {
+  const b = $("editing-bar");
+  b.hidden = !editing;
+  b.innerHTML = editing ? `<span>✏️ Đang sửa đơn #${editing.no}. Sửa xong bấm “Thanh toán” rồi “Lưu đơn đã sửa”.</span><button type="button" id="edit-stop">Bỏ sửa</button>` : "";
+  $("submit-btn").textContent = editing ? "Lưu đơn đã sửa" : "Đặt cơm";
+}
+document.addEventListener("click", e => {
+  if (e.target.id === "edit-stop") { endEdit(); cart.sets = []; cart.extras = {}; delete cart.tray; goHome(); return; }
+  const ed = e.target.closest("[data-editorder]");
+  if (ed) { const o = DON.find(x => x.id === ed.dataset.editorder); if (o) startEdit(o); return; }
+  const re = e.target.closest("[data-reorder]");
+  if (re) {
+    const o = DON.find(x => x.id === re.dataset.reorder); if (!o) return;
+    endEdit();
+    const dropped = loadIntoCart(o.detail);
+    if (!cart.sets.length && !cart.tray && !Object.values(cart.extras).some(Boolean)) { alert("Hôm nay quán không có các món của đơn này. Bạn chọn món khác nhé."); return; }
+    if (dropped) alert("Một vài món của đơn cũ hôm nay không có, quán đã bỏ ra khỏi giỏ.");
+    step = "gio"; trayMode = false; showKhach("menu"); renderKhach();
+  }
+});
+// Số phần còn lại: cộng lại phần của chính đơn đang sửa
+const _left = left;
+left = id => editing ? Math.max(0, _left(id) + (editing.own[id] || 0)) : _left(id);
+
+// Báo cho khách khi shipper lấy hàng: thông báo trên điện thoại (nếu bật) và chuông khi đang mở app
+const TRACK_SEEN = "cobich-seen";
+function noteChanges(list) {
+  let seen = {}; try { seen = JSON.parse(localStorage.getItem(TRACK_SEEN) || "{}"); } catch (_) {}
+  const mine = new Set(myOrders().map(x => x.id));
+  const went = list.filter(o => mine.has(o.id) && o.st === "nau" && seen[o.id] && seen[o.id] !== "nau");
+  for (const o of list) if (mine.has(o.id)) seen[o.id] = o.st;
+  try { localStorage.setItem(TRACK_SEEN, JSON.stringify(Object.fromEntries(Object.entries(seen).slice(-30)))); } catch (_) {}
+  if (went.length) {
+    ding();
+    const b = $("ship-alert"); b.hidden = false;
+    b.innerHTML = `<span>🛵 Shipper đã lấy cơm đơn #${went.map(o => o.no).join(", #")}, đang mang đến bạn!</span><button type="button" onclick="this.parentNode.hidden=true">OK</button>`;
+  }
+}
+let watchT = null;
+async function watchMine() {
+  clearTimeout(watchT);
+  const my = myOrders(); if (!my.length) return;
+  let active = false;
+  try {
+    const { orders: list } = await cusApi("track", { method: "POST", body: JSON.stringify({ items: my.slice(0, 5) }) });
+    DON = DON.length ? DON : list; noteChanges(list);
+    active = list.some(o => ["moi", "xong", "nau"].includes(o.st) && o.day === vnDate());
+  } catch (_) { active = true; }
+  if (active && $("view-don").hidden) watchT = setTimeout(watchMine, 20000);
+  else if (active) watchT = setTimeout(watchMine, 30000);
+}
+watchMine();
+const notifyBtnHTML = id => canPush ? `<button type="button" class="btn-ghost" data-notify="${id}">🔔 Báo tôi khi shipper đi giao</button>` : "";
+function renderNotifyBtn(o) { $("notify-wrap").innerHTML = notifyBtnHTML(o.id); }
+async function enableCusNotify(id, btn) {
+  const it = myOrders().find(x => x.id === id); if (!it) return;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  if (!canPush) { alert(ios ? "Trên iPhone: bấm nút Chia sẻ rồi “Thêm vào MH chính”, mở app từ màn hình chính rồi bấm lại." : "Trình duyệt này chưa nhận được thông báo. Bạn mở link bằng Chrome nhé."); return; }
+  try {
+    if ((await Notification.requestPermission()) !== "granted") { alert("Bạn chưa cho phép thông báo. Vào Cài đặt của điện thoại, mục Thông báo, để bật cho trang này."); return; }
+    const reg = await navigator.serviceWorker.register("/sw.js?r=khach", { scope: "/khach/" });
+    const ready = reg.active ? reg : await new Promise(ok => { const w = reg.installing || reg.waiting; if (!w) return ok(reg); w.addEventListener("statechange", () => w.state === "activated" && ok(reg)); });
+    const { key } = await api("push/key");
+    let sub = await ready.pushManager.getSubscription();
+    if (!sub) sub = await ready.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
+    await api("push/cus", { method: "POST", body: JSON.stringify({ id, key: it.key, sub: sub.toJSON() }) });
+    if (btn) { btn.textContent = "✓ Đã bật: shipper lấy hàng là điện thoại báo"; btn.disabled = true; }
+  } catch (e) { alert("Chưa bật được thông báo: " + (e.message || e)); }
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-notify]"); if (b) enableCusNotify(b.dataset.notify, b); });
+
+if (new URLSearchParams(location.search).has("don")) showKhach("don");
