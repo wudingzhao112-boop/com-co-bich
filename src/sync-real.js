@@ -62,6 +62,7 @@ async function pollMenu() {
     const d = await api("menu");
     soldSrv = d.sold || {};
     if (d.promo) { PROMO = d.promo; renderPromo(); }
+    if (d.shop) { SHOP = d.shop; renderShopBar(); }
     if (d.menu && !(ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName) && editMode)) applyMenu(d.menu, d.imgs);
     else if (d.imgs) for (const [id, v] of Object.entries(d.imgs)) if (byId[id]) byId[id].img = "/api/img/" + id + "?v=" + v;
     if (!menuReady) { menuReady = true; menuSig = d.menu ? JSON.stringify(menuState()) : ""; }
@@ -72,7 +73,7 @@ async function pollMenu() {
 let seen = null;
 function checkNew(list) {
   const key = o => o.id + (role === "ship" ? ":" + o.st : "");
-  const watch = role === "owner" ? list : list.filter(o => o.st === "xong");
+  const watch = role === "owner" || role === "bep" ? list : list.filter(o => o.st === "xong" && !o.pickup);
   if (seen && watch.some(o => !seen.has(key(o)))) ding();
   seen = new Set(watch.map(key));
 }
@@ -91,9 +92,10 @@ async function placeOrder(o) {
   try { const r = await api(ed ? `orders/${ed.id}/edit` : "orders", { method: "POST", body: JSON.stringify(ed ? { ...o, key: ed.key } : o), headers: { "x-cus": memGet()?.token || "" } }); if (ed) endEdit(); return { ok: true, ...r, edited: !!ed }; }
   catch (e) { if (e.status === 409) pollMenu(); return { ok: false, error: e.message }; }
 }
+let staffName = "";
 async function checkRole() {
   if (!pin) { role = null; return; }
-  try { role = (await api("auth")).role; } catch (_) { role = null; }
+  try { const d = await api("auth"); role = d.role; staffName = d.name || ""; } catch (_) { role = null; }
 }
 async function startSync() {
   await checkRole();
@@ -133,7 +135,7 @@ function ding() {
   } catch (_) {}
 }
 document.addEventListener("pointerdown", () => { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (_) {} }, { once: true });
-const bellKey = () => role === "owner" ? "chu" : "ship";
+const bellKey = () => role === "owner" || role === "bep" ? "chu" : "ship";
 function renderBell() {
   let on = false;
   try { on = canPush && Notification.permission === "granted" && localStorage.getItem("cobich-bell") === bellKey(); } catch (_) {}
@@ -158,7 +160,7 @@ async function enableBell() {
     if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
     await api("push/sub", { method: "POST", body: JSON.stringify({ sub: sub.toJSON() }) });
     try { localStorage.setItem("cobich-bell", bellKey()); } catch (_) {}
-    reg.showNotification("Đã bật thông báo", { body: role === "owner" ? "Khách đặt đơn mới, điện thoại sẽ báo và kêu chuông." : "Có đơn soạn xong, điện thoại sẽ báo để đi giao.", icon: "/icon-192.png" });
+    reg.showNotification("Đã bật thông báo", { body: role !== "ship" ? "Khách đặt đơn mới, điện thoại sẽ báo và kêu chuông." : "Có đơn soạn xong, điện thoại sẽ báo để đi giao.", icon: "/icon-192.png" });
   } catch (e) { alert("Chưa bật được thông báo: " + (e.message || e)); }
   renderBell();
 }

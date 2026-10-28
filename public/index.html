@@ -378,6 +378,17 @@ body.has-nav .wrap { padding-bottom: 200px; }
 .cart-set .dr li .money { font-size: 15px; font-weight: 600; }
 .cart-canh { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; background: color-mix(in srgb, var(--leaf) 10%, var(--surface)); border-radius: 10px; padding: 8px 12px; margin-bottom: 4px; }
 .cart-canh b { color: var(--leaf); }
+.shop-bar { border-color: var(--chili); background: color-mix(in srgb, var(--chili) 8%, var(--surface)); font-weight: 700; }
+.shop-bar.flash { animation: flash 0.5s 3; } @keyframes flash { 50% { transform: scale(1.03); } }
+.open-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; border-radius: 12px; padding: 10px 12px; font-weight: 700; border: 1.5px solid var(--leaf); background: color-mix(in srgb, var(--leaf) 10%, var(--surface)); }
+.open-bar.off { border-color: var(--chili); background: color-mix(in srgb, var(--chili) 10%, var(--surface)); }
+.open-bar button { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 8px 12px; cursor: pointer; background: var(--chili); color: #fff; white-space: nowrap; }
+.open-bar.off button { background: var(--leaf); color: var(--leaf-ink); }
+.badge-pick { display: inline-block; background: var(--yolk); color: #3b2a00; font-weight: 800; font-size: 12px; border-radius: 6px; padding: 1px 8px; margin-right: 6px; }
+#hours-edit input[type=time] { font: inherit; font-size: 16px; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.staff-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); padding: 8px 0; }
+#chu[data-tab="cd"] .bc-only, #chu[data-tab="cd"] .don-only { display: none !important; }
+#chu:not([data-tab="cd"]) .cd-only { display: none !important; }
 .req { color: var(--chili); font-weight: 700; font-size: 13px; }
 .field input.bad { border: 2px solid var(--chili); background: color-mix(in srgb, var(--chili) 8%, var(--surface)); }
 .cart-actions { display: flex; justify-content: space-between; gap: 10px; }
@@ -483,6 +494,7 @@ details.sorder { border-left-color: var(--st); }
     <a class="tab" href="#chu-mon" id="t-mon">Món hôm nay</a>
     <a class="tab" href="#chu-km" id="t-km">Khuyến mãi</a>
     <a class="tab" href="#chu-sp" id="t-sp">Sửa sản phẩm</a>
+    <a class="tab" href="#chu-cd" id="t-cd">Cài đặt quán</a>
     <button type="button" class="tab" id="chpin" style="margin-left:auto">Đổi mã</button>
     <button type="button" class="tab" id="logout">Thoát</button>
   </div>
@@ -504,7 +516,7 @@ details.sorder { border-left-color: var(--st); }
     <header id="khach-head">
       <div class="brand"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCADIAMgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD6oNJRRQAtFFFABRRTXdURndgqqMkk4AHrQAtI7KiszsFVRkknAAryHxz8cNJ0mdtP8MQnXNTJ2AxE+Qrem4cufZfzrg59C8efEKVZPFmqSWFi5ytjEMcf9clOPxck1xYnMKOHXvM7KOCqVNXoj1rxR8YPB3h8vHJqYvrlODDYr5xB92Hyj868/ufjrrusOY/B/hOSUdBLPul/RMAf99Vv+Fvg5o2mBHawjlkH/LW9Pmt+C/dH5VueJNV8MeEPItNQmnu9RmH+j6ZZR+ZcTf7sScge5wPeuH63jK/8GnZd5afhqzdU8LS3fMzzSbWPjDrH3rq20qNuyiKMj9Gaq58KfEO95vvG9wPZLiY/ywK9Ggj8ea4N2m6NonhSyb7r6jm9uyPXy1IRT7FjV5fA/imQZvPiNrG/0tLG2gQfQbT/ADp/VMdP46qXor/mx/W6Mfhgv6+R5V/wrjxafmPjO/3f70//AMXTl8H/ABBsubLxvc5HZ7iZf55r1M6B8QNJXzdK8X2mshefs2sWCpuHoJYcEfipq34Z8dQ6hq39heI9Ol0LxDglLS5YPHdAdWgl6SD24YelJ4HFR2r/APkq/wAw+uxf2E/69DyaPUfjFo4zHfwapGv8LeVLn8wrfrV62+OXiPRnEfi/woVXoZYd8J+uGyp/MV7vNYWk3+st4m99uP5Vn3fh2znRlTcgbgqfmU/gaX/ChS1TUvvT/G6D22GqfHC39eRzPhf4yeDtfZIv7QOn3LcCK+Xysn2flT+dehxukiK8bKyMMhlOQR7GvHvFXwd0bUg7rYJFKf8AltZHy2/FPun8q4CHQvHnw8laXwnqcl9YIctZsuePeEnH4oQa0p5soy5MRFwfn/nt+JMsFCor0ZH1FRXj/gL446RrUyWHiSIaLqedhaQnyHb03HlD7N+devKwZQykEEZBHevVhOM1eLOGpSlTdpqwtLRRVmYlFFFABRQKKACloooAKKK434m+PdO8CaN9puyJr6YEWtoGw0rDufRR3P8AWlKSirsqMXN8sdzS8aeLtI8HaS1/rdwI0OViiX5pJm/uovc/oO9fP+p6z4u+L9wyRs2j+Fd+NikkSDPc8GVvbhRR4Z8Kaz8RdcXxH40aSZZubay5UFOo4/gj9urdT7/QmiaHb6ZDGAiGRAFUKuFjHoo7V4lXF1cXN0sNolvLov8AN+X3npxp08Iuaesji/Afwz07w/ArQW/lSEYaeTDTyfj/AAj2Feh2lnBaJtgiVPU9z9TViuU+I/iSfw9oca6VEtzruozLZaZbno87dGb/AGVGWY+g966MNgaVB8y1l3e//A+RyVcROs9Xp2Mvxd4m1TUNdbwl4HMf9sBA9/qMi74dLjboSP4pWH3U/E8Vs+DvBmkeEkkktEkutVujm61G6bzLm6buXc9vYYAqt4P0K38H2WnaNDIbrUb15Lu/vH/1lzIADJKx92KqPQECrfiDxTp3h7wzfeJNUlxZRKfKC8tJzhVQd2dun4dhXoLQxeuiLfi7xTo/hHR31LXrxLW2U7VB5eRuyoo5Zj6CvnDxl8f/ABHqcskXhm3i0Sy6LNMgmuWHrg/In0wT71534u8Wal4y8RSaxrj/ALw5S2tlOY7SPP3VHr6t1J9qxjIs12kFpA8xLhRGo3NJIfuovqf/AK1c86zvaJ20sLFK89zqLLXPiN4i1ALpviHXbmdWUFFvjFlmDsAoBC9EY1eHjnxLvfQvHEVxq8MTB2tr1RFeWrdpYJwAVcdQTkHpnBr2H4VeCm8PaXBPqW06lIzXEuOdsjLt2g9wifKPcse9W/in4NtvF+iyx23lprtohltJQRvB67G77W6exwa444x81uh0Sow7HQfBTxn/AMJd4anjuboXWo6ZL9mnn2bDMpGY5WX+FmXhh2ZW7Yr0OvkL9nrxRcaX42uLeFQq6lbETI4/5aQnIz74Lj8K+qdL1m3viIz+6n/uMev0Petfr1FVfYSdpefX0OKphpxTnFXRqVVvLG3vFxPGCezDhh+NWqK6J041I8s1dGCk4u6PKviD8L9O12J5Zof3wHy3cKgSp/vDow+v6V5xoHirxT8I72Kx1hX1Xwy7bYyDnYP+mbH7p/2Dwe3rX05XOeJvDNpq9nPE1vFIkoxJA4+SQf0PvXlywtXBv2mF1j/L/l/kzvp4qNVezr/eaXhnxBpnibSIdS0a6S4tZOMjgo3dWHVWHoa1a+Vry01z4QeITrPh9pLjQ5XCXNtKTgDP3JPf+6/boff6M8F+KdN8X6DDqmky7on+WSNvvxOOqMOxH69RXqYTGQxUOaJy4nDOi7rVG7RRRXWcoUUtFABSUtNd1RGd2CqoySTgAepoAwPHfiqw8G+HLjVtSOVT5IoVOGmkP3UX6+vYAntXz/4J0DUviL4mbxZ4pXz1lf8A0S2I+RgDxgHpGvb1OSfdniDUJfi98SGRHceFtKJCY4Drnlv96Qjj0UV9DeG9Jj02yTESxuVChFGBGo6KK8PF1Z4ur9WpOyXxPsv830+89WnFYSnzy+J/1/w5b0rT47CHauGlb77+vt9KvUVSvdU0+xmihvb60tpZf9Wk0yoz/QE8/hXoUqUaUFTpqyR58pOb5pblyvO/DmzxN8WNf1S4dTF4bA0qygY/MkjqHmmK9RuBVFPcKa9ClkWKNpJCFRRkk9hXkvi2zvbvxCviTwzcppuuwp5QZlzFdxDpFOo+8PRuq9qwxOYUMHKKqvf+r+hrRw861+TobGs6jNL4s1dIXKSw6RDbwkdVe5uXTI/74X8q8Q/aT8VLfeKrbwvYEjStCRVKL917gqOv+4hAHuWrr9E8cR33xHuo9Rszp2oR2Fs17bvIsio1vclyUcHDKUkJ5wRjmvFNZ8OeJ7jSbrxZd2JNnfO99JIZVMoSRyfMKZ3BORz6elbuqnHR7mtKnaV30HeCPCt74qmvPsiyLb2uzznRMyMWztSNTxk46sQB1Ne3/C/4aTeFL1b29h0mSRgRu/eTTw57LIcJn1wgz61pfCzSI/D/AMN7N9LWOW+voBeO0z7VeV1BAJAOFHA6dBUWheDNba9j1fVfGurvq5YPJDbFRZqM8xiJhyvbPB78GvOnV5rq9kdrT0aR6NXlza78N/DvidrA+VHq8M376+8qSRkmJ6SXHJ3EnkE47HHSvS7ubyLeSVcZQFgDk5x24rOjtLbT7AQ2FpHbRSMZXjVRy7Hcxb1bJOSe9YQkle5Sg5tJHhXh+ytNL/aF1WCWVYVLzTWqYwHMyq4A/Bn/ACr27oa82+IGnJc+J5W27Z7nSJblJB96Oe1dWikB9fnKn1BxXo0LM8MbSLtkZQWHoSOR+deBnfvVYz8rf1+J1UI8l4s6vQNZMjLa3jZc8JIf4vY+/vXRV5qM12nh7UfttqUlOZ4sBv8AaHY162R5o63+z1n73R9/I87H4RQ/eQ26mtRR+dFfSnlmJ4l0OHVbSUNEkjOhR42GVlXHKkV86Ry6h8GvG0d/YiWfw5fNslgJySo6of8AbXkqe4yPWvqauK+I3he11zSLmK5jzBOuJMDlG/hkHuDXk4ulLDT+t0f+3l+vquvdHoYWspL2NTZnX6TqNrq+m21/p8yz2lzGJIpF6Mpq1Xzp8CPEt14T8V3XgPX5MRSSk2bk/KJDzgf7Ljke/wBa+i69mjVjWgpxOKvRdGfKxaKSitTEWvIf2jvFr6L4Vj0Swc/2jq5MWEPzLCMB8e7EhR9TXr1fL8VyfiB8bL/Vm/e6ZpJ2W46ghCVjx9W3PXFj8SsPRlNnZgqPtKl3sj0n4OeD00LRoIpUUzJia4bH3piOn0Ucfh716jVXSrUWdjFD/EBlz6setW658Bh3Qpe/8UtX6v8Ay2Fia3tajfToV7+5Wysbm6cEpBE0rAdwoJ/pXxzd3lzrco1C9WK4vb2Jbm5lmiWQuzjdt+YHCKCFVRwAPWvsqeJJ4ZIpV3RyKUYeoIwa+SZNGudB1O60G9U/bNN/dAY/11uCfKmX1UrgH0KkUY9yVNNHVlvK6jUtzrfht4svY1j8O3MjnT7jcbVWYsYJEGWhBPPllfnUHptZemK6HxN9r1TU9F8MabcSWs+sTOJ7mI4eG2jXdKynsxGFB7Fq8+0O1kXxHoRVSryX6soPB2pFKXOPTBx+Nd7e3eoaL8QNO1mz0O61eOPTJ7VUhljjVJHkjOWZyMDap5GfpXz0lTq5hSnXlpbrtpex31ounSlGktf8zN+Nmj+GfCXg+0g0qyg0y8V2TTVtogZrhtpWUyseWjKsQxY55B64rI+GfinRNd0PT9P1O5sbTXNPjjgdLpgqXKIu0bXPUFOGX68EGuP+N+p+IbzxVbXviSKzt2lsCltDaMzpEgcllLtjc/IJIAHT0ry7V4A0yG3jzBtAVcZr6Go6eKScXddGcVGM6MfM+xtAGkNprWPhu6hmtNPkNuUhl8wQn72wH0GePbjtV26t9SXT7g6U0CXwXMX2gEoWHY4PQ9M9s5r498N+IdW8G6l9v0O6MEgQCWMgGOUDqrL0I/UdiK+svDniDVbvS7W41XSYUee3SZXtbjKNuUEDa4BU8+pHvXHWpezfNfQ6YVJOPIkc+vjydoHW+F/YXkZKSWy2MSurDr87zMMeh2n1xW58P4bx9Cl1bXTKl5fyPcFLiUOYIRxGhbAGAo3HAAyxpl74n0UzA3+kasbtOFU6VJIxPoGUFT/31iuNHjLSPH2oPa3mpw6dosTGMaXNOIpr1weTN6RjHEYJz/FxxUVanLTcnHRdldjahooX5vN/8BG5o7R+JPEl74hVM6WsIsNOLD/XRh90k2P7rOAF9Qme9dUTxTIPLMC/Z9hiAAXy8FQB0Axxin18disRLEVXOWnl2OynFQjYBUXi7WJPA3g258Rll+0kCG2hYZDO/wB0t7DBbHtUp+6fpVL9oTTptV+FYubFDILGaK8ZF7xgFW/Ldn8DXq5Dh4Vakqkt46r/AD+Ry4ybXLDpJ6mBoXwz8V61pUXiDVvGWq2viK4QTwRo58uEkZVWGfpkAYHTBrf0rUPiN4s0O0msG07w6EiCSz3UPnS3My8OyJ0SPIOCeT16Yr0bw7qdvrOg6fqVkwa3uoElQjtkdPqDkfhWB498aQ+Go4rGwtn1PxFeAiy06Abnc/33x91B3J//AFfaKKR4/tJTdmlf8v68zF+Efi/WdZv9f0DxStu2saNKEee3G1ZVJIzgcZyO2MgjgV6RIiyIyOAVYYIPcVw3wo8G3PhfTr681mdbnxBq032q/lXlQ3JCA9wMnn1PoBXd1UV7tpEVXHnbjsfO3x78LSwRx63YFkvdNZWMqfeMW7Kt9Vbn869k+GXilPGHgzT9VG0XDL5dyg/gmXhh+PUexFS+MtOivtMczIHj2mOVT/EjDBH614t+z7qEvhj4ga54NvHPlTFpLfPd0Gcj/ejIP/Aa83AP6rXlhXtuvR/5PQ7a3+0YdVOq/r/gn0dRRRXuHlHIfFnXj4c+H2s6hG224EJhgOefMf5Fx9M5/CvNP2dtCFvoNtcOvz3cjXTE/wBxflQfpn8af+1ZqL/2LoOiwN895dNMVHU7AFX/AMef9K9F+Hempp2lLDGMJBHHbL9FUZrw8xftsTSodL3fy1/Ox6lD91hpT6v/AIY6ylopK9Q84WuL+J/hfSvEOjo9/Cy30DAWt5C2yaAnrtYduOVOQfSu0rB8YEjT4QO8o/ka4sxqulhak47pG+GjzVorzPnPRrmfS/GFjDrDiS7067aynlAwrpOmIpgO2TsB9CTXsA9xz7ivM9W0i38V3upa5PqSaL4fWE6eboqHe9ZHPzop6BWyFPJYjgYFTWut6b4T1G4B1Sa702TT2unaZ33meLG5gJOQZFboPl3LxXy+MwNTEU41kveS2/H9Xoe7Csk2unct/Fu78Lx6JHbeKFkmlcl7WK2/4+Nw43J6DsSePrXzoYZRI4t2aK2z+7WYiSQD3IAGa09V1O71zVbnVdTbN3cnO3PESfwxr7Afrk1TziTaehGRX0GXYH6pSUG7v8PkcNas5yutCWz05v7Nm1Ij7RNbTKQsoBiwrKcMvcHPNfWPgbxLpXivQo59PKh4wFuLViN9u/dSPT0PQivnHwrELnQtWtj/AMtHZf8AvqMVhaNNqdrcRXekfb4LtAAJrYMrD1GehHseKucFVclJ7GsrxjFx6o+yltIVcMF5Bzgnivnb406ZougeJNLtLKCPyXtGN7CACdpkOxz/ALWC3PUgfSoYvHfxIe38oXgXIx5ksECuPxx1/CuWn0TWr+6mu76eKa5mbdJNPMzu59ScVnSpwpv3pL5A/ay1SZSvNPn8PXkZ067uYIpBvgntpmjyOuDg4JH6iu+8B/FK9sryKx8Vzi5spCES/YASQk9PMxwy/wC11HfNYcWlTN4fOm3zB5IwzxNCrP5aryCeOAOn0rldP0rUL+C7kjtJJYYeJSoBC8Eke/AJ+lKpTw+KpuNe2nX8nczq1FQldO3lfY+twQRkcj1FdF4ZuVnim065VZImRsKwyCp4ZSPTn+deI/ArXrvU7EeH7zc91ar/AKHK5x58P93J6snTHXGPQ17fp1m+jQy313FLLKF2pBboZHOewA7n8h3NeFl2CxOGxyUV7q3fRr+unc1xVelUovXX9Tk/hUjeGvGXirwSjs+nWZTULAMc+XFL1jz7HH6+tat3faD8Pi97rEzXXiDWJvm8mIyXN0xOFjjXqEXhQOAO/Jqfwno82l3+v+K/ErQ2uoaltaSPzAyWVtGMIhfoTjliOM9OleffDFZvH3xc1fxrcRu2kWG6205pBxn7q7fcLuY+hcd6+wvayR5tlNyk9klfzf8Aw57bplxPd2Uc11ZyWUr8+RI6syj3KkjPsCat0UVocxHPEs0LxP8AddSp/GvmT4qCTwp8QvDviaEENHKFmx3Mbcg/VGI/Cvp+vDv2jNKE/hy9mC8wSR3Q+h+Vv/Qq8rMF7OrSrrvb7/8Ago9DASu5U3s0e5xSJLEkkbBkcBlI7g9KK5D4O6o2sfDPw/dO26QWwgc/7UZKHP8A3zRXuRfMkzzZR5ZOPY8i+Nsn9qfHHwvpp5jt4omYe5kZz+iCvdPDCbdHibvIzP8Ar/8AWrwTxl++/aWIbkQwJj8Lcn/2avoHQRt0azx/zyBrwYy58za7R/N/8A9OuuXCQXf/ACNCiiivXPNCsPxfEZNJypwVkBz6ZyP61uVW1G3+12M8Hd0IH17frXLjaLrYedNbtP7+hrRnyVIyfRnkvwrZZPhvo8cWxLiyR7Z2lTcY5Y3ZXOOOcg/nXE/H20/tDwvZXklzeXP2O9Q75LPYhDgrgPtBAzg85B+uK6fR7k+GPHU+nzHbY68zXMC/88rpABKuOwcbWz6g+tc38cbbX5bOYWt7d3WnTmIvZxxLhP3qhRnqQSQcnnI9OK8vDVlVlGotL6/5r9D15Qsmux4fmq9y+wxEDJLYA+oNTyxywXLW1xBPDdqcG3kjZZAc4A2nk88cV7V4U+EdhplrZ6h48hubzULgn7JodpnJYDOJGHcDGeQq55J6V7GlrvY4m7aHnfgZ/MW7gt4p7q4ef5YbWFpnOFA6KDj8a7+08I+Kry6t7dNCmtnnzsa9mjiwoxlioYtgZHavQ4prmKGey0TUdN0O2to2ZrPTLfEUSDI3PMU5bkcgAZ6ZrT8JX6afaSXWt6wk8krFYJ7icA+Wp4wWxkZJ5/PpXmupQqVGldvv0O1zr06Sei8tb/5GSPhjpOjWkEmsyatrVxJIqCOzQxRhuTyqchTwCWJ+tZXh3w/4c1xvKk0DUrOZ5hbrcWV3LKsbdTvJJAI6cjp2GK9G/wCFheHUDeZq9mEj4kkLEKPTnGOeceuOK1rDXdLvrbzdMubW4hJxmGVWGevOO9buMJSThJJLpY8uVSvKV+ZnkPjDwBeeGNPe58Pst1CV8pzLhJRubALMOGHzcn+lSah4Ds4dEvXe9vP7Xigebz1fZGHVM4VOm0cDnJ969O1K7W8D2+xpuCrRxru4PHPp171yV3pWqyWltZXGn3bWjy7b2YkNuhUkhQASfnIUH2z615OMoJT5qK0e5hUw6tzW1Z554T0vxXqeh2N9Y2cVoY2S6gaZwhMikEFVKnj6gA5Paul8N/FDWo47m3vIor+aKZlInfZKCow0eEXB+boffFUPEni69fWZbWzkayELFQzAo+0HHTqPYDHuckCuJuzbWby3agrM0gaTy8gShj33fxd8/WsKVarRT9k7X6f8Oel/q7io4f6xFra9utvusfQV54d0jx9YWl/f3up3WlTqJVsPtBigz6MqAEkEEYJPIrq9NsLTS7GGy062itbSFdscUShVUewFeT/B/wARXH9uR+H3u/8AQUsS8FvMVLIVZcKjAAnCscg5OMGvYq+nw9ZV6aqJbnlxqOcUFFFFbjCvP/i/Yi98O30RGfOspk/EDIrv65rx0gk0+NT0O9fzWvMzdWwkpdrP7mjrwTtWj/XQ4f8AZZvftHw7uLcnJtr6QAegZVf+ZNFY37Jbn+x/EcPZLmJh+KEf+y0V61B3poxxStWkYvi393+0vPu/5aQLj/wHH+FfQWhHdo1kf+mQrwD4tp/Zv7QOh3TcJdQQ8/8AfcZ/pXvHhaTzNCtueVDIfwJrwoe7msk+sPyl/wAE7q+uEg/62NaiiivaPMCiqmq3q6dpl3eyRTTJbRPM0cK7nYKCcKO546VwngT4veG/F16thEZ9P1BziOC7CjzT6KwJBP8As8H60m0tGWoSkm0tEV/HmiXEfxC8K6tbwO9kDdx3DqOIneIbSfZipH1+orRuYIrq2lgnUNFKpRx6g13bKrqVYAqRgg965PxLr/hPwgUfXb63tZJRmOJyXdh6hBk49686tgU3enZL/N3/AFO2hi7LlabZwV/aQJ4v8CNq4hdYdReP7Q6jJl8l/J57bmAOP72Km+IUtzbeMgb29W20yWzCQyzQPJsc5DxxBRhnbaCSSD0HIr0Xwz4h8PeLbJ7jQ7m1voYXAcCPDRt1GVYAg+nFamqaZZarZyWmo2sVzbyY3RuuQcc1r9V5qHsbi+t8tdVHHb+uqPmLV/FN7FJNpmmytaWFpcfvHCJ50rjHzvyQMdBwQMVyiyfaHl+zjyogeJ7gEvIeScH+pxivevEXwP0O+eebR7u60yaVzJtP76MN6gH5h+DVwms/CnxhatFGsNnqtnDyDDLtdsDgENg++MmvPeBqUlZK6PYhjsPXVpOze9/6scNY28txA7JE7RqDDEc7CFOOTuB3KBkAAZ71Wi2xX0kUKC4unOTn5hEOgy/oB+NdSfCXjTVruKyt9B1C2fdiSWYiOKNPZmGOnpn6V3C/Dvwx4O06I+LvEltZiTlV+VST3wzZL/XbUQwtaWtv0M/9kw8rxld+Wpg+H/iJrPhrR4rDUHgurdePNETpNGmfmYMxw5APcZxjnNekC6Pmq6tKJP4du7J9/U1x+pfCnS/FulyXvgvxUl0rDy8SkPH7glMEHvyD2r0nTW8S2ttb2S6JbKkMawrK16pUBQACQBnt6VjjMtq1+Vyk012V1/wPUyliKCbdJLzu7fmZPj3Tbe/8FvfavDtu7SEz5HDAjsfYjqPXntXiVzYXt+1tbWem3Uj3c6NArRkDjJI3HgD8e1e7eNvFHhvwsdPi8W3TXFzK6yCCCPcqAHHmugPCAnq2eegrE8b+Jmm1/TYNbuH0fwhJN5cciu/n6nLxsMZiOUiUlTuJG705ruWX8z5pvt6/MKGZTpYeeHUbqd/RX7LqVvD+gNp/iXw1pizC41m3ujquoPGMLaQ/Z3iCH0LlgBnltpPQV7HWdoeiadoVq1vpVqlvG7l5CCWeRz1Z2JLM3uSTXE+MPjF4b8NauNLAutTvg4jkjsUDiNs/dJJALf7Iya9SMY0oqK0SPEjBy92CPSKKajb0VsEZGcEYI+tOrQgK5vxuwWxhJ7Fj+S10lcJ8V70WeizyZx5VpNL/AOO4FeXnMrYOa72X3tHXglevH+uhwX7Jin+zfE0nZriED/vhj/WitL9lSzMPgbUblus9+VH0SNB/MmivWw6tTRji3etIyP2p7NrS78L69EDugkeFm9wVkX/0Fq9U+H96l1pknltlGKzJ/uuM1lfHvQjrvwy1RYkLz2W29jAH/PPlv/HS1cj+z9rgutCsI3fLxA2UnPpyh/LFeLmK9jjKOI6X5X/29/wUjuo/vcJKHVf8Oe2UhOAeD+FLRXsHmHgl38dNbj1SaGHwTdeTG5XZI0ol4OOQEwDTHvvh/wDEm6S21fTbnwv4llb9zO6eQ7ydRh8BXOezAH0r37J9T+dV76ytdQt2gvreG5hbgxzIHU/gajkfV3Oj2sF8MbPyZgpf33hnwLcXniSaK6u9NtpHlmjyBcBAdrY7MwAyOxJrx74AaRJ4w8Taz418S4vLqOYRwCRcqshG4kA9NqlVUds17b4w0T+3/CWq6MjeUbu1eBGIOFJHyk+2QK8M+F2seJvhxbah4f1LwXrF9JLcedC1omVLlQpG/BUqdoIIP4VM9JK+xdLWnLl+J/kdLBYW/wAF9N8ReJdZvhql/qtyFighj8lWO53C4ycfeYk9ABxWF4q8ceN76207w/qmm6XYyeKbdVspILiWOS23uAC55PQjgev1FWviX4N8ceMfCVvqF/FC2pR3jTppELLi2gKBQgb+N8jJ57nHpWtofhvxB4x+I2meKvFGlHRdO0iFUtLGSQPI8gycnHRdxzz6KPU0rO/KtjRONuebTf8AltYxrf4n654e1rUfCdjp8Wtf2NZmGO4Z2EkkkSKXklYnAQfPnvwBnJrFuPjf4ul8Ef2jBptjE8d35Et+Yz5XK7kRYy2S2AxJzgDHc1reGPAHimLQPiJd3mneVr2sBoLVXmT50dy0mCDgZyMZxnApviH4V+IJvhR4W0jTrW3Oo2VxJc3tq0ygO7553dDgYHXp06VPv20KXsL2dt1+Wp7l4curq+8PaZd6hGkV5PaxyzIn3VdlBIH4mvn74kXF94L+Ny+J9f0s6pos4CW5cAqibApVc8B1IYgHrknvke3+F9O12DQ7ptcv0fV7wtJiAEwWeUCpHED1VcAknqcmvH7HT/GuneCNZ8Iar4Pu9avL2SQrqMl2skJLgASEscgqRkdPw5rSabRhQspN6dvky1Lr+lfD3wfdeKPBk0ery+JNTBWK4HlJFw5MYRMEFScY9x7V1k/xDv4vin/wj0sFpHplnphvdQlwzSRMI95AOcYGVHTvXDS/BnxFB4M8OWtjdWD6naahJf3EU7nylZggUAgfNt8sZ9cnFa0Xwi8Sv4o1e9uvE1uLfWLUw39zHBmdi+C6IpG1VyAAc528dalc3Y0aou7cr7/8D8DjvEnjHXr/AMP6r42s4tI0+y1K5GlRWr2Ec011GFPMjsDnbjGOmc8cCtDxbol34g+LvhPw1eancqkVlFO6WyJEtmwjywhAGBkxqec4yMcAVrx/AvVbjwxb6ZqPihd1jOZLFIrcmGIMcuWBILMTjHPGMc5roLr4Lwz67a6uvijWYr/yyt7cowE1yxyGYP8A8s8qduACAAMUuWT38i/a0o/C+/T7js9R0+9uPBsWl+GdVPmOq239pTzGaREBIeTcPvycEDpyc9q8qt9b8BfDeZrTwtpFz4k12E4luoU85lfuDLghT7IPrXouseMPBPgi2h0G/wBQtrVIYRCLONWlZExjDBQSMj15Oc103hy50u80e2uNAa3OmyIGhNsgRNvsABirbTdr6nNFuKu07P5XPGtJ+OGtXWt21pc+CroRTSrHiEyGUAnGQCgBx+Fe70c+p/OiqSa3dzOpKMvhjYK8T/aG1TyNA1CMHBl8u0X8Tub9Aa9pmkWGJ5HOFQFj9BXzB8Y5pvEni/Q/Ddqd09zMHcDs0rbRn6LuNeTmf72pSoLq+Z+kf+DY7cvjaUqj6I9p+BWmHSvhdoaOpWS4ja6fP/TRiw/Qiiu3sraOzs4La3XbDDGsaL6KowP0FFe9FcsUjzZy55OXckmjSaJ45VDxupVlI4IPBFfLHhCKTwH8VdW8MTsUt5pP9GZu+Pmib8VOPqK+qq8N/aY8KyzWFl4t0wFbzTSqTsnXy92Vf/gLfo3tXFmOFWJoOB2YCt7OpyvZnsmnXS3tlFOv8Y5Hoe4qzXmvwk8WRa5pFvNuC+f8sif885x95fx6j6ivSqxwGJeIpJy+JaP1X9XIxNH2NRx6dDN8Ra1YeHdGutU1acQ2duu526k+igdyTwBXyv43+MvibxNetb6LNNpNgzbIoLU/vpMnA3OOcn0XA+tbf7UHimW88R23hyCQi0sEWaZQeHmccZ/3V/8AQjWd+zf4Xj1rxVNqd0geDTgNgPTzGzz+Az+JFFes9o+nzOvD0YQp+1mjG8S+HvGXhDQ7DXtS1q7glupvLWJb2TzVO0tknOD05x0r2X9nrx9qnimxvdO1yU3NzZbSlyRhnU54bHBIwea0fjN8M7vx3Jpk1jqQtfsaPH5EibozuIO4YIweMfSovDOh6L8GPCF3qOr3bSO7DzHCjfM54VEX+Qz6kms1GcJqKvfq7aW6/wBainVhVpa/F0RZ+KvxXsvCH/Es0lI9S8QyEKtsMskJPTfjnPog5PsKofBv4ry+Lr650jxBDbWerR5aIRAoJQPvDaxOGHcV4/efEW8v/E2p+IfDfhXR7SaJTcT3MsJmdVyBudiQoJ4HAyT612Xwb8XaF4q8cmXWtBsLPxLKpeO9tVKrOQPmBUk7Wx3HUZqp1p8110f9XD6vGNPWOp9GV8pePvjX4qu9Wv7PR5F0iygneBfKjBmO1iPmdgcE4zgAYr6oguIbjzPImjl8tzG+xw21h1U46EelfM37U89tD4g0jTrWKKJhDJeT7ABvd2CgnHU4Q101nK14mGDUXO0lc5TwPZeL/iPq91bR+JdQR4IhK8k9zKwOTgAAMOev5VW1/UPGnw48US6a3iC9W5hCSBkuWkjkVhkEq+R+BFTfCz4j23gCz1V00177UborsLSiONFUHG7qTyTwPzrmrzVj4w8Xyaj4p1QWgunBmuFhaQRqOAqqOwHA/XNcivZykz0bPnasuU+vfhN4tm8YeCrXVL2NIrr5o5tgwpZSQSPY4zXjvizx/wCJvHXjuKx+HV3e2+n2Z2CaIlUkOeZJOPu9gp5I7ZNd5r2rWfgH4Ji98FXVrLGgijtZ8earF3AJ9zyx57547VxXwD8c65qniLVRrVzbyabDbNdTyG3jj8og/eyoHYN+VOU5qnFN6v8AV6epyU4RTnUS0Wx9DaaLgWMAvGD3IQeYQMZPc47VYyCCQQfpXyP4m8c+Ifij4wg0fSbuey0u4m8u3t42KDZ3klxyxwCcdB0HrS+BrfVvDfxpXSNCutQmtra88m6ZwVV4gPnLr0xnOD9Mda0eIjSXLvZEfU21duz3sYHxuulufit4kkjACpcCM47lI1U/qK+k/BF/o/gb4b6Kmu6jbWCGBeZ32lmwCcDqeSegr5K13UU1HxbqGo3WWhnv5J5AvUoZCSB+FaXj+TW76+stY8QDy21GEy2kG7/UwBsKoX+Eenr1PWsua1VS9f6/M7J0uenGm3Y+1tD1rTdesVvNGvYL22Y4EkLZGfQ+hrRrxL9lqykh8JXd0xOy4nYqPYYX/wBlNe1yOsaM7naqjJJ7CumhV9pByfd/g7Hl16apzcEYPjPUY7LTGWSQIrKXkY/wxryTXiHwHsJPF3xN1fxddofs1nkQbugdxtQf8BjB/FhUvx78VyTRLo9jue81EhTGnLCHOFX6s3H517B8K/Ci+DvBdjpjBftZHnXTD+KZuW/AcKPZa4cAvrWIlinttH0X+b1O2t/s2HVPq/6/4B19FJRXvHki1Be2sN7ZzWt1GstvMhjkjYZDKRgg/hU1FAHykIbj4R/Ea40u9eQ6DekPDMf7mflf/eU/K3tz6V9KaBqa6jZjcwMyAbsH7w7MPY1k/FDwRa+OfDcljKVivYsyWlwR/q5Md/8AZPQj8eoFeJfC7xbfeGtaPhbxGGtr60k8mBpTwP8Apkx7g/wnuCPavAxVOWBrfWaavF/EvLv6r8j14NYylyv4l/X4nBfHKKWH4q+IPPBy8qyLnupRcfyr179lKSBvDurxqV+0rdbnHfBVcH9DWn8Wvh5F8QbSLV9GdYdXgXY6t/GP7rf0NeFafovj3wXq7T6VZ6lZ3Q+QyWwEiuPQgZBH1FKNen7snJW3XmvL+tGbcvtaXItz7VmljgheWaRI4kUs7uwCqB1JJ6Cvkf4/+PrPxjr1paaLO8ul6ergORhZZSeXX1XAABPv61aXRfid8RHS1168vY7AkFknwi/XykxuP+9xXUeNfgQyeGdP/wCEcZDqFqrCZXPM+eclh/ED+Hb3ronjIVNKeq6tbL+v+DsYUaEaEk6j16EXwy8L6XdfAXxFcanJ5Md4ks8s643IIjlMfQp09z614/8ADjSdT1vxbZWmi3b2N6Qzi5TOYhtwTxznnH411ll4Y+JR8Py+FI7aWDR5pvMkjZ4wpOc43DLbc87R3r234MfDFPBkD3t+yzanMBufGAo7Ko7DvzyT6YFc8akai9nSd276rW2u76aL79jacvZc0pvfZHV/DnwhB4M8PLp8MrzOWMksjnLO5OSx9ya+V/jxqv8AavxU1tlbMVs6Wic9PLUA/wDjxavtMe1fKl98CvF2oa/qEtzcWe2WWSb7QSx8xmYkcY4zn14967aijRgoK/5nLhZp1JTmz1n4F+G7KH4a6U91ZwvPcIZ3LRgk7iWGfwIr5z+ND6K3xG1UeG0hWxQojeRjyzKB+8K44xn04yDXXT+AvirFpq6M19cDTEXYIRqBWLb6Y4OPatDwh8BpXuY5fE+pWyQKcm3t5MbvYscHH0H4iuaM6ajaKvLyWv8AXqbxtCTnKWhwVxc3tt8G7K1lLi0vdZkmiB6FUiwSPbcT+RrS8DappulfCzxwJ76GDVL1EtYIi37yRTjOB6YL5PQV9C+Nvh1ofibwha6HbTw2hs2D2rxMuEOMYx6Y4xXKeB/gNYaTqSXur3X9omM5RCo2D32jOT9Tj2pONSNk4tu99Nu++2g1XpSi7ux478DtY03RPiNY3WsTx29qY5IvOkOFRmxgk9hwRn3r3P4m/Frw3odhcxaBNa6rrk6MifZjvSIkY3u4449Bz9BzWRr37PGmXN/JNpV/cWdu7E+ScMF9hkdK6Hwp8E/D2jWtwlyr3c08TQvK7ZYKwwcHjb+A/GqTmm0qbb87afP/ACuRUnRm1Ny+R8y/DnR49e8a6Rps43QSTBpAf4lUbiPxxj8a7z9p6GW38fWMZTbbppsSw4HBw77sfia9n8H/AAc0DwxrKalaNPJcR/cMjlio9uwrsPFXhPRvFMMUet2MV0IjlC6glfpThTqy5puNtrJ2877X8vuFPFQ5007o+YPA+v694j8N2HgfQrdrS1Eoa/vonO9o924KMfdJPbqfYZr33xv4jg8OeGmF7MSltGPOIOWdv4Yx6kmrb2eh+CdNePS4Le0KIXZ8BViXHLHsOPxrwtYtQ+MXjePTrBpYfD1k3mTTkdFPVz/ttyFHYc+tebKNSvUeHhp3t0Td2r9317I3jyS/etWS19X/AFsb/wACvDN14t8V3PjnX0zBDKfsiH7rSjjI/wBlBwP9r6V9G1U0jTbTSNLtdP06FYLS2jEcUa9FUf5696t19PQoxowUI9DyK9Z1puTFooorUxCkpaKACvNPjH8M7fxtYfbLDy7fXrdcRSnhZlHPluf5HsfavS6KmUVNWZcJypy5o7nzV8N/iFe6Pqv9g+Kt9pqlu3kiS443/wCxJ7+jdDx9T9AafeWupx7tieaPvI4BK/8A1q5b4o/DTS/HVn5jbbTWIlxDeKucj+44/iX9R29D4vpXijxF8NdXj0Xxnbzm3T/j3ukO4hR3Rv8Alont1H6V4NTD1cDJyormg94/qvPy2Z6idPGLtNH0+qKgwiqo9AMVi+IvFmgeHAP7b1a0s2IyI5JMuR6hBlj+VUfDPjGw1iyinS4ilhf7s8Ryp9iP4T7Vy3xz8Gr4g8Mzajo+nPeaxHtwLeUoZE75Uf6wgdAfw9D20MVTrwvSeq6dV6o4/YOFRRq6JnG+Kv2g5Y7mSHwzplvJEpIW5unY7h2IQAY/E1wl/wDGnxxd52anDaqe1taouPxIJrgWglsrvbf2kw8tv3kMgaM/QnGRXRWfijSbMDyvBehzMP4rqW4mJ/NwP0rN1JS3dj1Fh6cF7sb/ANeZe0nxR468V65Z6Ta+ItVkuruQRoouGjUdyTtxgAAk+wrfig0zXdW1Pw/Yax4hur61tZ5k1WbUGMU8sS5YeT2jOCAd2e9YPw48R2Gn/EX+1NRS30y1uY54QbaMiK1MiFVIXJIUH+ddd4e8P2Wm+ENWl8KSWus+LxYtZXMGn3f2hRDI2GuIwVB3FRgoucZz7VcNVe9yatouyVtrevmeXTaNrrW01xPa3vlQww3MhdidscxxE3XnceneuhufAWpra6PYJpUn9tX08qvJJcx7VKpu8jaGO1lUbmLYPIGK667+Jfh6DVLqSLQ9ScC/tLwK8qR8267FhYDOETAK45LZJwKyY/ilb2UUZ07Q2ivLZb1bS7lu97xtcEFpmG3DS5HJ6Y4GKXLTW7Hz1ntH+repwviHw7qXh02Q1WJIXvIPtEarIrELuKndj7pBBBHanw6R4jiiWaHTtaSNgGV44JgCOxBAqz4m8VLrelaRZmxgt3sbSO1ecSF2mCbsdfujLMSB1JyTwKqt4s8QNEkZ8Qar5aKFVRfSAADgADd0rN8qehsudrValyy8X+K9FmCw6zrFsyn/AFck7/8AoLZ/lX0D8I/inqfi27i0y50YySRIomvI5SQOPvONm0E+mRnsK8C8L+GfEPjq/IsFuL7y2VZp5Jt/khjwSWbp14FfSvww+HNh8Oobq9utQN1qFygjeXb5aKgOdqrk555yeeO1aU24+83aPmcmL9ly8tve8j0qsLxH4httJtZmaaNDGpaSRzhIh6k/0rlvHnxG0/QLQmecw7h8kSczTf7q9h7n868h0nSvFPxj1BXwdL8MRScyEEoSPTp5j/8Ajo/nyzxdTFv2eE26y/y/z2MaWFUF7Svouw3VdS1r4s+I/wCwfDQkTS1YPc3MgIDDP+sk/wBn+6nUn9PovwP4U07wdoMOl6Unyr80srffmfu7H1/kOBUng/wvpXhLR49N0W3EUK8u7cvK3dnbuf8AIxW3Xp4PBwwsOWO5z4nFOs7LSItJRRXYcgtFFFABSUtFACUUUUALWX4j0DS/EmmSWGtWcV3avztccqf7ynqp9xWpSUNX0Y02ndHzj4i+EnibwZeyap8Pr6a8tTy9oxHm49Cp+WUfk1J4V+Mf2O4Nl4it59Lu0O2T5GMef9pD8yfrX0fXP+K/BugeK4dmu6ZBcuBhZsbZU+jjkfnivMxOV06suePuy7rR/ed9PHu3LVV0cjrEvhr4i6IkGqgXNurb47mxnyY29eP5EH6Vxs3wG8P3Vu/9keILoTkjaLgIygd8hQpP50utfAG5sbhrvwV4gmtZc5WK5JUj28xP6rWFOvxY8McahpB1e3X/AJaJGJ8j/ejw35iuKVPG0fiSmvPR/etPwOqnKlJfup8vl/w5vWP7OlmmDf8AiG6k9RBbKn6sWrpdN+BfhKyZXMmrTSAY3G8Mf1+4BXnVr8abrT38rVdHvrOQcEJMV/8AHXArdtvjvprKN8mpIf8AahR/5GlHG8nx0GvSz/Uc6GIltP8AT8j0G1+Efga2A2+H4JCO80kkn82rUt/AHhG3/wBV4a0gfW1Vv5ivND8dNJx/x83v/gGP8az7z48aeAfKOpyH0Cxx/wBav+0o7Roy+5L9TL6nXlvP8We0L4U8ORrxoGkKP+vOMf0qld6V4Qg4l0jR3b+6lnGx/Ra8Kk+LOt61L5eheHLu8kPQu0k36IMfrVi38OfFrxWQJgNEtH4O9hb4H0XMhpfWMZW0p0lH1d/wX+YfVYQ1qVD1HXfHWh+FrPyUNlpkI5SJVAY/7saj+leTan8SPEHi7Um07wTpl1PcNwbh03yAeuPuxj3Y12fhj9n7SbeYXPifUbjVbg/M0UeYoyfc5Lt+Yr1/RtH07RLJbTSLK3srZekcCBQfc46n3NaRyudZqWKnzeXT7tvvuS8XRo6UY3fc8Z8DfA0PdDVvH92dRvXO82iyFkz/ANNH6v8AQYH1r3G3ghtYI4LaKOKGMBUjjUKqgdAAOAKkor16dKNNWijgq1p1XebClpKK0MgooooAKKKKACiiigAooooAKKKKAFpKKKAFpKKKAIrm2guk2XMMUyf3ZEDD9axrnwb4ZuTmfw9pEh9TZx5/lRRSaT3GpNbMqj4feEAcjwzo+f8Ar0T/AAq/aeFPD1pg2uh6XCR0KWkYP54oopcsV0G5ye7NeONI0CxqqKOgUYFPooqiRKKKKACiiigBaSiigAooooAKKKKAP//Z" alt="Logo Cô Bích Quán" width="76" height="76"><div><h1>Cô Bích Quán</h1><p class="sub" style="font-weight:600;color:var(--leaf)">Cơm suất · Cơm bình dân</p></div></div>
       <p class="sub">Cơm nấu sẵn mỗi ngày một thực đơn. Chọn món, quán giao tận nơi.</p>
-      <div class="hours"><span>206 Duyên Hà, Cốc Lếu, Lào Cai</span><a class="tel-link" href="tel:0354563552">📞 035 456 3552</a></div>
+      <div class="hours"><span>206 Duyên Hà, Cốc Lếu, Lào Cai</span><span id="open-hours">⏰ Nhận đặt 10:00–13:00, 17:00–19:00</span><a class="tel-link" href="tel:0354563552">📞 035 456 3552</a></div>
       <div class="price-tag"><b id="set-price-k">40k</b><span id="set-rule">1 suất, chọn 5 món</span></div>
     </header>
     <button type="button" class="mem-top" id="mem-top" hidden><span id="mem-top-hi"></span><b class="pts" id="mem-top-pts"></b></button>
@@ -513,6 +525,7 @@ details.sorder { border-left-color: var(--st); }
       <button type="button" class="switch" id="edit-toggle" aria-pressed="false" aria-label="Chế độ chủ quán sửa món"></button>
     </div>
 
+    <div class="cancel-bar shop-bar" id="shop-bar" hidden></div>
     <div class="cancel-bar" id="cancel-bar" hidden></div>
     <div class="cancel-bar ship-alert" id="ship-alert" hidden></div>
     <div class="cancel-bar" id="editing-bar" hidden></div>
@@ -583,12 +596,18 @@ details.sorder { border-left-color: var(--st); }
         <div id="mem-guest" class="mem-row" hidden><span>Đăng nhập số điện thoại để <b>tích điểm</b> cho đơn này.</span><button type="button" class="btn-sm" id="m-login">Đăng nhập</button></div>
       </div>
       <form id="form" novalidate style="display:grid;gap:14px">
+        <div class="field"><label>Nhận cơm thế nào?</label>
+          <div class="radios">
+            <label><input type="radio" name="recv" id="recv-ship" value="ship" checked> 🛵 Giao tận nơi</label>
+            <label><input type="radio" name="recv" id="recv-pick" value="pick"> 🏃 Tự qua quán lấy</label>
+          </div></div>
         <div class="row2">
           <div class="field"><label for="f-name">Tên của bạn <span class="req">*</span></label><input id="f-name" autocomplete="name" placeholder="VD: Chị Lan"></div>
           <div class="field"><label for="f-phone">Số điện thoại <span class="req">*</span></label><input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xx xxx xxx"></div>
         </div>
-        <div class="field"><label for="f-addr">Địa chỉ cụ thể <span class="req">* bắt buộc</span></label><input id="f-addr" autocomplete="street-address" placeholder="Vị trí: số nhà, ngõ, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="f">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="f-geo-st"></small></div>
-        <div class="field"><label for="f-hour">Giờ muốn nhận</label>
+        <div class="field" id="addr-field"><label for="f-addr">Địa chỉ cụ thể <span class="req">* bắt buộc</span></label><input id="f-addr" autocomplete="street-address" placeholder="Vị trí: số nhà, ngõ, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="f">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="f-geo-st"></small></div>
+        <p class="sub" id="pick-note" hidden style="margin:0">📍 Quán ở <b>206 Duyên Hà, Cốc Lếu</b>. Cơm soạn xong quán sẽ báo, bạn qua lấy và trả tiền tại quán.</p>
+        <div class="field"><label for="f-hour" id="f-hour-l">Giờ muốn nhận</label>
           <div class="time-pick"><select id="f-hour" aria-label="Giờ"></select><b>:</b><select id="f-min" aria-label="Phút"></select></div>
           <input type="hidden" id="f-time"></div>
         <div class="field">
@@ -738,6 +757,26 @@ details.sorder { border-left-color: var(--st); }
       <h3>Góp ý của khách</h3>
       <div id="fb-list" style="display:grid;gap:8px"><p class="sub" style="margin:0">Chưa có góp ý.</p></div>
     </section>
+    <div class="open-bar don-only" id="open-bar"></div>
+    <section class="panel cd-only" id="cd-panel">
+      <h3>Bán hay nghỉ</h3>
+      <div class="open-bar" id="open-bar2"></div>
+      <h3 style="margin-top:8px">Giờ khách được đặt cơm</h3>
+      <p class="sub" style="margin:0;font-size:13px">Ngoài các giờ này khách vẫn xem được món nhưng không đặt được.</p>
+      <div id="hours-edit" style="display:grid;gap:8px"></div>
+      <button type="button" class="btn-main" id="hours-save">Lưu giờ mở bán</button>
+      <p class="toast" id="hours-ok" aria-live="polite"></p>
+      <h3 style="margin-top:8px">Nhân viên</h3>
+      <p class="sub" style="margin:0;font-size:13px">Mỗi nhân viên một mã PIN riêng. Nhân viên quán xem và soạn đơn (link /#chu). Shipper đi giao (link /#shipper). Xoá nhân viên thì mã đó hết dùng được ngay.</p>
+      <div id="staff-list"></div>
+      <form id="staff-form" style="display:grid;gap:8px" novalidate>
+        <div class="row2"><div class="field"><label for="sf-name">Tên nhân viên</label><input id="sf-name" placeholder="VD: Tuấn"></div>
+        <div class="field"><label for="sf-role">Việc</label><select id="sf-role"><option value="ship">🛵 Shipper</option><option value="bep">🍚 Nhân viên quán (soạn đơn)</option></select></div></div>
+        <div class="field"><label for="sf-pin">Mã PIN riêng (6 số trở lên)</label><input id="sf-pin" inputmode="numeric" maxlength="12" autocomplete="off"></div>
+        <p class="err" id="sf-err" hidden></p>
+        <button type="submit" class="btn-main">+ Thêm nhân viên</button>
+      </form>
+    </section>
     <div class="cancel-note don-only" id="cancel-note" hidden></div>
     <section class="panel don-only">
       <h3>Danh sách đơn</h3><div class="ogroups" id="filters"></div>
@@ -831,6 +870,20 @@ let tierIx = -1, autoTier = false;
 const RULE = { man: 3, rau: 1 };
 // Khách có thấy số suất còn lại không (chủ quán bật/tắt)
 let SHOW_LEFT = false;
+// Giờ nhận đặt cơm và tạm nghỉ (chủ quán chỉnh trong Cài đặt quán)
+let SHOP = { paused: false, hours: [["10:00", "13:00"], ["17:00", "19:00"]] };
+const hmMin = s => { const [h, m] = String(s).split(":").map(Number); return h * 60 + (m || 0); };
+const hoursText = () => SHOP.hours.map(([a, b]) => `${a}–${b}`).join(" và ");
+function shopOpen() {
+  if (SHOP.paused) return false;
+  const d = new Date(), now = d.getHours() * 60 + d.getMinutes();
+  return SHOP.hours.some(([a, b]) => now >= hmMin(a) && now < hmMin(b));
+}
+function closedMsg() {
+  if (SHOP.paused) return "🛑 Hôm nay quán nghỉ bán. Hẹn quý khách hôm sau nhé!";
+  const now = new Date().getHours() * 60 + new Date().getMinutes(), nx = SHOP.hours.find(([a]) => hmMin(a) > now);
+  return `⏰ Quán nhận đặt cơm ${hoursText()}. ${nx ? `Mời quý khách quay lại lúc ${nx[0]}.` : "Hôm nay đã hết giờ, hẹn quý khách ngày mai."}`;
+}
 // Đặt mâm (gia đình, công ty): tính theo đĩa. person = cơm + canh mỗi người, man/rau = giá 1 đĩa, per = 1 đĩa trừ mấy phần trong kho
 const TRAY = { on: false, person: 0, man: 0, rau: 0, per: 2 };
 let trayMode = false;
@@ -1012,6 +1065,8 @@ const STATUS = { moi: "Mới, chưa soạn", xong: "Soạn xong, chờ shipper",
 // Chủ quán chỉ chuyển tới "đang giao"; "đã giao" do shipper bấm
 const NEXT = { moi: "xong", xong: "nau" };
 const NEXT_LABEL = { moi: "Soạn xong", xong: "Ship đã lấy" };
+// Đơn khách tự lấy: soạn xong rồi quán bấm "Khách đã lấy" là xong đơn
+const nextOf = o => o.pickup && o.st === "xong" ? "giao" : NEXT[o.st];
 // Giờ mẫu tính theo giờ hiện tại để demo luôn có đơn gấp, đơn trễ
 const NOW0 = Date.now(), MIN = 60000;
 const hm = t => { const d = new Date(Math.round(t / (5 * MIN)) * 5 * MIN); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
@@ -1086,6 +1141,7 @@ async function pollMenu() {
     const d = await api("menu");
     soldSrv = d.sold || {};
     if (d.promo) { PROMO = d.promo; renderPromo(); }
+    if (d.shop) { SHOP = d.shop; renderShopBar(); }
     if (d.menu && !(ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName) && editMode)) applyMenu(d.menu, d.imgs);
     else if (d.imgs) for (const [id, v] of Object.entries(d.imgs)) if (byId[id]) byId[id].img = "/api/img/" + id + "?v=" + v;
     if (!menuReady) { menuReady = true; menuSig = d.menu ? JSON.stringify(menuState()) : ""; }
@@ -1096,7 +1152,7 @@ async function pollMenu() {
 let seen = null;
 function checkNew(list) {
   const key = o => o.id + (role === "ship" ? ":" + o.st : "");
-  const watch = role === "owner" ? list : list.filter(o => o.st === "xong");
+  const watch = role === "owner" || role === "bep" ? list : list.filter(o => o.st === "xong" && !o.pickup);
   if (seen && watch.some(o => !seen.has(key(o)))) ding();
   seen = new Set(watch.map(key));
 }
@@ -1115,9 +1171,10 @@ async function placeOrder(o) {
   try { const r = await api(ed ? `orders/${ed.id}/edit` : "orders", { method: "POST", body: JSON.stringify(ed ? { ...o, key: ed.key } : o), headers: { "x-cus": memGet()?.token || "" } }); if (ed) endEdit(); return { ok: true, ...r, edited: !!ed }; }
   catch (e) { if (e.status === 409) pollMenu(); return { ok: false, error: e.message }; }
 }
+let staffName = "";
 async function checkRole() {
   if (!pin) { role = null; return; }
-  try { role = (await api("auth")).role; } catch (_) { role = null; }
+  try { const d = await api("auth"); role = d.role; staffName = d.name || ""; } catch (_) { role = null; }
 }
 async function startSync() {
   await checkRole();
@@ -1157,7 +1214,7 @@ function ding() {
   } catch (_) {}
 }
 document.addEventListener("pointerdown", () => { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (_) {} }, { once: true });
-const bellKey = () => role === "owner" ? "chu" : "ship";
+const bellKey = () => role === "owner" || role === "bep" ? "chu" : "ship";
 function renderBell() {
   let on = false;
   try { on = canPush && Notification.permission === "granted" && localStorage.getItem("cobich-bell") === bellKey(); } catch (_) {}
@@ -1182,7 +1239,7 @@ async function enableBell() {
     if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
     await api("push/sub", { method: "POST", body: JSON.stringify({ sub: sub.toJSON() }) });
     try { localStorage.setItem("cobich-bell", bellKey()); } catch (_) {}
-    reg.showNotification("Đã bật thông báo", { body: role === "owner" ? "Khách đặt đơn mới, điện thoại sẽ báo và kêu chuông." : "Có đơn soạn xong, điện thoại sẽ báo để đi giao.", icon: "/icon-192.png" });
+    reg.showNotification("Đã bật thông báo", { body: role !== "ship" ? "Khách đặt đơn mới, điện thoại sẽ báo và kêu chuông." : "Có đơn soạn xong, điện thoại sẽ báo để đi giao.", icon: "/icon-192.png" });
   } catch (e) { alert("Chưa bật được thông báo: " + (e.message || e)); }
   renderBell();
 }
@@ -1464,6 +1521,7 @@ function fillTimes() {
   // Giờ nhận: trưa 10–14 giờ, chiều 17–20 giờ
   const cur = $("f-hour").value, curM = $("f-min").value, hNow = new Date().getHours();
   const soon = new Date(Date.now() + 15 * MIN), mins = h => Array.from({ length: 12 }, (_, i) => i * 5).filter(x => h > soon.getHours() || (h === soon.getHours() && x >= soon.getMinutes()) || soon.getDate() !== new Date().getDate());
+  const HOURS = [...new Set(SHOP.hours.flatMap(([a, b]) => { const r = []; for (let h = Math.floor(hmMin(a) / 60); h <= Math.floor(hmMin(b) / 60); h++) r.push(h); return r; }))].sort((x, y) => x - y);
   const hours = HOURS.filter(x => x >= hNow && mins(x).length);
   $("f-hour").innerHTML = `<option value="">Sớm nhất</option>` + hours.map(x => `<option value="${x}"${String(x) === cur ? " selected" : ""}>${String(x).padStart(2, "0")} giờ</option>`).join("");
   const ms = $("f-hour").value ? mins(+$("f-hour").value) : Array.from({ length: 12 }, (_, i) => i * 5);
@@ -1480,9 +1538,14 @@ function syncTime() {
   $("f-min").disabled = !hh;
   $("f-time").value = hh ? `${hh.padStart(2, "0")}:${$("f-min").value.padStart(2, "0")}` : "Càng sớm càng tốt";
 }
-const HOURS = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 $("f-hour").onchange = fillTimes; $("f-min").onchange = syncTime;
+function renderShopBar() {
+  const open = shopOpen(), b = $("shop-bar");
+  b.hidden = open || mode !== "khach" || editMode; b.textContent = open ? "" : closedMsg();
+  $("open-hours").textContent = `⏰ Nhận đặt ${SHOP.hours.map(([a, c]) => `${a}–${c}`).join(", ")}`;
+}
 function showKhach(view) {
+  renderShopBar();
   const vm = view === "menu" && ownerPage !== "sp" && ownerPage !== "km";
   $("view-menu").hidden = !vm;
   $("view-menu").style.display = vm ? "grid" : "none";
@@ -1570,15 +1633,16 @@ function renderOwner() {
     <details class="order" data-st="${o.st}" data-grp="${o.st === "giao" ? "xanh" : o.st === "nau" ? "vang" : "do"}" data-ono="${o.no}"${openOrders.has(o.no) ? " open" : ""}>
       <summary>
         ${o.edited ? `<div class="cancel-note" style="padding:4px 10px;font-size:13px">✏️ Khách đã sửa đơn này lúc ${new Date(o.edited).toTimeString().slice(0, 5)}</div>` : ""}
-        <div class="order-head"><span class="sub">Đơn #${o.no} · giao lúc ${esc(o.time)} ${o.st !== "giao" ? `<span class="flag ${urgency(o).lv}">${urgency(o).text}</span>` : ""}</span><span class="pill">${STATUS[o.st]}</span></div>
+        <div class="order-head"><span class="sub">Đơn #${o.no} · ${o.pickup ? "lấy" : "giao"} lúc ${esc(o.time)} ${o.st !== "giao" ? `<span class="flag ${urgency(o).lv}">${urgency(o).text}</span>` : ""}</span><span class="pill">${STATUS[o.st]}</span></div>
         <div class="sum-who"><b>${esc(o.name)}</b> · <a class="tel tel-link" href="tel:${esc(o.phone.replace(/[^0-9+]/g, ""))}">📞 ${esc(o.phone)}</a></div>
-        <div class="sum-addr">${esc(o.addr)}</div>
+        <div class="sum-addr">${o.pickup ? `<span class="badge-pick">🏃 KHÁCH TỰ LẤY</span>` : esc(o.addr)}</div>
         <div class="sum-money"><b>${fmt(orderTotal(o))}</b> · ${o.pay}<span class="more">Xem chi tiết ▾</span></div>
       </summary>
       <div class="ship">
-        <div class="row"><span class="k">Bản đồ</span><a href="${mapUrl(o)}" target="_blank" rel="noopener">${o.geo ? "📍 Đã ghim trên bản đồ, xem đường" : "Xem đường đến " + esc(o.addr)}</a></div>
+        ${o.pickup ? "" : `<div class="row"><span class="k">Bản đồ</span><a href="${mapUrl(o)}" target="_blank" rel="noopener">${o.geo ? "📍 Đã ghim trên bản đồ, xem đường" : "Xem đường đến " + esc(o.addr)}</a></div>`}
+        ${o.by ? `<div class="row"><span class="k">Người làm</span><span>${[["xong", "Soạn"], ["nau", "Lấy đi giao"], ["giao", o.pickup ? "Đưa khách" : "Giao xong"]].filter(([x]) => o.by[x]).map(([x, l]) => `${l}: <b>${esc(o.by[x])}</b>`).join(" · ")}</span></div>` : ""}
         ${o.discount ? `<div class="row"><span class="k">Ưu đãi</span><b style="color:var(--leaf)">Đã giảm ${fmt(o.discount)}${o.promo?.points ? ` (đổi ${o.promo.points} điểm)` : ""}${o.promo?.ref ? " (phiếu mời bạn)" : ""}</b></div>` : ""}
-        <div class="row"><span class="k">Thu tiền</span>${isPaid(o) ? `<b class="paid">Đã nhận tiền (chuyển khoản)</b>` : o.pay === "Chuyển khoản" ? `<span><b class="collect">Chờ xác nhận chuyển khoản ${fmt(orderTotal(o))}</b><br><small class="sub">Nội dung: COBICH ${esc(o.phone.replace(/\D/g, ""))}</small><br><button type="button" class="btn-sm" style="margin-top:4px;background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-paid="${o.no}">Đã nhận tiền</button></span>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} khi giao</b>`}</div>
+        <div class="row"><span class="k">Thu tiền</span>${isPaid(o) ? `<b class="paid">Đã nhận tiền (chuyển khoản)</b>` : o.pay === "Chuyển khoản" ? `<span><b class="collect">Chờ xác nhận chuyển khoản ${fmt(orderTotal(o))}</b><br><small class="sub">Nội dung: COBICH ${esc(o.phone.replace(/\D/g, ""))}</small><br><button type="button" class="btn-sm" style="margin-top:4px;background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-paid="${o.no}">Đã nhận tiền</button></span>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} ${o.pickup ? "khi khách qua lấy" : "khi giao"}</b>`}</div>
       </div>
       <div class="dishes-list">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người (kèm cơm, ${o.canh ? esc(o.canh) : "canh"})</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${o.canh ? `<li>🍲 ${esc(o.canh)}</li>` : ""}${drinkLines(s.drinks, (id, q) => `<li>🥤 ${q} × ${esc(byId[id]?.name ?? "?")}</li>`)}</ul></div>`).join("")}
         ${exRest(o).length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${exRest(o).map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
@@ -1586,7 +1650,7 @@ function renderOwner() {
       <div class="foot"><span><b>${fmt(orderTotal(o))}</b> · ${o.pay}</span>
         <span class="actions" style="gap:6px">
           <button type="button" class="btn-sm" data-copy="${o.no}">Chép gửi shipper</button>
-          ${NEXT[o.st] ? `<button type="button" class="btn-sm" style="background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-next="${o.no}">${NEXT_LABEL[o.st]}</button>` : ""}
+          ${nextOf(o) && (role !== "bep" || nextOf(o) !== "nau") ? `<button type="button" class="btn-sm" style="background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-next="${o.no}">${o.pickup && o.st === "xong" ? "Khách đã lấy" : NEXT_LABEL[o.st]}</button>` : ""}
         </span></div>
     </details>`).join("") : `<p class="sub">Chưa có đơn nào ở mục này.</p>`;
 
@@ -1645,10 +1709,11 @@ let shipFilter = "chua";
 const SGROUPS = [["gap", "Đơn gấp"], ["chua", "Chưa giao"], ["giao", "Đã giao"]];
 function renderShip() {
   const inG = (o, g) => g === "gap" ? o.st !== "giao" && o.st !== "huy" && urgency(o).lv !== "thuong" : g === "chua" ? o.st !== "giao" && o.st !== "huy" : o.st === "giao";
-  const list = orders.filter(o => inG(o, shipFilter));
-  const cash = orders.filter(o => o.st !== "giao" && o.st !== "huy" && !isPaid(o)).reduce((s, o) => s + orderTotal(o), 0);
+  const mine = orders.filter(o => !o.pickup);
+  const list = mine.filter(o => inG(o, shipFilter));
+  const cash = mine.filter(o => o.st !== "giao" && o.st !== "huy" && !isPaid(o)).reduce((s, o) => s + orderTotal(o), 0);
   $("ship-sub").textContent = `Xếp theo giờ khách cần nhận, đơn gấp lên đầu. Cập nhật lúc ${new Date().toTimeString().slice(0, 5)}.`;
-  $("ship-filters").innerHTML = SGROUPS.map(([key, l]) => `<button type="button" class="ogroup ${key}" aria-pressed="${shipFilter === key}" data-sfilter="${key}"><b>${orders.filter(o => inG(o, key)).length}</b><small>${l}</small></button>`).join("");
+  $("ship-filters").innerHTML = SGROUPS.map(([key, l]) => `<button type="button" class="ogroup ${key}" aria-pressed="${shipFilter === key}" data-sfilter="${key}"><b>${mine.filter(o => inG(o, key)).length}</b><small>${l}</small></button>`).join("");
   $("sorders").innerHTML = list.length ? (shipFilter === "giao" ? list.reverse() : list.sort(byDue)).map(shipCard).join("")
     : `<p class="sub">${shipFilter === "giao" ? "Chưa giao xong đơn nào." : "Hết đơn cần giao. Nghỉ tay chút nhé!"}</p>`;
 }
@@ -1674,10 +1739,12 @@ function setEdit(on, page = "mon") {
 function show(id, on) { $(id).hidden = !on; $(id).style.display = on ? "grid" : "none"; }
 function route() {
   const h = location.hash.slice(1);
-  const r = ["chu", "chu-bc", "chu-mon", "chu-sp", "chu-km", "shipper"].includes(h) ? h : "khach";
+  const r = ["chu", "chu-bc", "chu-mon", "chu-sp", "chu-km", "chu-cd", "shipper"].includes(h) ? h : "khach";
   const page = r === "chu-sp" ? "sp" : r === "chu-mon" ? "mon" : r === "chu-km" ? "km" : "";
   mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";
-  const allowed = r === "khach" || role === "owner" || (role === "ship" && r === "shipper");
+  const allowed = r === "khach" || role === "owner" || (role === "ship" && r === "shipper") || (role === "bep" && r === "chu");
+  // Nhân viên quán chỉ thấy tab Đơn hàng
+  ["t-bc", "t-mon", "t-km", "t-sp", "t-cd", "chpin"].forEach(id => $(id).hidden = role === "bep");
   $("nav").hidden = role !== "owner" || r === "khach";
   if (!allowed) { showLogin(r); return; }
   $("login").hidden = true;
@@ -1691,12 +1758,14 @@ function route() {
   $("t-sp").setAttribute("aria-pressed", r === "chu-sp");
   $("t-km").setAttribute("aria-pressed", r === "chu-km");
   $("t-bc").setAttribute("aria-pressed", r === "chu-bc");
-  if (r === "chu-bc") mode = "chu";
+  $("t-cd").setAttribute("aria-pressed", r === "chu-cd");
+  if (r === "chu-bc" || r === "chu-cd") mode = "chu";
+  if (r === "chu-cd" && typeof loadStaff === "function") loadStaff();
   if (r === "chu-bc" && typeof loadFeedback === "function") loadFeedback();
-  $("chu").dataset.tab = r === "chu-bc" ? "bc" : "don";
+  $("chu").dataset.tab = r === "chu-bc" ? "bc" : r === "chu-cd" ? "cd" : "don";
   document.title = r === "shipper" ? "Shipper · Cô Bích" : r.startsWith("chu") ? "Chủ quán · Cô Bích" : "Đặt Cơm Cô Bích";
   show("khach", r === "khach" || !!page);
-  show("chu", r === "chu" || r === "chu-bc");
+  show("chu", r === "chu" || r === "chu-bc" || r === "chu-cd");
   show("ship", r === "shipper");
   if (r === "khach" || page) {
     if (ownerPage !== page) setEdit(!!page, page);
@@ -1745,7 +1814,7 @@ document.addEventListener("click", e => {
     else stock[id] = lastQty[id] || 15;
     refresh();
   }
-  if (d.next) { const o = orders.find(x => x.no == d.next), from = o.st; if (!NEXT[from]) return; o.st = NEXT[from]; pushOrder(o, from); refresh(); }
+  if (d.next) { const o = orders.find(x => x.no == d.next), from = o.st, to = nextOf(o); if (!to) return; o.st = to; pushOrder(o, from); refresh(); }
   if (d.ship) { const o = orders.find(x => x.no == d.ship), from = o.st; if (from !== "xong" && from !== "nau") return; o.st = from === "nau" ? "giao" : "nau"; pushOrder(o, from); refresh(); }
   if (d.copy) {
     const o = orders.find(x => x.no == d.copy), old = t.textContent;
@@ -1845,7 +1914,9 @@ $("copy-ann").onclick = () => {
   const fail = () => { $("ann").focus(); $("ann").select(); $("toast-ann").textContent = "Máy chưa cho sao chép tự động, bạn nhấn giữ vào chữ để sao chép."; };
   try { navigator.clipboard.writeText($("ann").value).then(() => { $("toast-ann").textContent = "Đã sao chép."; }, fail); } catch (_) { fail(); }
 };
-function openCheckout() { fillTimes(); renderQnote(); setTimeout(updateQR); $("cart-lines").innerHTML = cartLinesHTML(false); renderUse(); showKhach("checkout"); }
+function openCheckout() {
+  if (!shopOpen()) { const b = $("shop-bar"); renderShopBar(); b.scrollIntoView({ block: "center" }); b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash"); return; }
+  syncRecv(); fillTimes(); renderQnote(); setTimeout(updateQR); $("cart-lines").innerHTML = cartLinesHTML(false); renderUse(); showKhach("checkout"); }
 $("go").onclick = () => {
   if (step === "gio") return openCheckout();
   if (trayMode) return trayOk() && commitTray();
@@ -1881,14 +1952,23 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") $("zoom").hi
 $("back").onclick = () => { renderKhach(); showKhach("menu"); };
 
 $("form").addEventListener("input", e => e.target.classList.remove("bad"));
+const isPickup = () => $("recv-pick").checked;
+function syncRecv() {
+  const p = isPickup();
+  $("addr-field").hidden = p; $("pick-note").hidden = !p;
+  $("f-hour-l").textContent = p ? "Giờ qua lấy" : "Giờ muốn nhận";
+}
+document.querySelectorAll('input[name="recv"]').forEach(r => r.addEventListener("change", syncRecv));
 $("form").addEventListener("submit", e => {
   e.preventDefault();
   const name = $("f-name").value.trim(), phone = $("f-phone").value.trim(), addr = $("f-addr").value.trim();
   const missing = [];
   if (!name) missing.push("tên");
   if (!/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, ""))) missing.push("số điện thoại đúng");
-  if (addr.length < 8) missing.push("địa chỉ giao hàng đầy đủ (số nhà, ngõ, đường, phường)");
-  [["f-name", !name], ["f-phone", !/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, ""))], ["f-addr", addr.length < 8]].forEach(([id, b]) => $(id).classList.toggle("bad", b));
+  if (!shopOpen()) { $("err").textContent = closedMsg(); $("err").hidden = false; return; }
+  const pick = isPickup();
+  if (!pick && addr.length < 8) missing.push("địa chỉ giao hàng đầy đủ (số nhà, ngõ, đường, phường)");
+  [["f-name", !name], ["f-phone", !/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, ""))], ["f-addr", !pick && addr.length < 8]].forEach(([id, b]) => $(id).classList.toggle("bad", b));
   const tm = /^(\d\d):(\d\d)$/.exec($("f-time").value);
   if (!missing.length && tm) {
     const d = new Date(); d.setHours(+tm[1], +tm[2], 0, 0);
@@ -1896,7 +1976,7 @@ $("form").addEventListener("submit", e => {
   }
   if (missing.length) { $("err").textContent = "Vui lòng điền " + missing.join(", ") + ". Không có địa chỉ thì quán không giao được."; $("err").hidden = false; const f = document.querySelector("#form input.bad"); if (f) { f.scrollIntoView({ block: "center" }); f.focus(); } return; }
   $("err").hidden = true;
-  const o = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), no: Math.max(0, ...orders.map(x => x.no)) + 1, at: Date.now(), name, phone, addr, ...(pinGeo.f ? { geo: pinGeo.f } : {}), time: $("f-time").value, pay: document.querySelector('input[name="pay"]:checked').value,
+  const o = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), no: Math.max(0, ...orders.map(x => x.no)) + 1, at: Date.now(), name, phone, addr: pick ? "Khách tự qua quán lấy" : addr, ...(pick ? { pickup: true } : pinGeo.f ? { geo: pinGeo.f } : {}), time: $("f-time").value, pay: document.querySelector('input[name="pay"]:checked').value,
     note: noteText(), st: "moi", sets: cart.sets.map(s => ({ ...s })), extras: { ...cart.extras }, ...(cart.tray ? { tray: { ...cart.tray } } : {}), canh: canhNames(), use: { ...promoUse }, discount: promoDiscount() };
   $("submit-btn").disabled = true; $("submit-btn").textContent = "Đang gửi…";
   placeOrder(o).then(r => {
@@ -1941,7 +2021,7 @@ function showLogin(r) {
   api("auth").then(d => {
     const setup = !d.ready;
     $("login").dataset.setup = setup ? "1" : "";
-    $("login-title").textContent = setup ? "Tạo mã PIN lần đầu" : r === "shipper" ? "Shipper nhập mã PIN" : "Chủ quán nhập mã PIN";
+    $("login-title").textContent = setup ? "Tạo mã PIN lần đầu" : r === "shipper" ? "Shipper nhập mã PIN" : "Chủ quán hoặc nhân viên nhập mã PIN";
     $("login-sub").textContent = setup ? "Chủ quán đặt 2 mã (6 chữ số trở lên): một mã cho mình, một mã cho shipper. Nhớ kỹ, không gửi cho khách." : "Máy này sẽ nhớ mã, lần sau không phải nhập lại.";
     $("pin1-l").textContent = setup ? "Mã PIN chủ quán" : "Mã PIN";
     $("pin2-w").hidden = !setup;
@@ -2183,7 +2263,7 @@ async function loadFeedback() {
 
 // Ghim nhà trên bản đồ (OpenStreetMap). a = đăng ký, s = cài đặt, f = đặt cơm
 const pinGeo = { a: null, s: null, f: null };
-const SHOP = [22.5006, 103.9668];
+const SHOP_LL = [22.5006, 103.9668];
 function setPin(w, g) {
   pinGeo[w] = g || null;
   const st = $(w + "-geo-st"); if (st) st.textContent = g ? "✓ Đã ghim vị trí trên bản đồ" : "";
@@ -2207,7 +2287,7 @@ async function openMap(w) {
   mapFor = w; mapPick = pinGeo[w]; $("map-ok").disabled = !mapPick; $("map-st").textContent = "";
   $("mapbox").hidden = false;
   try { await loadLeaflet(); } catch (_) { $("map-st").textContent = "Không tải được bản đồ. Bạn bấm “Vị trí của tôi” khi đang ở nhà, hoặc ghi rõ địa chỉ."; return; }
-  const c = mapPick ? [mapPick.lat, mapPick.lng] : SHOP;
+  const c = mapPick ? [mapPick.lat, mapPick.lng] : SHOP_LL;
   if (!lmap) {
     lmap = L.map("map").setView(c, 16);
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(lmap);
@@ -2403,6 +2483,7 @@ renderCancel();
 
 // Trang Đơn hàng của khách: xem đơn đang ở bước nào
 const TRACK = [["moi", "Quán đã nhận"], ["xong", "Đã soạn xong"], ["nau", "Shipper đang giao"], ["giao", "Đã giao"]];
+const TRACK_PICK = [["moi", "Quán đã nhận"], ["xong", "Xong, mời qua lấy"], ["giao", "Đã lấy"]];
 const TRACK_NOW = { moi: "Quán đã nhận đơn, đang soạn cơm", xong: "Đã soạn xong, chờ shipper lấy", nau: "Shipper đang mang cơm đến bạn", giao: "Đã giao xong. Chúc ngon miệng!", huy: "Đơn đã huỷ" };
 let donTimer = null;
 const canCancel = (o, my) => ["moi", "xong"].includes(o.st) && Date.now() - o.at < 5 * 60e3 && my.some(x => x.id === o.id);
@@ -2415,11 +2496,11 @@ async function renderDon() {
     const { orders: list } = await cusApi("track", { method: "POST", body: JSON.stringify({ items: my }) });
     DON = list; noteChanges(list);
     box.innerHTML = list.length ? list.map(o => {
-      const ix = TRACK.findIndex(([k]) => k === o.st);
+      const T = o.pickup ? TRACK_PICK : TRACK, ix = T.findIndex(([k]) => k === o.st);
       return `<div class="track${o.st === "huy" ? " huy" : ""}"><div class="hd"><span>Đơn #${o.no} · ${o.day === vnDate() ? "hôm nay" : dmy(o.day)}</span><span>${fmt(o.total || 0)}</span></div>
         <span class="sub" style="margin:0">${o.tray ? `Mâm ${o.tray} người · ` : ""}${o.sets} suất${o.canh ? ` · 🍲 ${esc(o.canh)}` : ""}${o.drinks ? ` · ${o.drinks} nước` : ""} · nhận ${/^\d/.test(o.time) ? "lúc " + esc(o.time) : "sớm nhất"}</span>
-        ${o.st === "huy" ? "" : `<div class="steps">${TRACK.map(([, l], i) => `<span class="${i <= ix ? "on" : ""}">${l}</span>`).join("")}</div>`}
-        <span class="now">${TRACK_NOW[o.st] || ""}</span>
+        ${o.st === "huy" ? "" : `<div class="steps">${T.map(([, l], i) => `<span class="${i <= ix ? "on" : ""}">${l}</span>`).join("")}</div>`}
+        <span class="now">${o.pickup && o.st === "xong" ? "Cơm đã xong, mời bạn qua quán lấy (206 Duyên Hà)" : o.pickup && o.st === "giao" ? "Bạn đã lấy cơm. Chúc ngon miệng!" : TRACK_NOW[o.st] || ""}</span>
         ${o.edited ? `<span class="sub" style="margin:0">✏️ Đã sửa lúc ${new Date(o.edited).toTimeString().slice(0, 5)}</span>` : ""}
         <div class="cart-actions" style="flex-wrap:wrap">
         ${canCancel(o, my) && o.st === "moi" ? `<button type="button" class="btn-ghost" data-editorder="${o.id}" style="font-weight:700">✏️ Sửa đơn</button>` : ""}
@@ -2455,7 +2536,8 @@ function startEdit(o) {
   // Trong lúc sửa, món của đơn cũ vẫn tính là của mình (không bị báo hết)
   editing = { id: o.id, key: it.key, no: o.no, own: soldMapOf(d) };
   loadIntoCart(d);
-  $("f-name").value = d.name || ""; $("f-phone").value = d.phone || ""; $("f-addr").value = d.addr || ""; if (d.geo) setPin("f", d.geo);
+  $("f-name").value = d.name || ""; $("f-phone").value = d.phone || ""; $("f-addr").value = d.pickup ? "" : d.addr || ""; if (d.geo) setPin("f", d.geo);
+  $(d.pickup ? "recv-pick" : "recv-ship").checked = true;
   const tm = /^(\d{2}):(\d{2})$/.exec(d.time || ""); fillTimes();
   if (tm) { $("f-hour").value = String(+tm[1]); fillTimes(); $("f-min").value = String(+tm[2]); syncTime(); }
   qnote.clear(); const rest = (d.note || "").split(", ").filter(x => QNOTES.includes(x) ? (qnote.add(x), false) : true); $("f-note").value = rest.join(", ");
@@ -2498,13 +2580,14 @@ const TRACK_SEEN = "cobich-seen";
 function noteChanges(list) {
   let seen = {}; try { seen = JSON.parse(localStorage.getItem(TRACK_SEEN) || "{}"); } catch (_) {}
   const mine = new Set(myOrders().map(x => x.id));
-  const went = list.filter(o => mine.has(o.id) && o.st === "nau" && seen[o.id] && seen[o.id] !== "nau");
+  const went = list.filter(o => mine.has(o.id) && !o.pickup && o.st === "nau" && seen[o.id] && seen[o.id] !== "nau");
+  const ready = list.filter(o => mine.has(o.id) && o.pickup && o.st === "xong" && seen[o.id] === "moi");
   for (const o of list) if (mine.has(o.id)) seen[o.id] = o.st;
   try { localStorage.setItem(TRACK_SEEN, JSON.stringify(Object.fromEntries(Object.entries(seen).slice(-30)))); } catch (_) {}
-  if (went.length) {
+  if (went.length || ready.length) {
     ding();
     const b = $("ship-alert"); b.hidden = false;
-    b.innerHTML = `<span>🛵 Shipper đã lấy cơm đơn #${went.map(o => o.no).join(", #")}, đang mang đến bạn!</span><button type="button" onclick="this.parentNode.hidden=true">OK</button>`;
+    b.innerHTML = `<span>${went.length ? `🛵 Shipper đã lấy cơm đơn #${went.map(o => o.no).join(", #")}, đang mang đến bạn!` : `🍚 Cơm đơn #${ready.map(o => o.no).join(", #")} đã xong, mời bạn qua quán lấy!`}</span><button type="button" onclick="this.parentNode.hidden=true">OK</button>`;
   }
 }
 let watchT = null;
@@ -2541,6 +2624,56 @@ async function enableCusNotify(id, btn) {
 document.addEventListener("click", e => { const b = e.target.closest("[data-notify]"); if (b) enableCusNotify(b.dataset.notify, b); });
 
 if (new URLSearchParams(location.search).has("don")) showKhach("don");
+
+// Chủ quán: bán hay tạm nghỉ, giờ nhận đặt cơm, nhân viên
+function renderOpenBar() {
+  const html = SHOP.paused ? `<span>🔴 Đang TẠM NGHỈ BÁN. Khách không đặt được.</span><button type="button" data-pause="0">Mở bán lại</button>`
+    : `<span>${shopOpen() ? "🟢 Đang nhận đơn" : "⏸ Ngoài giờ nhận đơn"} · ${hoursText()}</span><button type="button" data-pause="1">Tạm nghỉ bán</button>`;
+  for (const id of ["open-bar", "open-bar2"]) { const b = $(id); if (!b) continue; b.classList.toggle("off", SHOP.paused); b.innerHTML = role === "owner" ? html : `<span>${SHOP.paused ? "🔴 Quán đang tạm nghỉ bán" : (shopOpen() ? "🟢 Đang nhận đơn · " : "⏸ Ngoài giờ · ") + hoursText()}</span>`; }
+  if (staffName && role !== "owner") $("owner-date").textContent = `Xin chào ${staffName} · ` + $("owner-date").textContent.replace(/^Xin chào [^·]*· /, "");
+}
+async function saveShop(patch) {
+  try { const d = await api("shop", { method: "PUT", body: JSON.stringify({ ...SHOP, ...patch }) }); SHOP = d.shop; } catch (e) { alert(e.message); }
+  renderOpenBar(); renderShopBar(); renderHoursEdit();
+}
+document.addEventListener("click", e => {
+  const p = e.target.closest("[data-pause]"); if (!p || role !== "owner") return;
+  if (p.dataset.pause === "1" && !confirm("Tạm nghỉ bán? Khách sẽ không đặt được cho tới khi chị bấm “Mở bán lại”.")) return;
+  saveShop({ paused: p.dataset.pause === "1" });
+});
+function renderHoursEdit() {
+  const h = [...SHOP.hours]; while (h.length < 2) h.push(["", ""]);
+  $("hours-edit").innerHTML = h.map(([a, b], i) => `<div class="setup-row"><span style="flex:1">${i === 0 ? "Buổi trưa" : i === 1 ? "Buổi chiều" : "Thêm"}</span><input type="time" data-hr="${i}:0" value="${a}" aria-label="Từ giờ"><b>–</b><input type="time" data-hr="${i}:1" value="${b}" aria-label="Đến giờ"></div>`).join("");
+}
+$("hours-save").onclick = async () => {
+  const rows = {}; document.querySelectorAll("[data-hr]").forEach(x => { const [i, j] = x.dataset.hr.split(":"); (rows[i] ||= ["", ""])[j] = x.value; });
+  const hours = Object.values(rows).filter(([a, b]) => a && b && a < b);
+  if (!hours.length) { alert("Điền ít nhất một khung giờ, giờ bắt đầu sớm hơn giờ kết thúc."); return; }
+  await saveShop({ hours }); $("hours-ok").textContent = "Đã lưu: " + hoursText(); setTimeout(() => $("hours-ok").textContent = "", 4000);
+};
+const ROLE_NAME = { ship: "🛵 Shipper", bep: "🍚 Nhân viên quán" };
+async function loadStaff() {
+  if (role !== "owner") return;
+  renderOpenBar(); renderHoursEdit();
+  try { const { staff } = await api("staff"); renderStaff(staff); } catch (e) { $("staff-list").innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+function renderStaff(list) {
+  $("staff-list").innerHTML = list.length ? list.map(x => `<div class="staff-row"><span><b>${esc(x.name)}</b> · ${ROLE_NAME[x.role] || x.role}</span><button type="button" class="btn-sm" data-delstaff="${x.id}" data-n="${esc(x.name)}">Xoá</button></div>`).join("") : `<p class="sub" style="margin:0">Chưa có nhân viên nào.</p>`;
+}
+$("staff-form").addEventListener("submit", async e => {
+  e.preventDefault(); $("sf-err").hidden = true;
+  try {
+    const { staff } = await api("staff", { method: "POST", body: JSON.stringify({ name: $("sf-name").value, role: $("sf-role").value, pin: $("sf-pin").value.trim() }) });
+    renderStaff(staff); $("sf-name").value = $("sf-pin").value = "";
+  } catch (ex) { $("sf-err").textContent = ex.message; $("sf-err").hidden = false; }
+});
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-delstaff]"); if (!b) return;
+  if (!confirm(`Xoá nhân viên ${b.dataset.n}? Mã PIN của người này sẽ hết dùng được.`)) return;
+  try { const { staff } = await api("staff/" + b.dataset.delstaff, { method: "DELETE" }); renderStaff(staff); } catch (ex) { alert(ex.message); }
+});
+const _renderOwner = renderOwner;
+renderOwner = function () { _renderOwner(); renderOpenBar(); };
 
 $("chpin").onclick = () => {
   ["khach", "chu", "ship"].forEach(id => show(id, false)); $("cartbar").hidden = $("bnav").hidden = true; document.body.classList.remove("has-nav"); $("owner-tabs").hidden = true;

@@ -219,7 +219,7 @@ async function loadFeedback() {
 
 // Ghim nhà trên bản đồ (OpenStreetMap). a = đăng ký, s = cài đặt, f = đặt cơm
 const pinGeo = { a: null, s: null, f: null };
-const SHOP = [22.5006, 103.9668];
+const SHOP_LL = [22.5006, 103.9668];
 function setPin(w, g) {
   pinGeo[w] = g || null;
   const st = $(w + "-geo-st"); if (st) st.textContent = g ? "✓ Đã ghim vị trí trên bản đồ" : "";
@@ -243,7 +243,7 @@ async function openMap(w) {
   mapFor = w; mapPick = pinGeo[w]; $("map-ok").disabled = !mapPick; $("map-st").textContent = "";
   $("mapbox").hidden = false;
   try { await loadLeaflet(); } catch (_) { $("map-st").textContent = "Không tải được bản đồ. Bạn bấm “Vị trí của tôi” khi đang ở nhà, hoặc ghi rõ địa chỉ."; return; }
-  const c = mapPick ? [mapPick.lat, mapPick.lng] : SHOP;
+  const c = mapPick ? [mapPick.lat, mapPick.lng] : SHOP_LL;
   if (!lmap) {
     lmap = L.map("map").setView(c, 16);
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(lmap);
@@ -439,6 +439,7 @@ renderCancel();
 
 // Trang Đơn hàng của khách: xem đơn đang ở bước nào
 const TRACK = [["moi", "Quán đã nhận"], ["xong", "Đã soạn xong"], ["nau", "Shipper đang giao"], ["giao", "Đã giao"]];
+const TRACK_PICK = [["moi", "Quán đã nhận"], ["xong", "Xong, mời qua lấy"], ["giao", "Đã lấy"]];
 const TRACK_NOW = { moi: "Quán đã nhận đơn, đang soạn cơm", xong: "Đã soạn xong, chờ shipper lấy", nau: "Shipper đang mang cơm đến bạn", giao: "Đã giao xong. Chúc ngon miệng!", huy: "Đơn đã huỷ" };
 let donTimer = null;
 const canCancel = (o, my) => ["moi", "xong"].includes(o.st) && Date.now() - o.at < 5 * 60e3 && my.some(x => x.id === o.id);
@@ -451,11 +452,11 @@ async function renderDon() {
     const { orders: list } = await cusApi("track", { method: "POST", body: JSON.stringify({ items: my }) });
     DON = list; noteChanges(list);
     box.innerHTML = list.length ? list.map(o => {
-      const ix = TRACK.findIndex(([k]) => k === o.st);
+      const T = o.pickup ? TRACK_PICK : TRACK, ix = T.findIndex(([k]) => k === o.st);
       return `<div class="track${o.st === "huy" ? " huy" : ""}"><div class="hd"><span>Đơn #${o.no} · ${o.day === vnDate() ? "hôm nay" : dmy(o.day)}</span><span>${fmt(o.total || 0)}</span></div>
         <span class="sub" style="margin:0">${o.tray ? `Mâm ${o.tray} người · ` : ""}${o.sets} suất${o.canh ? ` · 🍲 ${esc(o.canh)}` : ""}${o.drinks ? ` · ${o.drinks} nước` : ""} · nhận ${/^\d/.test(o.time) ? "lúc " + esc(o.time) : "sớm nhất"}</span>
-        ${o.st === "huy" ? "" : `<div class="steps">${TRACK.map(([, l], i) => `<span class="${i <= ix ? "on" : ""}">${l}</span>`).join("")}</div>`}
-        <span class="now">${TRACK_NOW[o.st] || ""}</span>
+        ${o.st === "huy" ? "" : `<div class="steps">${T.map(([, l], i) => `<span class="${i <= ix ? "on" : ""}">${l}</span>`).join("")}</div>`}
+        <span class="now">${o.pickup && o.st === "xong" ? "Cơm đã xong, mời bạn qua quán lấy (206 Duyên Hà)" : o.pickup && o.st === "giao" ? "Bạn đã lấy cơm. Chúc ngon miệng!" : TRACK_NOW[o.st] || ""}</span>
         ${o.edited ? `<span class="sub" style="margin:0">✏️ Đã sửa lúc ${new Date(o.edited).toTimeString().slice(0, 5)}</span>` : ""}
         <div class="cart-actions" style="flex-wrap:wrap">
         ${canCancel(o, my) && o.st === "moi" ? `<button type="button" class="btn-ghost" data-editorder="${o.id}" style="font-weight:700">✏️ Sửa đơn</button>` : ""}
@@ -491,7 +492,8 @@ function startEdit(o) {
   // Trong lúc sửa, món của đơn cũ vẫn tính là của mình (không bị báo hết)
   editing = { id: o.id, key: it.key, no: o.no, own: soldMapOf(d) };
   loadIntoCart(d);
-  $("f-name").value = d.name || ""; $("f-phone").value = d.phone || ""; $("f-addr").value = d.addr || ""; if (d.geo) setPin("f", d.geo);
+  $("f-name").value = d.name || ""; $("f-phone").value = d.phone || ""; $("f-addr").value = d.pickup ? "" : d.addr || ""; if (d.geo) setPin("f", d.geo);
+  $(d.pickup ? "recv-pick" : "recv-ship").checked = true;
   const tm = /^(\d{2}):(\d{2})$/.exec(d.time || ""); fillTimes();
   if (tm) { $("f-hour").value = String(+tm[1]); fillTimes(); $("f-min").value = String(+tm[2]); syncTime(); }
   qnote.clear(); const rest = (d.note || "").split(", ").filter(x => QNOTES.includes(x) ? (qnote.add(x), false) : true); $("f-note").value = rest.join(", ");
@@ -534,13 +536,14 @@ const TRACK_SEEN = "cobich-seen";
 function noteChanges(list) {
   let seen = {}; try { seen = JSON.parse(localStorage.getItem(TRACK_SEEN) || "{}"); } catch (_) {}
   const mine = new Set(myOrders().map(x => x.id));
-  const went = list.filter(o => mine.has(o.id) && o.st === "nau" && seen[o.id] && seen[o.id] !== "nau");
+  const went = list.filter(o => mine.has(o.id) && !o.pickup && o.st === "nau" && seen[o.id] && seen[o.id] !== "nau");
+  const ready = list.filter(o => mine.has(o.id) && o.pickup && o.st === "xong" && seen[o.id] === "moi");
   for (const o of list) if (mine.has(o.id)) seen[o.id] = o.st;
   try { localStorage.setItem(TRACK_SEEN, JSON.stringify(Object.fromEntries(Object.entries(seen).slice(-30)))); } catch (_) {}
-  if (went.length) {
+  if (went.length || ready.length) {
     ding();
     const b = $("ship-alert"); b.hidden = false;
-    b.innerHTML = `<span>🛵 Shipper đã lấy cơm đơn #${went.map(o => o.no).join(", #")}, đang mang đến bạn!</span><button type="button" onclick="this.parentNode.hidden=true">OK</button>`;
+    b.innerHTML = `<span>${went.length ? `🛵 Shipper đã lấy cơm đơn #${went.map(o => o.no).join(", #")}, đang mang đến bạn!` : `🍚 Cơm đơn #${ready.map(o => o.no).join(", #")} đã xong, mời bạn qua quán lấy!`}</span><button type="button" onclick="this.parentNode.hidden=true">OK</button>`;
   }
 }
 let watchT = null;
@@ -577,3 +580,53 @@ async function enableCusNotify(id, btn) {
 document.addEventListener("click", e => { const b = e.target.closest("[data-notify]"); if (b) enableCusNotify(b.dataset.notify, b); });
 
 if (new URLSearchParams(location.search).has("don")) showKhach("don");
+
+// Chủ quán: bán hay tạm nghỉ, giờ nhận đặt cơm, nhân viên
+function renderOpenBar() {
+  const html = SHOP.paused ? `<span>🔴 Đang TẠM NGHỈ BÁN. Khách không đặt được.</span><button type="button" data-pause="0">Mở bán lại</button>`
+    : `<span>${shopOpen() ? "🟢 Đang nhận đơn" : "⏸ Ngoài giờ nhận đơn"} · ${hoursText()}</span><button type="button" data-pause="1">Tạm nghỉ bán</button>`;
+  for (const id of ["open-bar", "open-bar2"]) { const b = $(id); if (!b) continue; b.classList.toggle("off", SHOP.paused); b.innerHTML = role === "owner" ? html : `<span>${SHOP.paused ? "🔴 Quán đang tạm nghỉ bán" : (shopOpen() ? "🟢 Đang nhận đơn · " : "⏸ Ngoài giờ · ") + hoursText()}</span>`; }
+  if (staffName && role !== "owner") $("owner-date").textContent = `Xin chào ${staffName} · ` + $("owner-date").textContent.replace(/^Xin chào [^·]*· /, "");
+}
+async function saveShop(patch) {
+  try { const d = await api("shop", { method: "PUT", body: JSON.stringify({ ...SHOP, ...patch }) }); SHOP = d.shop; } catch (e) { alert(e.message); }
+  renderOpenBar(); renderShopBar(); renderHoursEdit();
+}
+document.addEventListener("click", e => {
+  const p = e.target.closest("[data-pause]"); if (!p || role !== "owner") return;
+  if (p.dataset.pause === "1" && !confirm("Tạm nghỉ bán? Khách sẽ không đặt được cho tới khi chị bấm “Mở bán lại”.")) return;
+  saveShop({ paused: p.dataset.pause === "1" });
+});
+function renderHoursEdit() {
+  const h = [...SHOP.hours]; while (h.length < 2) h.push(["", ""]);
+  $("hours-edit").innerHTML = h.map(([a, b], i) => `<div class="setup-row"><span style="flex:1">${i === 0 ? "Buổi trưa" : i === 1 ? "Buổi chiều" : "Thêm"}</span><input type="time" data-hr="${i}:0" value="${a}" aria-label="Từ giờ"><b>–</b><input type="time" data-hr="${i}:1" value="${b}" aria-label="Đến giờ"></div>`).join("");
+}
+$("hours-save").onclick = async () => {
+  const rows = {}; document.querySelectorAll("[data-hr]").forEach(x => { const [i, j] = x.dataset.hr.split(":"); (rows[i] ||= ["", ""])[j] = x.value; });
+  const hours = Object.values(rows).filter(([a, b]) => a && b && a < b);
+  if (!hours.length) { alert("Điền ít nhất một khung giờ, giờ bắt đầu sớm hơn giờ kết thúc."); return; }
+  await saveShop({ hours }); $("hours-ok").textContent = "Đã lưu: " + hoursText(); setTimeout(() => $("hours-ok").textContent = "", 4000);
+};
+const ROLE_NAME = { ship: "🛵 Shipper", bep: "🍚 Nhân viên quán" };
+async function loadStaff() {
+  if (role !== "owner") return;
+  renderOpenBar(); renderHoursEdit();
+  try { const { staff } = await api("staff"); renderStaff(staff); } catch (e) { $("staff-list").innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+function renderStaff(list) {
+  $("staff-list").innerHTML = list.length ? list.map(x => `<div class="staff-row"><span><b>${esc(x.name)}</b> · ${ROLE_NAME[x.role] || x.role}</span><button type="button" class="btn-sm" data-delstaff="${x.id}" data-n="${esc(x.name)}">Xoá</button></div>`).join("") : `<p class="sub" style="margin:0">Chưa có nhân viên nào.</p>`;
+}
+$("staff-form").addEventListener("submit", async e => {
+  e.preventDefault(); $("sf-err").hidden = true;
+  try {
+    const { staff } = await api("staff", { method: "POST", body: JSON.stringify({ name: $("sf-name").value, role: $("sf-role").value, pin: $("sf-pin").value.trim() }) });
+    renderStaff(staff); $("sf-name").value = $("sf-pin").value = "";
+  } catch (ex) { $("sf-err").textContent = ex.message; $("sf-err").hidden = false; }
+});
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-delstaff]"); if (!b) return;
+  if (!confirm(`Xoá nhân viên ${b.dataset.n}? Mã PIN của người này sẽ hết dùng được.`)) return;
+  try { const { staff } = await api("staff/" + b.dataset.delstaff, { method: "DELETE" }); renderStaff(staff); } catch (ex) { alert(ex.message); }
+});
+const _renderOwner = renderOwner;
+renderOwner = function () { _renderOwner(); renderOpenBar(); };

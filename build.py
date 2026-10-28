@@ -32,8 +32,8 @@ rep("const sold = id => orders.reduce((s, o) => s + usedBy(o, id), 0);",
 # Ghi chú demo -> dòng báo kết nối; thanh 3 link chỉ chủ quán thấy
 s = re.sub(r'<p class="demo-note" id="demo-note">.*?</p>', '<p class="demo-note" id="demo-note" hidden><b id="sync-note"></b></p>', s, count=1, flags=re.S)
 rep('<nav class="mode three" aria-label="Ba link của quán">', '<nav class="mode three" id="nav" aria-label="Ba link của quán" hidden>')
-rep('<a class="tab" href="#chu-sp" id="t-sp">Sửa sản phẩm</a>',
-    '<a class="tab" href="#chu-sp" id="t-sp">Sửa sản phẩm</a>\n    <button type="button" class="tab" id="chpin" style="margin-left:auto">Đổi mã</button>\n    <button type="button" class="tab" id="logout">Thoát</button>')
+rep('<a class="tab" href="#chu-cd" id="t-cd">Cài đặt quán</a>',
+    '<a class="tab" href="#chu-cd" id="t-cd">Cài đặt quán</a>\n    <button type="button" class="tab" id="chpin" style="margin-left:auto">Đổi mã</button>\n    <button type="button" class="tab" id="logout">Thoát</button>')
 rep('<a class="btn-ghost" href="#chu" id="see-owner" style="text-decoration:none">Xem bên chủ quán (demo)</a>', '')
 rep('<h1>Đơn cần giao</h1>', '<div class="order-head"><h1>Đơn cần giao</h1><button type="button" class="tab" id="logout2">Thoát</button></div>')
 
@@ -54,7 +54,9 @@ rep('  <!-- ============ KHÁCH ============ -->', '''  <!-- ============ ĐĂNG
 
 # Định tuyến: trang chủ quán, shipper cần mã PIN
 rep('''  mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";''', '''  mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";
-  const allowed = r === "khach" || role === "owner" || (role === "ship" && r === "shipper");
+  const allowed = r === "khach" || role === "owner" || (role === "ship" && r === "shipper") || (role === "bep" && r === "chu");
+  // Nhân viên quán chỉ thấy tab Đơn hàng
+  ["t-bc", "t-mon", "t-km", "t-sp", "t-cd", "chpin"].forEach(id => $(id).hidden = role === "bep");
   $("nav").hidden = role !== "owner" || r === "khach";
   if (!allowed) { showLogin(r); return; }
   $("login").hidden = true;
@@ -142,7 +144,7 @@ rep("""  const paid = orders.filter(o => o.pay === "Chuyển khoản").reduce((s
 rep("""  $("st-paid").innerHTML = `<span class="paid">Đã thu ${fmt(paid)}</span> · <span class="collect">Cần thu ${fmt(due)}</span>`;""",
 """  $("st-paid").innerHTML = `<span class="paid">Đã thu ${fmt(paid)}</span> · <span class="collect">Cần thu ${fmt(due)}</span>${wait.length ? ` · <span class="collect">${wait.length} đơn chờ xác nhận chuyển khoản</span>` : ""}`;""")
 rep("""${o.pay === "Chuyển khoản" ? `<b class="paid">Đã thu tiền (chuyển khoản)</b>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} khi giao</b>`}</div>""",
-"""${isPaid(o) ? `<b class="paid">Đã nhận tiền (chuyển khoản)</b>` : o.pay === "Chuyển khoản" ? `<span><b class="collect">Chờ xác nhận chuyển khoản ${fmt(orderTotal(o))}</b><br><small class="sub">Nội dung: COBICH ${esc(o.phone.replace(/\\D/g, ""))}</small><br><button type="button" class="btn-sm" style="margin-top:4px;background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-paid="${o.no}">Đã nhận tiền</button></span>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} khi giao</b>`}</div>""")
+"""${isPaid(o) ? `<b class="paid">Đã nhận tiền (chuyển khoản)</b>` : o.pay === "Chuyển khoản" ? `<span><b class="collect">Chờ xác nhận chuyển khoản ${fmt(orderTotal(o))}</b><br><small class="sub">Nội dung: COBICH ${esc(o.phone.replace(/\\D/g, ""))}</small><br><button type="button" class="btn-sm" style="margin-top:4px;background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-paid="${o.no}">Đã nhận tiền</button></span>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} ${o.pickup ? "khi khách qua lấy" : "khi giao"}</b>`}</div>""")
 rep("""${o.pay === "Chuyển khoản" ? "ĐÃ THU TIỀN (chuyển khoản)" : "THU TIỀN MẶT: " + fmt(orderTotal(o))}""",
 """${isPaid(o) ? "ĐÃ THU TIỀN (chuyển khoản)" : o.pay === "Chuyển khoản" ? "CHUYỂN KHOẢN CHƯA XÁC NHẬN: hỏi chủ quán trước khi thu " + fmt(orderTotal(o)) : "THU TIỀN MẶT: " + fmt(orderTotal(o))}""")
 rep("""const u = urgency(o), gone = o.st === "giao", cash = o.pay !== "Chuyển khoản";""",
@@ -162,7 +164,7 @@ function showLogin(r) {
   api("auth").then(d => {
     const setup = !d.ready;
     $("login").dataset.setup = setup ? "1" : "";
-    $("login-title").textContent = setup ? "Tạo mã PIN lần đầu" : r === "shipper" ? "Shipper nhập mã PIN" : "Chủ quán nhập mã PIN";
+    $("login-title").textContent = setup ? "Tạo mã PIN lần đầu" : r === "shipper" ? "Shipper nhập mã PIN" : "Chủ quán hoặc nhân viên nhập mã PIN";
     $("login-sub").textContent = setup ? "Chủ quán đặt 2 mã (6 chữ số trở lên): một mã cho mình, một mã cho shipper. Nhớ kỹ, không gửi cho khách." : "Máy này sẽ nhớ mã, lần sau không phải nhập lại.";
     $("pin1-l").textContent = setup ? "Mã PIN chủ quán" : "Mã PIN";
     $("pin2-w").hidden = !setup;
