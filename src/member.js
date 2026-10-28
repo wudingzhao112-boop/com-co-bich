@@ -453,7 +453,7 @@ async function renderDon() {
     box.innerHTML = list.length ? list.map(o => {
       const ix = TRACK.findIndex(([k]) => k === o.st);
       return `<div class="track${o.st === "huy" ? " huy" : ""}"><div class="hd"><span>Đơn #${o.no} · ${o.day === vnDate() ? "hôm nay" : dmy(o.day)}</span><span>${fmt(o.total || 0)}</span></div>
-        <span class="sub" style="margin:0">${o.tray ? `Mâm ${o.tray} người · ` : ""}${o.sets} suất${o.drinks ? ` · ${o.drinks} nước` : ""} · nhận ${/^\d/.test(o.time) ? "lúc " + esc(o.time) : "sớm nhất"}</span>
+        <span class="sub" style="margin:0">${o.tray ? `Mâm ${o.tray} người · ` : ""}${o.sets} suất${o.canh ? ` · 🍲 ${esc(o.canh)}` : ""}${o.drinks ? ` · ${o.drinks} nước` : ""} · nhận ${/^\d/.test(o.time) ? "lúc " + esc(o.time) : "sớm nhất"}</span>
         ${o.st === "huy" ? "" : `<div class="steps">${TRACK.map(([, l], i) => `<span class="${i <= ix ? "on" : ""}">${l}</span>`).join("")}</div>`}
         <span class="now">${TRACK_NOW[o.st] || ""}</span>
         ${o.edited ? `<span class="sub" style="margin:0">✏️ Đã sửa lúc ${new Date(o.edited).toTimeString().slice(0, 5)}</span>` : ""}

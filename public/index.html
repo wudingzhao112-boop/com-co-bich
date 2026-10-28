@@ -1214,6 +1214,8 @@ function usedBy(o, id) {
 const CANH = "Canh";
 const allPicks = x => x.canh ? [...x.picks, x.canh] : x.picks;
 const canhToday = () => MENU.filter(m => m.cat === CANH && stock[m.id] > 0);
+// Tên canh hôm nay (miễn phí, kèm mọi suất); đơn đã đặt thì dùng tên canh lưu trong đơn
+const canhNames = () => canhToday().map(m => m.name).join(", ");
 let step = "mon", canhPick = "";
 const RAU = "Rau", MAN = "Món mặn";
 const nCat = (ids, c) => [...ids].filter(id => byId[id]?.cat === c).length;
@@ -1249,7 +1251,7 @@ function renderBuilder() {
   const need = SET.picks - build.size;
   $("build-title").textContent = tierIx < 0 ? "👇 Bước 1: chọn loại suất" : `Suất ${k(SET.price)}: chọn món (${build.size}/${SET.picks})`;
   $("build-title").classList.toggle("step1", tierIx < 0 && !editMode);
-  $("pick-hint").textContent = tierIx < 0 ? "Bấm 35k, 40k hoặc 50k ở trên. Hoặc bấm luôn vào tên món, quán tự chọn suất 40k cho bạn." : (autoTier ? `Đã chọn suất ${k(SET.price)} (${SET.picks} món). Muốn đổi thì bấm loại suất ở trên. ` : "") + (need > 0 ? `Chọn thêm ${need} món nữa${ruleText() ? " (" + ruleText() + ")" : ""}. Suất kèm cơm trắng và canh.` : `Đủ ${SET.picks} món. Bấm “Tiếp” ở dưới.`);
+  $("pick-hint").textContent = tierIx < 0 ? "Bấm 35k, 40k hoặc 50k ở trên. Hoặc bấm luôn vào tên món, quán tự chọn suất 40k cho bạn." : (autoTier ? `Đã chọn suất ${k(SET.price)} (${SET.picks} món). Muốn đổi thì bấm loại suất ở trên. ` : "") + (need > 0 ? `Chọn thêm ${need} món nữa${ruleText() ? " (" + ruleText() + ")" : ""}. Suất kèm cơm trắng và canh.` : `Đủ ${SET.picks} món. Bấm “Tiếp” ở dưới.`) + (canhNames() ? ` 🍲 Canh hôm nay: ${canhNames()} (miễn phí).` : "");
   $("view-menu").classList.toggle("editing", editMode);
   if (editMode) {
     syncToday();
@@ -1280,7 +1282,7 @@ function renderBuilder() {
   if (isCanh) {
     $("chips").hidden = true;
     $("build-title").textContent = "Thêm nước uống (nếu muốn)";
-    $("pick-hint").textContent = "Suất cơm đã kèm canh của quán. Muốn uống gì thì bấm +, không thì bấm “Xem đơn hàng”.";
+    $("pick-hint").textContent = `Suất cơm đã kèm ${canhNames() ? "canh hôm nay: " + canhNames() : "canh của quán"}. Muốn uống gì thì bấm +, không thì bấm “Xem đơn hàng”.`;
     $("dishes").innerHTML = "";
     renderDrinks();
     $("bq").textContent = buildQty;
@@ -1392,9 +1394,9 @@ function renderExtras() {
 // Giỏ: mỗi suất một khối, mỗi món một dòng (trang xác nhận gộp món thành một dòng)
 function cartLinesHTML(editable) {
   const sets = cart.sets.map((s, i) => `<div class="cart-set"><div class="hd"><span>Suất ${k(setPrice(s))}${s.qty > 1 ? ` (${s.qty} hộp)` : ""}</span><span class="money">${fmt(s.qty * setPrice(s))}</span></div>
-    ${editable ? `<ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul>` : `<div class="one">${esc(picksText(allPicks(s)))}</div>`}</div>`);
+    ${editable ? `<ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${canhNames() ? `<li>🍲 ${esc(canhNames())} (miễn phí)</li>` : ""}</ul>` : `<div class="one">${esc(picksText(allPicks(s)))}${canhNames() ? ` · 🍲 ${esc(canhNames())}` : ""}</div>`}</div>`);
   if (cart.tray) sets.unshift(`<div class="cart-set"><div class="hd"><span>🍲 Mâm ${cart.tray.people} người</span><span class="money">${fmt(trayPrice(cart.tray))}</span></div>
-    ${editable ? `<ul>${Object.entries(cart.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}<li>Cơm trắng, canh cho ${cart.tray.people} người</li></ul>${editable ? `<button type="button" class="linkish" data-edittray="1">Sửa mâm</button>` : ""}` : `<div class="one">${esc(trayText(cart.tray))}</div>`}</div>`);
+    ${editable ? `<ul>${Object.entries(cart.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}<li>Cơm trắng, ${esc(canhNames() || "canh")} cho ${cart.tray.people} người</li></ul>${editable ? `<button type="button" class="linkish" data-edittray="1">Sửa mâm</button>` : ""}` : `<div class="one">${esc(trayText(cart.tray))}</div>`}</div>`);
   const ex = Object.entries(cart.extras).filter(([, q]) => q);
   const exHTML = ex.length ? [`<div class="cart-set"><div class="hd"><span>Đồ uống</span></div><ul>${ex.map(([id, q]) => `<li class="ln"><span>${esc(byId[id].name)} × ${q}</span><span class="money">${fmt(q * byId[id].price)}</span></li>`).join("")}</ul></div>`] : [];
   return sets.concat(exHTML).join("");
@@ -1561,7 +1563,7 @@ function renderOwner() {
         ${o.discount ? `<div class="row"><span class="k">Ưu đãi</span><b style="color:var(--leaf)">Đã giảm ${fmt(o.discount)}${o.promo?.points ? ` (đổi ${o.promo.points} điểm)` : ""}${o.promo?.ref ? " (phiếu mời bạn)" : ""}</b></div>` : ""}
         <div class="row"><span class="k">Thu tiền</span>${isPaid(o) ? `<b class="paid">Đã nhận tiền (chuyển khoản)</b>` : o.pay === "Chuyển khoản" ? `<span><b class="collect">Chờ xác nhận chuyển khoản ${fmt(orderTotal(o))}</b><br><small class="sub">Nội dung: COBICH ${esc(o.phone.replace(/\D/g, ""))}</small><br><button type="button" class="btn-sm" style="margin-top:4px;background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-paid="${o.no}">Đã nhận tiền</button></span>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} khi giao</b>`}</div>
       </div>
-      <div class="dishes-list">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người (kèm cơm, canh)</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
+      <div class="dishes-list">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người (kèm cơm, ${o.canh ? esc(o.canh) : "canh"})</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${o.canh ? `<li>🍲 ${esc(o.canh)}</li>` : ""}</ul></div>`).join("")}
         ${Object.entries(o.extras).filter(([, q]) => q).length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${Object.entries(o.extras).filter(([, q]) => q).map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
       ${o.note ? `<div class="meta"><b>Ghi chú:</b> ${esc(o.note)}</div>` : ""}
       <div class="foot"><span><b>${fmt(orderTotal(o))}</b> · ${o.pay}</span>
@@ -1591,7 +1593,7 @@ ${groups.join("\n\n")}
 👉 Đặt cơm tại: [link trang đặt cơm]`;
 }
 function orderText(o) {
-  const sets = o.sets.map((s, i) => `Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` (x${s.qty} hộp)` : ""}:\n${allPicks(s).map(id => "- " + (byId[id]?.name ?? "?")).join("\n")}`).join("\n");
+  const sets = o.sets.map((s, i) => `Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` (x${s.qty} hộp)` : ""}:\n${allPicks(s).map(id => "- " + (byId[id]?.name ?? "?")).join("\n")}${o.canh ? "\n- Canh: " + o.canh : ""}`).join("\n");
   const ex = Object.entries(o.extras).filter(([, q]) => q).map(([id, q]) => `+ ${q} x ${byId[id]?.name ?? "?"}`).join("\n");
   return `ĐƠN #${o.no} – giao lúc ${o.time}\nTên: ${o.name}\nSĐT: ${o.phone}\nĐịa chỉ: ${o.addr}\n${isPaid(o) ? "ĐÃ THU TIỀN (chuyển khoản)" : o.pay === "Chuyển khoản" ? "CHUYỂN KHOẢN CHƯA XÁC NHẬN: hỏi chủ quán trước khi thu " + fmt(orderTotal(o)) : "THU TIỀN MẶT: " + fmt(orderTotal(o))}\n\n${o.tray ? trayText(o.tray) + "\n" : ""}${sets}${ex ? "\n" + ex : ""}${o.note ? "\n\nGhi chú: " + o.note : ""}`;
 }
@@ -1615,7 +1617,7 @@ function shipCard(o) {
     <div class="sum-money"><span>${o.tray ? `Mâm ${o.tray.people} người · ` : ""}${setCount(o)} hộp cơm${extrasCount(o) ? ` · ${extrasCount(o)} đồ uống` : ""}</span><span class="more">Xem chi tiết ▾</span></div>
     </summary>
     ${gone ? "" : `<div class="s-btns"><a href="tel:${tel}">Gọi khách</a><a href="${map}" target="_blank" rel="noopener">Chỉ đường</a></div>`}
-      <div class="dishes-list" style="margin-top:6px">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((x, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(x))})${x.qty > 1 ? ` <span class="x">× ${x.qty} hộp</span>` : ""}</div><ul>${allPicks(x).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>`).join("")}
+      <div class="dishes-list" style="margin-top:6px">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((x, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(x))})${x.qty > 1 ? ` <span class="x">× ${x.qty} hộp</span>` : ""}</div><ul>${allPicks(x).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${o.canh ? `<li>🍲 ${esc(o.canh)}</li>` : ""}</ul></div>`).join("")}
       ${ex.length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${ex.map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
     ${o.note ? `<div class="meta"><b>Ghi chú:</b> ${esc(o.note)}</div>` : ""}
     ${o.st === "moi" ? `<div class="s-ready">Bếp đang soạn, chờ chủ quán bấm “Soạn xong” rồi lấy.</div>` : ""}
@@ -1873,7 +1875,7 @@ $("form").addEventListener("submit", e => {
   if (missing.length) { $("err").textContent = "Vui lòng điền " + missing.join(", ") + "."; $("err").hidden = false; return; }
   $("err").hidden = true;
   const o = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), no: Math.max(0, ...orders.map(x => x.no)) + 1, at: Date.now(), name, phone, addr, ...(pinGeo.f ? { geo: pinGeo.f } : {}), time: $("f-time").value, pay: document.querySelector('input[name="pay"]:checked').value,
-    note: noteText(), st: "moi", sets: cart.sets.map(s => ({ ...s })), extras: { ...cart.extras }, ...(cart.tray ? { tray: { ...cart.tray } } : {}), use: { ...promoUse }, discount: promoDiscount() };
+    note: noteText(), st: "moi", sets: cart.sets.map(s => ({ ...s })), extras: { ...cart.extras }, ...(cart.tray ? { tray: { ...cart.tray } } : {}), canh: canhNames(), use: { ...promoUse }, discount: promoDiscount() };
   $("submit-btn").disabled = true; $("submit-btn").textContent = "Đang gửi…";
   placeOrder(o).then(r => {
     $("submit-btn").disabled = false; renderEditBar();
@@ -2393,7 +2395,7 @@ async function renderDon() {
     box.innerHTML = list.length ? list.map(o => {
       const ix = TRACK.findIndex(([k]) => k === o.st);
       return `<div class="track${o.st === "huy" ? " huy" : ""}"><div class="hd"><span>Đơn #${o.no} · ${o.day === vnDate() ? "hôm nay" : dmy(o.day)}</span><span>${fmt(o.total || 0)}</span></div>
-        <span class="sub" style="margin:0">${o.tray ? `Mâm ${o.tray} người · ` : ""}${o.sets} suất${o.drinks ? ` · ${o.drinks} nước` : ""} · nhận ${/^\d/.test(o.time) ? "lúc " + esc(o.time) : "sớm nhất"}</span>
+        <span class="sub" style="margin:0">${o.tray ? `Mâm ${o.tray} người · ` : ""}${o.sets} suất${o.canh ? ` · 🍲 ${esc(o.canh)}` : ""}${o.drinks ? ` · ${o.drinks} nước` : ""} · nhận ${/^\d/.test(o.time) ? "lúc " + esc(o.time) : "sớm nhất"}</span>
         ${o.st === "huy" ? "" : `<div class="steps">${TRACK.map(([, l], i) => `<span class="${i <= ix ? "on" : ""}">${l}</span>`).join("")}</div>`}
         <span class="now">${TRACK_NOW[o.st] || ""}</span>
         ${o.edited ? `<span class="sub" style="margin:0">✏️ Đã sửa lúc ${new Date(o.edited).toTimeString().slice(0, 5)}</span>` : ""}

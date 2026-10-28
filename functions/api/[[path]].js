@@ -291,7 +291,7 @@ export async function onRequest({ request, env, params, waitUntil }) {
       const geo = geoOf(body.geo);
       const ckey = crypto.randomUUID();
       const order = { no, at, ckey, name, phone, addr, ...(geo ? { geo } : {}), time: str(body.time, 30) || "Càng sớm càng tốt",
-        pay: body.pay === "Chuyển khoản" ? "Chuyển khoản" : "Tiền mặt", paid: false, note: str(body.note, 300), sets, extras, ...(tray ? { tray } : {}),
+        pay: body.pay === "Chuyển khoản" ? "Chuyển khoản" : "Tiền mặt", paid: false, note: str(body.note, 300), canh: str(body.canh, 120), sets, extras, ...(tray ? { tray } : {}),
         ...(discount ? { discount, promo } : {}), total: total - discount };
       await db.prepare("INSERT INTO orders (id, no, day, at, st, data) VALUES (?, ?, ?, ?, 'moi', ?)").bind(id, no, vnDay(at), at, JSON.stringify(order)).run();
       later(sendPush(db, "owner"));
@@ -415,7 +415,7 @@ export async function onRequest({ request, env, params, waitUntil }) {
     if (a === "track" && m === "POST") {
       const body = await request.json(), c = await cusOf(db, request), out = new Map();
       const pub = r => { const d = JSON.parse(r.data); return { id: r.id, no: d.no, at: r.at, day: r.day, st: r.st, time: d.time, total: d.total, sets: (d.sets || []).reduce((t, x) => t + (x.qty || 0), 0), drinks: Object.values(d.extras || {}).reduce((t, q) => t + q, 0), addr: d.addr,
-        tray: d.tray ? d.tray.people : 0, edited: d.edited || 0, discount: d.discount || 0,
+        tray: d.tray ? d.tray.people : 0, canh: d.canh || "", edited: d.edited || 0, discount: d.discount || 0,
         detail: { name: d.name, phone: d.phone, addr: d.addr, geo: d.geo || null, time: d.time, note: d.note, sets: (d.sets || []).map(x => ({ picks: x.picks, qty: x.qty, price: x.price })), extras: d.extras || {}, tray: d.tray || null } }; };
       for (const it of (Array.isArray(body.items) ? body.items : []).slice(0, 20)) {
         const r = await db.prepare("SELECT id, day, at, st, data FROM orders WHERE id = ?").bind(str(it.id, 40)).first();
@@ -456,7 +456,7 @@ export async function onRequest({ request, env, params, waitUntil }) {
       if (out.length) return json({ error: "Có món vừa hết, bạn chọn lại giúp quán nhé.", out }, 409);
       if (old.promo?.points && !it.sets.length) return bad("Đơn có đổi suất miễn phí nên cần giữ ít nhất 1 suất cơm.", 409);
       const discount = Math.min(old.discount || 0, it.total), geo = geoOf(body.geo);
-      const order = { ...old, name, phone, addr, time: str(body.time, 30) || "Càng sớm càng tốt", note: str(body.note, 300),
+      const order = { ...old, name, phone, addr, time: str(body.time, 30) || "Càng sớm càng tốt", note: str(body.note, 300), canh: str(body.canh ?? old.canh, 120),
         sets: it.sets, extras: it.extras, total: it.total - discount, edited: Date.now(), ...(discount ? { discount } : {}) };
       delete order.tray; if (it.tray) order.tray = it.tray;
       delete order.geo; if (geo) order.geo = geo;
