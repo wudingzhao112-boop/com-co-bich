@@ -261,7 +261,7 @@ export async function onRequest({ request, env, params, waitUntil }) {
     if (a === "orders" && !b && m === "POST") {
       const body = await request.json();
       const name = str(body.name, 80), phone = str(body.phone, 20), addr = str(body.addr, 200);
-      if (!name || !/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, "")) || !addr) return bad("Vui lòng điền tên, số điện thoại và địa chỉ.");
+      if (!name || !/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, "")) || addr.length < 8) return bad("Vui lòng điền tên, số điện thoại và địa chỉ giao hàng đầy đủ.");
       const menu = await getKV(db, "menu");
       const it = parseItems(body, menu);
       if (it.error) return bad(it.error);

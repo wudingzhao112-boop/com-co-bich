@@ -359,11 +359,19 @@ body.has-nav .wrap { padding-bottom: 200px; }
 .zoom-card { background: var(--surface); color: var(--fg); border-radius: 16px; padding: 12px; width: min(100%, 460px); display: grid; gap: 10px; }
 .zoom-card .thumb { aspect-ratio: 1 / 1; margin: 0; border-radius: 12px; }
 .zoom-card h3 { margin: 0; font-size: 20px; }
-.cart-set { padding: 10px 0; border-bottom: 1px dashed var(--line); display: grid; gap: 2px; }
-.cart-set:last-child { border-bottom: 0; }
-.cart-set .hd { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-weight: 700; }
-.cart-set ul { margin: 2px 0 0; padding-left: 18px; font-size: 15px; }
-.cart-set .one { font-size: 14px; color: var(--muted); }
+.cart-set { border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; display: grid; gap: 6px; background: var(--surface); }
+.cart-set .hd { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; font-weight: 700; font-size: 17px; }
+.cart-set .hd small { font-weight: 500; color: var(--muted); font-size: 13px; margin-left: 6px; }
+.cart-set ul { margin: 0; padding: 0; list-style: none; font-size: 15px; display: grid; gap: 3px; }
+.cart-set ul.dl li::before { content: "•"; color: var(--chili); font-weight: 700; margin-right: 8px; }
+.cart-set .one { font-size: 15px; line-height: 1.45; }
+.cart-set .dr { border-top: 1px dashed var(--line); padding-top: 6px; }
+.cart-set .dr li { display: flex; justify-content: space-between; gap: 8px; color: var(--fg); }
+.cart-set .dr li .money { font-size: 15px; font-weight: 600; }
+.cart-canh { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; background: color-mix(in srgb, var(--leaf) 10%, var(--surface)); border-radius: 10px; padding: 8px 12px; margin-bottom: 4px; }
+.cart-canh b { color: var(--leaf); }
+.req { color: var(--chili); font-weight: 700; font-size: 13px; }
+.field input.bad { border: 2px solid var(--chili); background: color-mix(in srgb, var(--chili) 8%, var(--surface)); }
 .cart-actions { display: flex; justify-content: space-between; gap: 10px; }
 .cart-actions .btn-main { flex: 1; }
 #cart-actions { display: grid; grid-template-columns: 1fr 1fr; }
@@ -538,10 +546,10 @@ details.sorder { border-left-color: var(--st); }
       <div class="total"><span>Tổng cộng</span><span id="total-co"></span></div>
       <form id="form" novalidate style="display:grid;gap:14px">
         <div class="row2">
-          <div class="field"><label for="f-name">Tên của bạn</label><input id="f-name" autocomplete="name" placeholder="VD: Chị Lan"></div>
-          <div class="field"><label for="f-phone">Số điện thoại</label><input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xx xxx xxx"></div>
+          <div class="field"><label for="f-name">Tên của bạn <span class="req">*</span></label><input id="f-name" autocomplete="name" placeholder="VD: Chị Lan"></div>
+          <div class="field"><label for="f-phone">Số điện thoại <span class="req">*</span></label><input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xx xxx xxx"></div>
         </div>
-        <div class="field"><label for="f-addr">Địa chỉ cụ thể</label><input id="f-addr" autocomplete="street-address" placeholder="Vị trí: số nhà, ngõ, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="f">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="f-geo-st"></small></div>
+        <div class="field"><label for="f-addr">Địa chỉ cụ thể <span class="req">* bắt buộc</span></label><input id="f-addr" autocomplete="street-address" placeholder="Vị trí: số nhà, ngõ, đường, phường"><button type="button" class="btn-ghost pin-btn" data-mappin="f">📍 Ghim nhà trên bản đồ</button><small class="geo-st" id="f-geo-st"></small></div>
         <div class="field"><label for="f-hour">Giờ muốn nhận</label>
           <div class="time-pick"><select id="f-hour" aria-label="Giờ"></select><b>:</b><select id="f-min" aria-label="Phút"></select></div>
           <input type="hidden" id="f-time"></div>
@@ -1258,14 +1266,16 @@ function renderExtras() {
 }
 // Giỏ: mỗi suất một khối, mỗi món một dòng (trang xác nhận gộp món thành một dòng)
 function cartLinesHTML(editable) {
-  const sets = cart.sets.map((s, i) => `<div class="cart-set"><div class="hd"><span>Suất ${i + 1}: ${k(setPrice(s))}${s.qty > 1 ? ` (${s.qty} hộp)` : ""}</span><span class="money">${fmt(s.qty * setPrice(s))}</span></div>
-    ${editable ? `<ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${canhNames() ? `<li>🍲 ${esc(canhNames())} (miễn phí)</li>` : ""}</ul>` : `<div class="one">${esc(picksText(allPicks(s)))}${canhNames() ? ` · 🍲 ${esc(canhNames())}` : ""}</div>`}
-    ${s.drinks ? `<ul>${drinkLines(s.drinks, (id, q) => `<li class="ln"><span>🥤 ${esc(byId[id]?.name ?? "?")} × ${q}</span><span class="money">${fmt(q * (byId[id]?.price || 0))}</span></li>`)}</ul>` : ""}</div>`);
+  const sets = cart.sets.map((s, i) => `<div class="cart-set"><div class="hd"><span>Suất ${i + 1}<small>${k(setPrice(s))} · ${s.picks.length} món${s.qty > 1 ? ` · ${s.qty} hộp` : ""}</small></span><span class="money">${fmt(s.qty * setPrice(s))}</span></div>
+    ${editable ? `<ul class="dl">${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul>` : `<div class="one">${esc(picksText(allPicks(s)))}</div>`}
+    ${s.drinks ? `<ul class="dr">${drinkLines(s.drinks, (id, q) => `<li><span>🥤 ${esc(byId[id]?.name ?? "?")} × ${q}</span><span class="money">${fmt(q * (byId[id]?.price || 0))}</span></li>`)}</ul>` : ""}</div>`);
   if (cart.tray) sets.unshift(`<div class="cart-set"><div class="hd"><span>🍲 Mâm ${cart.tray.people} người</span><span class="money">${fmt(trayPrice(cart.tray))}</span></div>
     ${editable ? `<ul>${Object.entries(cart.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}<li>Cơm trắng, ${esc(canhNames() || "canh")} cho ${cart.tray.people} người</li></ul>${editable ? `<button type="button" class="linkish" data-edittray="1">Sửa mâm</button>` : ""}` : `<div class="one">${esc(trayText(cart.tray))}</div>`}</div>`);
   const ex = exRest(cart);
-  const exHTML = ex.length ? [`<div class="cart-set"><div class="hd"><span>Đồ uống</span></div><ul>${ex.map(([id, q]) => `<li class="ln"><span>${esc(byId[id].name)} × ${q}</span><span class="money">${fmt(q * byId[id].price)}</span></li>`).join("")}</ul></div>`] : [];
-  return sets.concat(exHTML).join("");
+  const exHTML = ex.length ? [`<div class="cart-set"><div class="hd"><span>Đồ uống</span></div><ul class="dr" style="border:0;padding:0">${ex.map(([id, q]) => `<li><span>🥤 ${esc(byId[id].name)} × ${q}</span><span class="money">${fmt(q * byId[id].price)}</span></li>`).join("")}</ul></div>`] : [];
+  // Canh ghi một lần cho cả đơn (suất nào cũng kèm)
+  const canhHTML = canhNames() && (cart.sets.length || cart.tray) ? [`<div class="cart-canh">🍲<span>Mỗi suất kèm canh: <b>${esc(canhNames())}</b> · miễn phí</span></div>`] : [];
+  return sets.concat(exHTML, canhHTML).join("");
 }
 function renderCart() {
   const has = cart.sets.length || !!cart.tray || Object.values(cart.extras).some(Boolean);
@@ -1724,19 +1734,21 @@ document.addEventListener("click", e => {
 document.addEventListener("keydown", e => { if (e.key === "Escape") $("zoom").hidden = true; });
 $("back").onclick = () => { renderKhach(); showKhach("menu"); };
 
+$("form").addEventListener("input", e => e.target.classList.remove("bad"));
 $("form").addEventListener("submit", e => {
   e.preventDefault();
   const name = $("f-name").value.trim(), phone = $("f-phone").value.trim(), addr = $("f-addr").value.trim();
   const missing = [];
   if (!name) missing.push("tên");
   if (!/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, ""))) missing.push("số điện thoại đúng");
-  if (!addr) missing.push("địa chỉ giao");
+  if (addr.length < 8) missing.push("địa chỉ giao hàng đầy đủ (số nhà, ngõ, đường, phường)");
+  [["f-name", !name], ["f-phone", !/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, ""))], ["f-addr", addr.length < 8]].forEach(([id, b]) => $(id).classList.toggle("bad", b));
   const tm = /^(\d\d):(\d\d)$/.exec($("f-time").value);
   if (!missing.length && tm) {
     const d = new Date(); d.setHours(+tm[1], +tm[2], 0, 0);
     if (d.getTime() < Date.now() + 10 * MIN) { $("err").textContent = "Giờ nhận đã qua hoặc gần quá. Bạn chọn giờ muộn hơn, hoặc chọn “Sớm nhất” nhé."; $("err").hidden = false; return; }
   }
-  if (missing.length) { $("err").textContent = "Vui lòng điền " + missing.join(", ") + "."; $("err").hidden = false; return; }
+  if (missing.length) { $("err").textContent = "Vui lòng điền " + missing.join(", ") + ". Không có địa chỉ thì quán không giao được."; $("err").hidden = false; const f = document.querySelector("#form input.bad"); if (f) { f.scrollIntoView({ block: "center" }); f.focus(); } return; }
   $("err").hidden = true;
   const o = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), no: Math.max(0, ...orders.map(x => x.no)) + 1, at: Date.now(), name, phone, addr, ...(pinGeo.f ? { geo: pinGeo.f } : {}), time: $("f-time").value, pay: document.querySelector('input[name="pay"]:checked').value,
     note: noteText(), st: "moi", sets: cart.sets.map(s => ({ ...s })), extras: { ...cart.extras }, ...(cart.tray ? { tray: { ...cart.tray } } : {}), canh: canhNames(), use: { ...promoUse }, discount: promoDiscount() };
