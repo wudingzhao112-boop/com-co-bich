@@ -1076,6 +1076,12 @@ const canhToday = () => MENU.filter(m => m.cat === CANH && stock[m.id] > 0);
 // Tên canh hôm nay (miễn phí, kèm mọi suất); đơn đã đặt thì dùng tên canh lưu trong đơn
 const canhNames = () => canhToday().map(m => m.name).join(", ");
 let step = "mon", canhPick = "";
+// Nước chọn cho suất đang làm; bấm xong suất thì lưu vào suất đó, suất mới bắt đầu lại từ 0
+let buildDrinks = {};
+const addEx = (to, from, sign = 1) => { for (const [id, q] of Object.entries(from || {})) { to[id] = Math.max(0, (to[id] || 0) + sign * q); if (!to[id]) delete to[id]; } return to; };
+// Nước không gắn với suất nào (đơn cũ, đặt lại): phần còn lại sau khi trừ nước của từng suất
+const exRest = o => { const r = { ...o.extras }; for (const x of o.sets) addEx(r, x.drinks, -1); return Object.entries(r).filter(([, q]) => q > 0); };
+const drinkLines = (d, f) => Object.entries(d || {}).filter(([, q]) => q).map(([id, q]) => f(id, q)).join("");
 const RAU = "Rau", MAN = "Món mặn";
 const nCat = (ids, c) => [...ids].filter(id => byId[id]?.cat === c).length;
 // Món này còn chọn được vào suất không (đủ chỗ, chưa quá số món mặn, chừa chỗ cho rau)
@@ -1091,7 +1097,7 @@ function ruleBlock(id) {
 const ruleText = () => [RULE.man > 0 ? `tối đa ${RULE.man} món mặn` : "", RULE.rau > 0 ? `ít nhất ${RULE.rau} món rau` : ""].filter(Boolean).join(", ");
 const leftInfo = rem => rem === 0 ? "Hết" : SHOW_LEFT ? (rem <= 5 ? `<span style="color:var(--chili)">còn ${rem}</span>` : `còn ${rem}`) : "";
 const sold = id => orders.reduce((s, o) => s + usedBy(o, id), 0);
-let left = id => Math.max(0, (stock[id] || 0) - sold(id) - usedBy(cart, id));
+let left = id => Math.max(0, (stock[id] || 0) - sold(id) - usedBy(cart, id) - (buildDrinks[id] || 0));
 const setPrice = x => x.price || TIERS.find(t => t.picks === x.picks.length)?.price || 0;
 const trayDish = id => byId[id]?.cat === RAU ? TRAY.rau : TRAY.man;
 const trayPrice = t => t ? (t.price ?? (t.people * TRAY.person + Object.entries(t.items).reduce((s, [id, q]) => s + q * trayDish(id), 0))) : 0;
@@ -1211,7 +1217,7 @@ const pickRow = (info, on, out) => `<span class="pick-row"><small>${info}</small
 function renderDrinks() {
   const list = MENU.filter(m => isExtra(m.id) && stock[m.id] > 0);
   $("drinks").innerHTML = list.map(m => {
-    const q = cart.extras[m.id] || 0, rem = left(m.id);
+    const q = buildDrinks[m.id] || 0, rem = left(m.id);
     return `<div class="drink${q ? " on" : ""}"><span class="thumb" data-zoom="${m.id}">${thumb(m)}</span><b>${esc(m.name)}</b><span class="pr">${fmt(m.price)}</span>
       <div class="st"><button type="button" data-dec="${m.id}" aria-label="Bớt ${esc(m.name)}" ${q ? "" : "disabled"}>−</button><b>${q}</b><button type="button" class="add" data-inc="${m.id}" aria-label="Thêm ${esc(m.name)}" ${rem ? "" : "disabled"}>+</button></div></div>`;
   }).join("") || `<p class="sub">Hôm nay quán chưa có đồ uống.</p>`;
@@ -1252,11 +1258,12 @@ function renderExtras() {
 }
 // Giỏ: mỗi suất một khối, mỗi món một dòng (trang xác nhận gộp món thành một dòng)
 function cartLinesHTML(editable) {
-  const sets = cart.sets.map((s, i) => `<div class="cart-set"><div class="hd"><span>Suất ${k(setPrice(s))}${s.qty > 1 ? ` (${s.qty} hộp)` : ""}</span><span class="money">${fmt(s.qty * setPrice(s))}</span></div>
-    ${editable ? `<ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${canhNames() ? `<li>🍲 ${esc(canhNames())} (miễn phí)</li>` : ""}</ul>` : `<div class="one">${esc(picksText(allPicks(s)))}${canhNames() ? ` · 🍲 ${esc(canhNames())}` : ""}</div>`}</div>`);
+  const sets = cart.sets.map((s, i) => `<div class="cart-set"><div class="hd"><span>Suất ${i + 1}: ${k(setPrice(s))}${s.qty > 1 ? ` (${s.qty} hộp)` : ""}</span><span class="money">${fmt(s.qty * setPrice(s))}</span></div>
+    ${editable ? `<ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${canhNames() ? `<li>🍲 ${esc(canhNames())} (miễn phí)</li>` : ""}</ul>` : `<div class="one">${esc(picksText(allPicks(s)))}${canhNames() ? ` · 🍲 ${esc(canhNames())}` : ""}</div>`}
+    ${s.drinks ? `<ul>${drinkLines(s.drinks, (id, q) => `<li class="ln"><span>🥤 ${esc(byId[id]?.name ?? "?")} × ${q}</span><span class="money">${fmt(q * (byId[id]?.price || 0))}</span></li>`)}</ul>` : ""}</div>`);
   if (cart.tray) sets.unshift(`<div class="cart-set"><div class="hd"><span>🍲 Mâm ${cart.tray.people} người</span><span class="money">${fmt(trayPrice(cart.tray))}</span></div>
     ${editable ? `<ul>${Object.entries(cart.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}<li>Cơm trắng, ${esc(canhNames() || "canh")} cho ${cart.tray.people} người</li></ul>${editable ? `<button type="button" class="linkish" data-edittray="1">Sửa mâm</button>` : ""}` : `<div class="one">${esc(trayText(cart.tray))}</div>`}</div>`);
-  const ex = Object.entries(cart.extras).filter(([, q]) => q);
+  const ex = exRest(cart);
   const exHTML = ex.length ? [`<div class="cart-set"><div class="hd"><span>Đồ uống</span></div><ul>${ex.map(([id, q]) => `<li class="ln"><span>${esc(byId[id].name)} × ${q}</span><span class="money">${fmt(q * byId[id].price)}</span></li>`).join("")}</ul></div>`] : [];
   return sets.concat(exHTML).join("");
 }
@@ -1290,15 +1297,15 @@ function renderKhach() {
   go.disabled = !(gio || step === "canh" || full || has);
   // Tổng tiền luôn tính cả suất đang chọn dở
   if (!gio && tierIx >= 0) {
-    const n = setCount(cart) + buildQty, drinks = Object.values(cart.extras).reduce((a, q) => a + q, 0);
-    $("total-bar").textContent = fmt(orderTotal(cart) + SET.price * buildQty);
+    const n = setCount(cart) + buildQty, drinks = Object.values(cart.extras).reduce((a, q) => a + q, 0) + Object.values(buildDrinks).reduce((a, q) => a + q, 0);
+    $("total-bar").textContent = fmt(orderTotal(cart) + SET.price * buildQty + Object.entries(buildDrinks).reduce((a, [id, q]) => a + q * byId[id].price, 0));
     $("count-bar").textContent = `${n} suất${drinks ? ` · ${drinks} nước` : ""}${step === "canh" ? " · bấm xem đơn" : ""}`;
   }
 }
 function goStep(st) { step = st; renderKhach(); $(st === "gio" ? "cart-panel" : "builder").scrollIntoView({ block: "start" }); }
 function goHome() {
   if (mode !== "khach" || editMode) return;
-  trayMode = false; step = "mon"; tierIx = -1; build = new Set(); buildQty = 1; canhPick = ""; dishCat = "all"; Object.assign(SET, { price: 0, picks: 0 });
+  trayMode = false; step = "mon"; tierIx = -1; build = new Set(); buildQty = 1; canhPick = ""; dishCat = "all"; buildDrinks = {}; Object.assign(SET, { price: 0, picks: 0 });
   $("zoom").hidden = true; renderKhach(); showKhach("menu");
 }
 function fillTimes() {
@@ -1421,8 +1428,8 @@ function renderOwner() {
         ${o.discount ? `<div class="row"><span class="k">Ưu đãi</span><b style="color:var(--leaf)">Đã giảm ${fmt(o.discount)}${o.promo?.points ? ` (đổi ${o.promo.points} điểm)` : ""}${o.promo?.ref ? " (phiếu mời bạn)" : ""}</b></div>` : ""}
         <div class="row"><span class="k">Thu tiền</span>${o.pay === "Chuyển khoản" ? `<b class="paid">Đã thu tiền (chuyển khoản)</b>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} khi giao</b>`}</div>
       </div>
-      <div class="dishes-list">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người (kèm cơm, ${o.canh ? esc(o.canh) : "canh"})</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${o.canh ? `<li>🍲 ${esc(o.canh)}</li>` : ""}</ul></div>`).join("")}
-        ${Object.entries(o.extras).filter(([, q]) => q).length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${Object.entries(o.extras).filter(([, q]) => q).map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
+      <div class="dishes-list">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người (kèm cơm, ${o.canh ? esc(o.canh) : "canh"})</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${o.canh ? `<li>🍲 ${esc(o.canh)}</li>` : ""}${drinkLines(s.drinks, (id, q) => `<li>🥤 ${q} × ${esc(byId[id]?.name ?? "?")}</li>`)}</ul></div>`).join("")}
+        ${exRest(o).length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${exRest(o).map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
       ${o.note ? `<div class="meta"><b>Ghi chú:</b> ${esc(o.note)}</div>` : ""}
       <div class="foot"><span><b>${fmt(orderTotal(o))}</b> · ${o.pay}</span>
         <span class="actions" style="gap:6px">
@@ -1451,8 +1458,8 @@ ${groups.join("\n\n")}
 👉 Đặt cơm tại: [link trang đặt cơm]`;
 }
 function orderText(o) {
-  const sets = o.sets.map((s, i) => `Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` (x${s.qty} hộp)` : ""}:\n${allPicks(s).map(id => "- " + (byId[id]?.name ?? "?")).join("\n")}${o.canh ? "\n- Canh: " + o.canh : ""}`).join("\n");
-  const ex = Object.entries(o.extras).filter(([, q]) => q).map(([id, q]) => `+ ${q} x ${byId[id]?.name ?? "?"}`).join("\n");
+  const sets = o.sets.map((s, i) => `Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` (x${s.qty} hộp)` : ""}:\n${allPicks(s).map(id => "- " + (byId[id]?.name ?? "?")).join("\n")}${o.canh ? "\n- Canh: " + o.canh : ""}${drinkLines(s.drinks, (id, q) => `\n+ ${q} x ${byId[id]?.name ?? "?"}`)}`).join("\n");
+  const ex = exRest(o).map(([id, q]) => `+ ${q} x ${byId[id]?.name ?? "?"}`).join("\n");
   return `ĐƠN #${o.no} – giao lúc ${o.time}\nTên: ${o.name}\nSĐT: ${o.phone}\nĐịa chỉ: ${o.addr}\n${o.pay === "Chuyển khoản" ? "ĐÃ THU TIỀN (chuyển khoản)" : "THU TIỀN MẶT: " + fmt(orderTotal(o))}\n\n${o.tray ? trayText(o.tray) + "\n" : ""}${sets}${ex ? "\n" + ex : ""}${o.note ? "\n\nGhi chú: " + o.note : ""}`;
 }
 
@@ -1462,7 +1469,7 @@ const extrasCount = o => Object.values(o.extras).reduce((s, q) => s + q, 0);
 function shipCard(o) {
   const u = urgency(o), gone = o.st === "giao", cash = o.pay !== "Chuyển khoản";
   const tel = o.phone.replace(/[^0-9+]/g, ""), map = mapUrl(o);
-  const ex = Object.entries(o.extras).filter(([, q]) => q);
+  const ex = exRest(o);
   const btn = o.st === "nau" ? `<button type="button" class="btn-main btn-green" data-ship="${o.no}">✓ Đã giao xong</button>`
     : o.st === "xong" ? `<button type="button" class="btn-main" data-ship="${o.no}">Đã nhận đơn, đi giao</button>` : "";
   return `<details class="order sorder" data-st="${o.st}" data-grp="${o.st === "giao" ? "xanh" : o.st === "nau" ? "vang" : "do"}" data-ono="${o.no}"${openOrders.has(o.no) ? " open" : ""}>
@@ -1475,7 +1482,7 @@ function shipCard(o) {
     <div class="sum-money"><span>${o.tray ? `Mâm ${o.tray.people} người · ` : ""}${setCount(o)} hộp cơm${extrasCount(o) ? ` · ${extrasCount(o)} đồ uống` : ""}</span><span class="more">Xem chi tiết ▾</span></div>
     </summary>
     ${gone ? "" : `<div class="s-btns"><a href="tel:${tel}">Gọi khách</a><a href="${map}" target="_blank" rel="noopener">Chỉ đường</a></div>`}
-      <div class="dishes-list" style="margin-top:6px">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((x, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(x))})${x.qty > 1 ? ` <span class="x">× ${x.qty} hộp</span>` : ""}</div><ul>${allPicks(x).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${o.canh ? `<li>🍲 ${esc(o.canh)}</li>` : ""}</ul></div>`).join("")}
+      <div class="dishes-list" style="margin-top:6px">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((x, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(x))})${x.qty > 1 ? ` <span class="x">× ${x.qty} hộp</span>` : ""}</div><ul>${allPicks(x).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${o.canh ? `<li>🍲 ${esc(o.canh)}</li>` : ""}${drinkLines(x.drinks, (id, q) => `<li>🥤 ${q} × ${esc(byId[id]?.name ?? "?")}</li>`)}</ul></div>`).join("")}
       ${ex.length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${ex.map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
     ${o.note ? `<div class="meta"><b>Ghi chú:</b> ${esc(o.note)}</div>` : ""}
     ${o.st === "moi" ? `<div class="s-ready">Bếp đang soạn, chờ chủ quán bấm “Soạn xong” rồi lấy.</div>` : ""}
@@ -1567,11 +1574,11 @@ document.addEventListener("click", e => {
     Object.assign(SET, TIERS[tierIx]); build = new Set([d.browse]); renderKhach(); return;
   }
   if (d.browse) { $("tiers").scrollIntoView({ block: "center", behavior: "smooth" }); $("tiers").classList.remove("need"); void $("tiers").offsetWidth; $("tiers").classList.add("need"); }
-  if (d.inc && left(d.inc) > 0) { cart.extras[d.inc] = (cart.extras[d.inc] || 0) + 1; renderKhach(); }
-  if (d.dec) { cart.extras[d.dec] = Math.max(0, (cart.extras[d.dec] || 0) - 1); renderKhach(); }
+  if (d.inc && left(d.inc) > 0) { buildDrinks[d.inc] = (buildDrinks[d.inc] || 0) + 1; renderKhach(); }
+  if (d.dec) { addEx(buildDrinks, { [d.dec]: 1 }, -1); renderKhach(); }
   if (d.editset) return editSet(+d.editset, "mon");
   if (d.edittray) { step = "mon"; $("tray-btn").click(); return; }
-  if (d.rmset) { cart.sets.splice(+d.rmset, 1); renderKhach(); }
+  if (d.rmset) { const [x] = cart.sets.splice(+d.rmset, 1); addEx(cart.extras, x?.drinks, -1); renderKhach(); }
   if (d.filter) { filter = d.filter; refresh(); }
   if (d.sfilter) { shipFilter = d.sfilter; renderShip(); }
   if (d.catfilter) { catFilter = d.catfilter; renderCatalog(); }
@@ -1614,7 +1621,9 @@ $("show-left").onclick = () => { SHOW_LEFT = !SHOW_LEFT; refresh(); };
 $("bq-inc").onclick = () => { if ([...build].every(id => left(id) > buildQty)) buildQty++; renderKhach(); };
 $("bq-dec").onclick = () => { buildQty = Math.max(1, buildQty - 1); renderKhach(); };
 function commitSet() {
-  cart.sets.push({ picks: [...build], qty: buildQty, price: SET.price, ...(canhPick ? { canh: canhPick } : {}) });
+  const dr = Object.fromEntries(Object.entries(buildDrinks).filter(([, q]) => q));
+  cart.sets.push({ picks: [...build], qty: buildQty, price: SET.price, ...(Object.keys(dr).length ? { drinks: dr } : {}) });
+  addEx(cart.extras, dr); buildDrinks = {};
   build = new Set(); buildQty = 1; canhPick = ""; tierIx = -1; Object.assign(SET, { price: 0, picks: 0 });
   goStep("gio");
 }
@@ -1635,6 +1644,7 @@ function editSet(i, st) {
   if (tierIx < 0) { tierIx = -1; return goStep("mon"); }
   Object.assign(SET, TIERS[tierIx]);
   build = new Set(x.picks); buildQty = x.qty; canhPick = x.canh || "";
+  addEx(cart.extras, x.drinks, -1); buildDrinks = { ...(x.drinks || {}) };
   goStep(st);
 }
 $("cart-back").onclick = () => cart.sets.length ? editSet(cart.sets.length - 1, "canh") : goStep("mon");

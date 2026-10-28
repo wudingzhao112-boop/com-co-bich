@@ -477,7 +477,7 @@ const myOrders = () => { try { return JSON.parse(localStorage.getItem("cobich-my
 function loadIntoCart(d) {
   const ok = id => byId[id] && stock[id] > 0;
   let dropped = 0;
-  cart.sets = (d.sets || []).filter(x => x.picks.every(ok) || (dropped++, false)).map(x => ({ picks: [...x.picks], qty: x.qty, price: TIERS.find(t => t.picks === x.picks.length)?.price || x.price }));
+  cart.sets = (d.sets || []).filter(x => x.picks.every(ok) || (dropped++, false)).map(x => ({ picks: [...x.picks], qty: x.qty, price: TIERS.find(t => t.picks === x.picks.length)?.price || x.price, ...(x.drinks ? { drinks: Object.fromEntries(Object.entries(x.drinks).filter(([id]) => ok(id))) } : {}) }));
   cart.extras = Object.fromEntries(Object.entries(d.extras || {}).filter(([id]) => ok(id) || (dropped++, false)));
   delete cart.tray;
   if (d.tray && TRAY.on) { const items = Object.fromEntries(Object.entries(d.tray.items).filter(([id]) => ok(id) || (dropped++, false))); if (Object.keys(items).length) cart.tray = { people: d.tray.people, items }; }

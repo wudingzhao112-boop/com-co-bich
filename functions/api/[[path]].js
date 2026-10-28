@@ -53,7 +53,9 @@ function parseItems(body, menu) {
   const maxPicks = Math.max(...tiers.map(t => +t.picks || 0));
   const sets = (Array.isArray(body.sets) ? body.sets : []).slice(0, 30).map(s => {
     const picks = [...new Set((Array.isArray(s.picks) ? s.picks : []).slice(0, maxPicks).map(x => str(x, 40)))];
-    return { picks, qty: Math.max(1, Math.min(50, parseInt(s.qty, 10) || 1)), price: +tiers.find(t => +t.picks === picks.length)?.price || 0 };
+    const drinks = {};
+    for (const [id, q] of Object.entries(s.drinks || {}).slice(0, 20)) { const n = Math.min(50, parseInt(q, 10) || 0); if (n > 0) drinks[str(id, 40)] = n; }
+    return { picks, qty: Math.max(1, Math.min(50, parseInt(s.qty, 10) || 1)), price: +tiers.find(t => +t.picks === picks.length)?.price || 0, ...(Object.keys(drinks).length ? { drinks } : {}) };
   }).filter(s => s.picks.length);
   if (sets.some(s => !s.price)) return { error: "Số món trong suất chưa đúng, bạn chọn lại giúp quán nhé." };
   const extras = {};
@@ -416,7 +418,7 @@ export async function onRequest({ request, env, params, waitUntil }) {
       const body = await request.json(), c = await cusOf(db, request), out = new Map();
       const pub = r => { const d = JSON.parse(r.data); return { id: r.id, no: d.no, at: r.at, day: r.day, st: r.st, time: d.time, total: d.total, sets: (d.sets || []).reduce((t, x) => t + (x.qty || 0), 0), drinks: Object.values(d.extras || {}).reduce((t, q) => t + q, 0), addr: d.addr,
         tray: d.tray ? d.tray.people : 0, canh: d.canh || "", edited: d.edited || 0, discount: d.discount || 0,
-        detail: { name: d.name, phone: d.phone, addr: d.addr, geo: d.geo || null, time: d.time, note: d.note, sets: (d.sets || []).map(x => ({ picks: x.picks, qty: x.qty, price: x.price })), extras: d.extras || {}, tray: d.tray || null } }; };
+        detail: { name: d.name, phone: d.phone, addr: d.addr, geo: d.geo || null, time: d.time, note: d.note, sets: (d.sets || []).map(x => ({ picks: x.picks, qty: x.qty, price: x.price, ...(x.drinks ? { drinks: x.drinks } : {}) })), extras: d.extras || {}, tray: d.tray || null } }; };
       for (const it of (Array.isArray(body.items) ? body.items : []).slice(0, 20)) {
         const r = await db.prepare("SELECT id, day, at, st, data FROM orders WHERE id = ?").bind(str(it.id, 40)).first();
         if (r && JSON.parse(r.data).ckey === it.key) out.set(r.id, pub(r));
