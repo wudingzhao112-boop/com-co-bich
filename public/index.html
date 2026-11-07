@@ -375,6 +375,9 @@ body.has-nav .wrap { padding-bottom: 200px; }
 .cart-set .one { font-size: 15px; line-height: 1.45; }
 .cart-set .dr { border-top: 1px dashed var(--line); padding-top: 6px; }
 .cart-set .dr li { display: flex; justify-content: space-between; gap: 8px; color: var(--fg); }
+.cart-set .snote { display: flex; align-items: center; gap: 6px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.cart-set .snote input { flex: 1; min-width: 0; font: inherit; font-size: 15px; padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); }
+.snote-v { font-size: 14px; color: var(--chili); font-weight: 600; margin-top: 4px; }
 .cart-set .dr li .money { font-size: 15px; font-weight: 600; }
 .cart-canh { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; background: color-mix(in srgb, var(--leaf) 10%, var(--surface)); border-radius: 10px; padding: 8px 12px; margin-bottom: 4px; }
 .cart-canh b { color: var(--leaf); }
@@ -1470,7 +1473,8 @@ function renderExtras() {
 function cartLinesHTML(editable) {
   const sets = cart.sets.map((s, i) => `<div class="cart-set"><div class="hd"><span>Suất ${i + 1}<small>${k(setPrice(s))} · ${s.picks.length} món${s.qty > 1 ? ` · ${s.qty} hộp` : ""}</small></span><span class="money">${fmt(s.qty * setPrice(s))}</span></div>
     ${editable ? `<ul class="dl">${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul>` : `<div class="one">${esc(picksText(allPicks(s)))}</div>`}
-    ${s.drinks ? `<ul class="dr">${drinkLines(s.drinks, (id, q) => `<li><span>🥤 ${esc(byId[id]?.name ?? "?")} × ${q}</span><span class="money">${fmt(q * (byId[id]?.price || 0))}</span></li>`)}</ul>` : ""}</div>`);
+    ${s.drinks ? `<ul class="dr">${drinkLines(s.drinks, (id, q) => `<li><span>🥤 ${esc(byId[id]?.name ?? "?")} × ${q}</span><span class="money">${fmt(q * (byId[id]?.price || 0))}</span></li>`)}</ul>` : ""}
+    ${editable ? `<label class="snote">📝<input type="text" data-snote="${i}" maxlength="120" value="${esc(s.note || "")}" placeholder="Ghi chú suất này (vd: ít cơm, không hành…)" aria-label="Ghi chú suất ${i + 1}"></label>` : s.note ? `<div class="snote-v">📝 ${esc(s.note)}</div>` : ""}</div>`);
   if (cart.tray) sets.unshift(`<div class="cart-set"><div class="hd"><span>🍲 Mâm ${cart.tray.people} người</span><span class="money">${fmt(trayPrice(cart.tray))}</span></div>
     ${editable ? `<ul>${Object.entries(cart.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}<li>Cơm trắng, ${esc(canhNames() || "canh")} cho ${cart.tray.people} người</li></ul>${editable ? `<button type="button" class="linkish" data-edittray="1">Sửa mâm</button>` : ""}` : `<div class="one">${esc(trayText(cart.tray))}</div>`}</div>`);
   const ex = exRest(cart);
@@ -1648,7 +1652,7 @@ function renderOwner() {
         ${o.discount ? `<div class="row"><span class="k">Ưu đãi</span><b style="color:var(--leaf)">Đã giảm ${fmt(o.discount)}${o.promo?.points ? ` (đổi ${o.promo.points} điểm)` : ""}${o.promo?.ref ? " (phiếu mời bạn)" : ""}</b></div>` : ""}
         <div class="row"><span class="k">Thu tiền</span>${isPaid(o) ? `<b class="paid">Đã nhận tiền (chuyển khoản)</b>` : o.pay === "Chuyển khoản" ? `<span><b class="collect">Chờ xác nhận chuyển khoản ${fmt(orderTotal(o))}</b><br><small class="sub">Nội dung: COBICH ${esc(o.phone.replace(/\D/g, ""))}</small><br><button type="button" class="btn-sm" style="margin-top:4px;background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-paid="${o.no}">Đã nhận tiền</button></span>` : `<b class="collect">Thu tiền mặt ${fmt(orderTotal(o))} ${o.pickup ? "khi khách qua lấy" : "khi giao"}</b>`}</div>
       </div>
-      <div class="dishes-list">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người (kèm cơm, ${o.canh ? esc(o.canh) : "canh"})</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${o.canh ? `<li>🍲 ${esc(o.canh)}</li>` : ""}${drinkLines(s.drinks, (id, q) => `<li>🥤 ${q} × ${esc(byId[id]?.name ?? "?")}</li>`)}</ul></div>`).join("")}
+      <div class="dishes-list">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người (kèm cơm, ${o.canh ? esc(o.canh) : "canh"})</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((s, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` <span class="x">× ${s.qty} hộp</span>` : ""}</div><ul>${allPicks(s).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${o.canh ? `<li>🍲 ${esc(o.canh)}</li>` : ""}${drinkLines(s.drinks, (id, q) => `<li>🥤 ${q} × ${esc(byId[id]?.name ?? "?")}</li>`)}</ul>${s.note ? `<div class="snote-v">📝 ${esc(s.note)}</div>` : ""}</div>`).join("")}
         ${exRest(o).length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${exRest(o).map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
       ${o.note ? `<div class="meta"><b>Ghi chú:</b> ${esc(o.note)}</div>` : ""}
       <div class="foot"><span><b>${fmt(orderTotal(o))}</b> · ${o.pay}</span>
@@ -1678,7 +1682,7 @@ ${groups.join("\n\n")}
 👉 Đặt cơm tại: [link trang đặt cơm]`;
 }
 function orderText(o) {
-  const sets = o.sets.map((s, i) => `Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` (x${s.qty} hộp)` : ""}:\n${allPicks(s).map(id => "- " + (byId[id]?.name ?? "?")).join("\n")}${o.canh ? "\n- Canh: " + o.canh : ""}${drinkLines(s.drinks, (id, q) => `\n+ ${q} x ${byId[id]?.name ?? "?"}`)}`).join("\n");
+  const sets = o.sets.map((s, i) => `Suất ${i + 1} (${k(setPrice(s))})${s.qty > 1 ? ` (x${s.qty} hộp)` : ""}:\n${allPicks(s).map(id => "- " + (byId[id]?.name ?? "?")).join("\n")}${o.canh ? "\n- Canh: " + o.canh : ""}${drinkLines(s.drinks, (id, q) => `\n+ ${q} x ${byId[id]?.name ?? "?"}`)}${s.note ? "\n* Ghi chú: " + s.note : ""}`).join("\n");
   const ex = exRest(o).map(([id, q]) => `+ ${q} x ${byId[id]?.name ?? "?"}`).join("\n");
   return `ĐƠN #${o.no} – giao lúc ${o.time}\nTên: ${o.name}\nSĐT: ${o.phone}\nĐịa chỉ: ${o.addr}\n${isPaid(o) ? "ĐÃ THU TIỀN (chuyển khoản)" : o.pay === "Chuyển khoản" ? "CHUYỂN KHOẢN CHƯA XÁC NHẬN: hỏi chủ quán trước khi thu " + fmt(orderTotal(o)) : "THU TIỀN MẶT: " + fmt(orderTotal(o))}\n\n${o.tray ? trayText(o.tray) + "\n" : ""}${sets}${ex ? "\n" + ex : ""}${o.note ? "\n\nGhi chú: " + o.note : ""}`;
 }
@@ -1702,7 +1706,7 @@ function shipCard(o) {
     <div class="sum-money"><span>${o.tray ? `Mâm ${o.tray.people} người · ` : ""}${setCount(o)} hộp cơm${extrasCount(o) ? ` · ${extrasCount(o)} đồ uống` : ""}</span><span class="more">Xem chi tiết ▾</span></div>
     </summary>
     ${gone ? "" : `<div class="s-btns"><a href="tel:${tel}">Gọi khách</a><a href="${map}" target="_blank" rel="noopener">Chỉ đường</a></div>`}
-      <div class="dishes-list" style="margin-top:6px">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((x, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(x))})${x.qty > 1 ? ` <span class="x">× ${x.qty} hộp</span>` : ""}</div><ul>${allPicks(x).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${o.canh ? `<li>🍲 ${esc(o.canh)}</li>` : ""}${drinkLines(x.drinks, (id, q) => `<li>🥤 ${q} × ${esc(byId[id]?.name ?? "?")}</li>`)}</ul></div>`).join("")}
+      <div class="dishes-list" style="margin-top:6px">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((x, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(x))})${x.qty > 1 ? ` <span class="x">× ${x.qty} hộp</span>` : ""}</div><ul>${allPicks(x).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${o.canh ? `<li>🍲 ${esc(o.canh)}</li>` : ""}${drinkLines(x.drinks, (id, q) => `<li>🥤 ${q} × ${esc(byId[id]?.name ?? "?")}</li>`)}</ul>${x.note ? `<div class="snote-v">📝 ${esc(x.note)}</div>` : ""}</div>`).join("")}
       ${ex.length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${ex.map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
     ${o.note ? `<div class="meta"><b>Ghi chú:</b> ${esc(o.note)}</div>` : ""}
     ${o.st === "moi" ? `<div class="s-ready">Bếp đang soạn, chờ chủ quán bấm “Soạn xong” rồi lấy.</div>` : ""}
@@ -1857,7 +1861,7 @@ $("bq-inc").onclick = () => { if ([...build].every(id => left(id) > buildQty)) b
 $("bq-dec").onclick = () => { buildQty = Math.max(1, buildQty - 1); renderKhach(); };
 function commitSet() {
   const dr = Object.fromEntries(Object.entries(buildDrinks).filter(([, q]) => q));
-  cart.sets.push({ picks: [...build], qty: buildQty, price: SET.price, ...(Object.keys(dr).length ? { drinks: dr } : {}) });
+  cart.sets.push({ picks: [...build], qty: buildQty, price: SET.price, ...(Object.keys(dr).length ? { drinks: dr } : {}), ...(buildNote ? { note: buildNote } : {}) }); buildNote = "";
   addEx(cart.extras, dr); buildDrinks = {};
   build = new Set(); buildQty = 1; canhPick = ""; tierIx = -1; Object.assign(SET, { price: 0, picks: 0 });
   goStep("gio");
@@ -1871,6 +1875,7 @@ $("back-mon").onclick = () => { canhPick = ""; goStep("mon"); };
 $("pay-now").onclick = () => openCheckout();
 $("more-set").onclick = () => goStep("mon");
 // Sửa lại một suất trong giỏ: lấy suất ra, đưa về bước chọn món (hoặc bước canh/nước)
+let buildNote = "";
 function editSet(i, st) {
   const x = cart.sets[i]; if (!x) return;
   cart.sets.splice(i, 1);
@@ -1878,7 +1883,7 @@ function editSet(i, st) {
   tierIx = ix >= 0 ? ix : TIERS.findIndex(t => t.picks === x.picks.length);
   if (tierIx < 0) { tierIx = -1; return goStep("mon"); }
   Object.assign(SET, TIERS[tierIx]);
-  build = new Set(x.picks); buildQty = x.qty; canhPick = x.canh || "";
+  build = new Set(x.picks); buildQty = x.qty; canhPick = x.canh || ""; buildNote = x.note || "";
   addEx(cart.extras, x.drinks, -1); buildDrinks = { ...(x.drinks || {}) };
   goStep(st);
 }
@@ -1911,6 +1916,7 @@ $("add-form").addEventListener("submit", e => {
   if (file) readImage(file, url => { m.img = url; uploadImg(m.id, url); renderCatalog(); });
 });
 $("q").addEventListener("input", renderCatalog);
+$("cart-list").addEventListener("input", e => { const i = e.target.dataset.snote; if (i != null && cart.sets[i]) cart.sets[i].note = e.target.value.slice(0, 120); });
 $("new-day").onclick = () => {
   if (!confirm("Tắt hết món đang bán để sang ngày mới? (Đơn hàng không bị xoá)")) return;
   for (const key in stock) { if (stock[key]) lastQty[key] = stock[key]; stock[key] = 0; }
@@ -2531,7 +2537,7 @@ const myOrders = () => { try { return JSON.parse(localStorage.getItem("cobich-my
 function loadIntoCart(d) {
   const ok = id => byId[id] && stock[id] > 0;
   let dropped = 0;
-  cart.sets = (d.sets || []).filter(x => x.picks.every(ok) || (dropped++, false)).map(x => ({ picks: [...x.picks], qty: x.qty, price: TIERS.find(t => t.picks === x.picks.length)?.price || x.price, ...(x.drinks ? { drinks: Object.fromEntries(Object.entries(x.drinks).filter(([id]) => ok(id))) } : {}) }));
+  cart.sets = (d.sets || []).filter(x => x.picks.every(ok) || (dropped++, false)).map(x => ({ picks: [...x.picks], qty: x.qty, price: TIERS.find(t => t.picks === x.picks.length)?.price || x.price, ...(x.drinks ? { drinks: Object.fromEntries(Object.entries(x.drinks).filter(([id]) => ok(id))) } : {}), ...(x.note ? { note: x.note } : {}) }));
   cart.extras = Object.fromEntries(Object.entries(d.extras || {}).filter(([id]) => ok(id) || (dropped++, false)));
   delete cart.tray;
   if (d.tray && TRAY.on) { const items = Object.fromEntries(Object.entries(d.tray.items).filter(([id]) => ok(id) || (dropped++, false))); if (Object.keys(items).length) cart.tray = { people: d.tray.people, items }; }
