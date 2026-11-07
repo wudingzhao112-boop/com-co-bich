@@ -374,6 +374,22 @@ body.has-nav .wrap { padding-bottom: 200px; }
 .cart-canh { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; background: color-mix(in srgb, var(--leaf) 10%, var(--surface)); border-radius: 10px; padding: 8px 12px; margin-bottom: 4px; }
 .cart-canh b { color: var(--leaf); }
 .shop-bar { border-color: var(--chili); background: color-mix(in srgb, var(--chili) 8%, var(--surface)); font-weight: 700; }
+.pause-sign { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgb(0 0 0 / 0.55); }
+.pause-sign[hidden] { display: none; }
+.ps-card { width: min(360px, 100%); text-align: center; background: var(--surface); border: 3px solid var(--chili); border-radius: 20px; padding: 22px 18px 18px; box-shadow: 0 12px 40px rgb(0 0 0 / 0.3); display: grid; gap: 8px; justify-items: center; }
+.ps-card img { border-radius: 50%; }
+.ps-card h2 { margin: 0; font-size: 22px; }
+.ps-card p { margin: 0; }
+.ps-tag { background: var(--chili); color: #fff; font-weight: 800; letter-spacing: 1px; border-radius: 999px; padding: 4px 14px; font-size: 14px; }
+.ps-until { font-weight: 800; font-size: 18px; color: var(--chili); }
+.ps-card .btn-ghost { width: 100%; margin-top: 6px; }
+body.shop-paused #builder, body.shop-paused #go { opacity: 0.5; filter: grayscale(0.6); }
+.pause-form { display: grid; gap: 8px; width: 100%; }
+.pause-form label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; }
+.pause-form input { font: inherit; padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); }
+.pause-form .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.pause-form .row button { flex: 1; }
+.open-bar .ghost { background: transparent !important; color: var(--fg) !important; border: 1.5px solid var(--line) !important; }
 .shop-bar.flash { animation: flash 0.5s 3; } @keyframes flash { 50% { transform: scale(1.03); } }
 .open-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; border-radius: 12px; padding: 10px 12px; font-weight: 700; border: 1.5px solid var(--leaf); background: color-mix(in srgb, var(--leaf) 10%, var(--surface)); }
 .open-bar.off { border-color: var(--chili); background: color-mix(in srgb, var(--chili) 10%, var(--surface)); }
@@ -508,6 +524,17 @@ details.sorder { border-left-color: var(--st); }
     </div>
 
     <div class="cancel-bar shop-bar" id="shop-bar" hidden></div>
+    <div class="pause-sign" id="pause-sign" hidden role="dialog" aria-modal="true" aria-labelledby="ps-title">
+      <div class="ps-card">
+        <img src="/icon-192.png" alt="" width="72" height="72">
+        <div class="ps-tag">TẠM NGHỈ BÁN</div>
+        <h2 id="ps-title">Cô Bích Quán xin nghỉ</h2>
+        <p id="ps-msg"></p>
+        <p class="ps-until" id="ps-until"></p>
+        <p class="sub" id="ps-hours"></p>
+        <button type="button" class="btn-ghost" id="ps-close">Xem thực đơn</button>
+      </div>
+    </div>
     <div class="cancel-bar" id="cancel-bar" hidden></div>
     <div class="cancel-bar ship-alert" id="ship-alert" hidden></div>
     <div class="cancel-bar" id="editing-bar" hidden></div>
@@ -842,13 +869,22 @@ let SHOW_LEFT = false;
 let SHOP = { paused: false, hours: [["10:00", "13:00"], ["17:00", "19:00"]] };
 const hmMin = s => { const [h, m] = String(s).split(":").map(Number); return h * 60 + (m || 0); };
 const hoursText = () => SHOP.hours.map(([a, b]) => `${a}–${b}`).join(" và ");
+// Nghỉ bán: until = "YYYY-MM-DDTHH:MM" giờ VN; qua giờ đó tự mở bán lại
+const untilMs = () => SHOP.until ? Date.parse(SHOP.until + ":00+07:00") : 0;
+const pausedNow = () => !!SHOP.paused && !(untilMs() && Date.now() >= untilMs());
+const THU = ["Chủ nhật", "thứ Hai", "thứ Ba", "thứ Tư", "thứ Năm", "thứ Sáu", "thứ Bảy"];
+function untilText() {
+  if (!untilMs()) return "";
+  const d = new Date(untilMs() + 7 * 3600e3), p = n => String(n).padStart(2, "0");
+  return `${p(d.getUTCHours())}:${p(d.getUTCMinutes())} ${THU[d.getUTCDay()]}, ${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
+}
 function shopOpen() {
-  if (SHOP.paused) return false;
+  if (pausedNow()) return false;
   const d = new Date(), now = d.getHours() * 60 + d.getMinutes();
   return SHOP.hours.some(([a, b]) => now >= hmMin(a) && now < hmMin(b));
 }
 function closedMsg() {
-  if (SHOP.paused) return "🛑 Hôm nay quán nghỉ bán. Hẹn quý khách hôm sau nhé!";
+  if (pausedNow()) return `🛑 Quán đang tạm nghỉ bán. ${untilText() ? `Mở bán lại lúc ${untilText()}.` : "Hẹn quý khách hôm sau nhé!"}`;
   const now = new Date().getHours() * 60 + new Date().getMinutes(), nx = SHOP.hours.find(([a]) => hmMin(a) > now);
   return `⏰ Quán nhận đặt cơm ${hoursText()}. ${nx ? `Mời quý khách quay lại lúc ${nx[0]}.` : "Hôm nay đã hết giờ, hẹn quý khách ngày mai."}`;
 }
@@ -1404,9 +1440,26 @@ function syncTime() {
   $("f-time").value = hh ? `${hh.padStart(2, "0")}:${$("f-min").value.padStart(2, "0")}` : "Càng sớm càng tốt";
 }
 $("f-hour").onchange = fillTimes; $("f-min").onchange = syncTime;
+// Biển "quán nghỉ bán" cho khách: hiện ngay khi mở app, chặn chọn món
+let pauseShown = false;
+function showPauseSign() {
+  pauseShown = true;
+  $("ps-msg").textContent = SHOP.msg || "Hôm nay quán xin phép nghỉ bán một hôm.";
+  $("ps-until").textContent = untilText() ? `Mở bán lại: ${untilText()}` : "Quán sẽ mở bán lại sớm";
+  $("ps-hours").textContent = `Giờ nhận đặt cơm: ${hoursText()}`;
+  $("pause-sign").hidden = false;
+}
+$("ps-close").onclick = () => { $("pause-sign").hidden = true; };
+document.addEventListener("click", e => {
+  if (mode !== "khach" || editMode || !pausedNow() || !e.target.closest("#builder, #go, #pay-now, #more-set, #cart-panel button")) return;
+  e.preventDefault(); e.stopImmediatePropagation(); showPauseSign();
+}, true);
 function renderShopBar() {
   const open = shopOpen(), b = $("shop-bar");
   b.hidden = open || mode !== "khach" || editMode; b.textContent = open ? "" : closedMsg();
+  document.body.classList.toggle("shop-paused", pausedNow() && mode === "khach");
+  if (pausedNow() && mode === "khach" && !pauseShown) showPauseSign();
+  if (!pausedNow()) { pauseShown = false; $("pause-sign").hidden = true; }
   $("open-hours").textContent = `⏰ Nhận đặt ${SHOP.hours.map(([a, c]) => `${a}–${c}`).join(", ")}`;
 }
 function showKhach(view) {

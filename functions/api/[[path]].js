@@ -40,7 +40,7 @@ const SHOP0 = { paused: false, hours: [["10:00", "13:00"], ["17:00", "19:00"]] }
 const shopOf = async db => ({ ...SHOP0, ...((await getKV(db, "shop")) || {}) });
 const hm = s => { const [h, m] = String(s).split(":").map(Number); return h * 60 + (m || 0); };
 function openNow(shop, t = Date.now()) {
-  if (shop.paused) return false;
+  if (shop.paused && !(shop.until && t >= Date.parse(shop.until + ":00+07:00"))) return false;
   const d = new Date(t + 7 * 3600e3), now = d.getUTCHours() * 60 + d.getUTCMinutes();
   return shop.hours.some(([a, b]) => now >= hm(a) && now < hm(b));
 }
@@ -240,7 +240,8 @@ export async function onRequest({ request, env, params, waitUntil }) {
       if ((await roleOf(db, request)) !== "owner") return bad("Cần mã PIN chủ quán.", 401);
       const b2 = await request.json(), ok = v => /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
       const hours = (Array.isArray(b2.hours) ? b2.hours : []).slice(0, 3).filter(x => Array.isArray(x) && ok(x[0]) && ok(x[1]) && hm(x[0]) < hm(x[1]));
-      const shop = { paused: !!b2.paused, hours: hours.length ? hours : SHOP0.hours };
+      const until = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(b2.until || "") && b2.paused ? b2.until : "";
+      const shop = { paused: !!b2.paused, until, msg: b2.paused ? str(b2.msg, 120) : "", hours: hours.length ? hours : SHOP0.hours };
       await putKV(db, "shop", shop);
       return json({ shop: { ...shop, open: openNow(shop) } });
     }
@@ -306,7 +307,7 @@ export async function onRequest({ request, env, params, waitUntil }) {
     if (a === "orders" && !b && m === "POST") {
       const body = await request.json();
       const shop = await shopOf(db);
-      if (!openNow(shop)) return bad(shop.paused ? "Hôm nay quán nghỉ bán. Hẹn quý khách hôm sau nhé!" : `Quán chỉ nhận đặt cơm trong giờ ${shop.hours.map(([x, y]) => x + "–" + y).join(" và ")}. Quý khách quay lại trong giờ nhé!`, 403);
+      if (!openNow(shop)) return bad(shop.paused && !(shop.until && Date.now() >= Date.parse(shop.until + ":00+07:00")) ? `Quán đang tạm nghỉ bán.${shop.until ? " Mở bán lại lúc " + shop.until.slice(11) + " ngày " + shop.until.slice(8, 10) + "/" + shop.until.slice(5, 7) + "." : " Hẹn quý khách hôm sau nhé!"}` : `Quán chỉ nhận đặt cơm trong giờ ${shop.hours.map(([x, y]) => x + "–" + y).join(" và ")}. Quý khách quay lại trong giờ nhé!`, 403);
       const pickup = !!body.pickup;
       const name = str(body.name, 80), phone = str(body.phone, 20), addr = pickup ? "Khách tự qua quán lấy" : str(body.addr, 200);
       if (!name || !/^\+?\d{9,12}$/.test(phone.replace(/[\s.\-()]/g, "")) || addr.length < 8) return bad("Vui lòng điền tên, số điện thoại và địa chỉ giao hàng đầy đủ.");

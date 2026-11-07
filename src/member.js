@@ -583,19 +583,38 @@ if (new URLSearchParams(location.search).has("don")) showKhach("don");
 
 // Chủ quán: bán hay tạm nghỉ, giờ nhận đặt cơm, nhân viên
 function renderOpenBar() {
-  const html = SHOP.paused ? `<span>🔴 Đang TẠM NGHỈ BÁN. Khách không đặt được.</span><button type="button" data-pause="0">Mở bán lại</button>`
+  const P = pausedNow(), ut = untilText();
+  const html = pauseForm ? pauseFormHTML() : P ? `<span>🔴 Đang TẠM NGHỈ BÁN${ut ? ` đến ${ut}` : ""}. Khách không đặt được.${SHOP.msg ? `<br><small>“${esc(SHOP.msg)}”</small>` : ""}</span><button type="button" data-pause="0">Mở bán lại</button>`
     : `<span>${shopOpen() ? "🟢 Đang nhận đơn" : "⏸ Ngoài giờ nhận đơn"} · ${hoursText()}</span><button type="button" data-pause="1">Tạm nghỉ bán</button>`;
-  for (const id of ["open-bar", "open-bar2"]) { const b = $(id); if (!b) continue; b.classList.toggle("off", SHOP.paused); b.innerHTML = role === "owner" ? html : `<span>${SHOP.paused ? "🔴 Quán đang tạm nghỉ bán" : (shopOpen() ? "🟢 Đang nhận đơn · " : "⏸ Ngoài giờ · ") + hoursText()}</span>`; }
+  for (const id of ["open-bar", "open-bar2"]) { const b = $(id); if (!b) continue; b.classList.toggle("off", P || pauseForm); b.innerHTML = role === "owner" ? (pauseForm && id !== pauseForm ? `<span>🔴 Đang đặt lịch nghỉ…</span>` : html) : `<span>${P ? "🔴 Quán đang tạm nghỉ bán" + (ut ? ` đến ${ut}` : "") : (shopOpen() ? "🟢 Đang nhận đơn · " : "⏸ Ngoài giờ · ") + hoursText()}</span>`; }
   if (staffName && role !== "owner") $("owner-date").textContent = `Xin chào ${staffName} · ` + $("owner-date").textContent.replace(/^Xin chào [^·]*· /, "");
 }
 async function saveShop(patch) {
   try { const d = await api("shop", { method: "PUT", body: JSON.stringify({ ...SHOP, ...patch }) }); SHOP = d.shop; } catch (e) { alert(e.message); }
   renderOpenBar(); renderShopBar(); renderHoursEdit();
 }
+// Đặt lịch nghỉ: nghỉ đến ngày giờ nào + lời nhắn cho khách
+let pauseForm = "";
+function pauseFormHTML() {
+  const d = new Date(Date.now() + 7 * 3600e3 + 864e5), p = n => String(n).padStart(2, "0");
+  const def = `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}T${(SHOP.hours[0] || ["10:00"])[0]}`;
+  return `<div class="pause-form"><b>🛑 Đặt lịch nghỉ bán</b>
+    <label>Nghỉ đến (ngày, giờ mở bán lại)<input type="datetime-local" id="pf-until" value="${def}"></label>
+    <label>Lời nhắn cho khách (không bắt buộc)<input type="text" id="pf-msg" maxlength="120" placeholder="VD: Quán nghỉ lễ, hẹn gặp lại quý khách" value="${esc(SHOP.msg || "")}"></label>
+    <small class="sub">Đến giờ đó app tự mở bán lại. Muốn nghỉ cho đến khi tự bật lại thì xoá trống ô ngày giờ.</small>
+    <div class="row"><button type="button" class="ghost" data-pause="x">Huỷ</button><button type="button" data-pause="ok">Xác nhận nghỉ</button></div></div>`;
+}
 document.addEventListener("click", e => {
   const p = e.target.closest("[data-pause]"); if (!p || role !== "owner") return;
-  if (p.dataset.pause === "1" && !confirm("Tạm nghỉ bán? Khách sẽ không đặt được cho tới khi chị bấm “Mở bán lại”.")) return;
-  saveShop({ paused: p.dataset.pause === "1" });
+  const v = p.dataset.pause;
+  if (v === "1") { pauseForm = p.closest(".open-bar")?.id || "open-bar"; return renderOpenBar(); }
+  if (v === "x") { pauseForm = ""; return renderOpenBar(); }
+  if (v === "ok") {
+    const until = $("pf-until").value, msg = $("pf-msg").value.trim();
+    if (until && Date.parse(until + ":00+07:00") <= Date.now()) { alert("Giờ mở bán lại phải sau bây giờ."); return; }
+    pauseForm = ""; return saveShop({ paused: true, until, msg });
+  }
+  pauseForm = ""; saveShop({ paused: false, until: "", msg: "" });
 });
 function renderHoursEdit() {
   const h = [...SHOP.hours]; while (h.length < 2) h.push(["", ""]);
