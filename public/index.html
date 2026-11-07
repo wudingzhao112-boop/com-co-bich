@@ -1,4 +1,4 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6b3a1c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" href="/icon-192.png"><script>(function(){var h=location.hash,k=h.indexOf("#chu")===0?"chu":h==="#shipper"?"ship":"khach",l=document.createElement("link");l.rel="manifest";l.href="/manifest-"+k+".webmanifest";document.head.appendChild(l);var t=document.createElement("meta");t.name="apple-mobile-web-app-title";t.content=k==="chu"?"Quán Cô Bích":k==="ship"?"Ship Cô Bích":"Cô Bích";document.head.appendChild(t)})()</script><style>*,*::before,*::after{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style></head><body><title>Đặt Cơm Cô Bích</title>
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6b3a1c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" href="/icon-192.png"><script>(function(){var h=location.hash,k=h.indexOf("#chu")===0?"chu":h==="#shipper"?"ship":h==="#nhanvien"?"nv":"khach",l=document.createElement("link");l.rel="manifest";l.href="/manifest-"+k+".webmanifest";document.head.appendChild(l);var t=document.createElement("meta");t.name="apple-mobile-web-app-title";t.content=k==="chu"?"Quán Cô Bích":k==="ship"?"Ship Cô Bích":k==="nv"?"NV Cô Bích":"Cô Bích";document.head.appendChild(t)})()</script><style>*,*::before,*::after{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style></head><body><title>Đặt Cơm Cô Bích</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap">
@@ -388,6 +388,8 @@ body.has-nav .wrap { padding-bottom: 200px; }
 #hours-edit input[type=time] { font: inherit; font-size: 16px; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
 .staff-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); padding: 8px 0; }
 #chu[data-tab="cd"] .bc-only, #chu[data-tab="cd"] .don-only { display: none !important; }
+#chu[data-tab="nv"] .bc-only:not(#prep-panel) { display: none !important; }
+#chu[data-tab="nv"] [data-next] { font-size: 16px; padding: 10px 14px; font-weight: 700; }
 #chu:not([data-tab="cd"]) .cd-only { display: none !important; }
 .req { color: var(--chili); font-weight: 700; font-size: 13px; }
 .field input.bad { border: 2px solid var(--chili); background: color-mix(in srgb, var(--chili) 8%, var(--surface)); }
@@ -729,8 +731,9 @@ details.sorder { border-left-color: var(--st); }
   <!-- ============ CHỦ QUÁN ============ -->
   <div id="chu" hidden style="display:none;gap:20px">
     <header>
-      <div class="order-head"><h1>Quản lý quán</h1><button type="button" class="bell" data-bell>🔔 Bật thông báo</button></div>
+      <div class="order-head"><h1 id="chu-h1">Quản lý quán</h1><button type="button" class="bell" data-bell>🔔 Bật thông báo</button></div>
       <p class="sub" id="owner-date"></p>
+      <p class="sub" id="nv-help" hidden style="margin:4px 0 0">Việc của bạn: 1) xem đơn mới và soạn cơm, bấm <b>“Đã soạn xong”</b>; 2) đưa hộp cơm cho shipper, bấm <b>“Đã bàn giao shipper”</b>. Đơn khách tự lấy thì bấm <b>“Khách đã lấy”</b>.</p>
     </header>
     <div class="alert bc-only" id="alert"></div>
     <div class="stats bc-only">
@@ -767,7 +770,7 @@ details.sorder { border-left-color: var(--st); }
       <button type="button" class="btn-main" id="hours-save">Lưu giờ mở bán</button>
       <p class="toast" id="hours-ok" aria-live="polite"></p>
       <h3 style="margin-top:8px">Nhân viên</h3>
-      <p class="sub" style="margin:0;font-size:13px">Mỗi nhân viên một mã PIN riêng. Nhân viên quán xem và soạn đơn (link /#chu). Shipper đi giao (link /#shipper). Xoá nhân viên thì mã đó hết dùng được ngay.</p>
+      <p class="sub" style="margin:0;font-size:13px">Mỗi nhân viên một mã PIN riêng. Nhân viên quán xem đơn, soạn đơn, bàn giao shipper (link /#nhanvien). Shipper đi giao (link /#shipper). Xoá nhân viên thì mã đó hết dùng được ngay.</p>
       <div id="staff-list"></div>
       <form id="staff-form" style="display:grid;gap:8px" novalidate>
         <div class="row2"><div class="field"><label for="sf-name">Tên nhân viên</label><input id="sf-name" placeholder="VD: Tuấn"></div>
@@ -1065,6 +1068,7 @@ const STATUS = { moi: "Mới, chưa soạn", xong: "Soạn xong, chờ shipper",
 // Chủ quán chỉ chuyển tới "đang giao"; "đã giao" do shipper bấm
 const NEXT = { moi: "xong", xong: "nau" };
 const NEXT_LABEL = { moi: "Soạn xong", xong: "Ship đã lấy" };
+const NV_LABEL = { moi: "✓ Đã soạn xong", xong: "🛵 Đã bàn giao shipper" };
 // Đơn khách tự lấy: soạn xong rồi quán bấm "Khách đã lấy" là xong đơn
 const nextOf = o => o.pickup && o.st === "xong" ? "giao" : NEXT[o.st];
 // Giờ mẫu tính theo giờ hiện tại để demo luôn có đơn gấp, đơn trễ
@@ -1650,7 +1654,7 @@ function renderOwner() {
       <div class="foot"><span><b>${fmt(orderTotal(o))}</b> · ${o.pay}</span>
         <span class="actions" style="gap:6px">
           <button type="button" class="btn-sm" data-copy="${o.no}">Chép gửi shipper</button>
-          ${nextOf(o) && (role !== "bep" || nextOf(o) !== "nau") ? `<button type="button" class="btn-sm" style="background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-next="${o.no}">${o.pickup && o.st === "xong" ? "Khách đã lấy" : NEXT_LABEL[o.st]}</button>` : ""}
+          ${nextOf(o) ? `<button type="button" class="btn-sm" style="background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)" data-next="${o.no}">${o.pickup && o.st === "xong" ? "Khách đã lấy" : $("chu").dataset.tab === "nv" ? NV_LABEL[o.st] : NEXT_LABEL[o.st]}</button>` : ""}
         </span></div>
     </details>`).join("") : `<p class="sub">Chưa có đơn nào ở mục này.</p>`;
 
@@ -1739,10 +1743,10 @@ function setEdit(on, page = "mon") {
 function show(id, on) { $(id).hidden = !on; $(id).style.display = on ? "grid" : "none"; }
 function route() {
   const h = location.hash.slice(1);
-  const r = ["chu", "chu-bc", "chu-mon", "chu-sp", "chu-km", "chu-cd", "shipper"].includes(h) ? h : "khach";
+  const r = ["chu", "chu-bc", "chu-mon", "chu-sp", "chu-km", "chu-cd", "shipper", "nhanvien"].includes(h) ? h : "khach";
   const page = r === "chu-sp" ? "sp" : r === "chu-mon" ? "mon" : r === "chu-km" ? "km" : "";
   mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";
-  const allowed = r === "khach" || role === "owner" || (role === "ship" && r === "shipper") || (role === "bep" && r === "chu");
+  const allowed = r === "khach" || role === "owner" || (role === "ship" && r === "shipper") || (role === "bep" && (r === "chu" || r === "nhanvien")) || (role === "owner" && r === "nhanvien");
   // Nhân viên quán chỉ thấy tab Đơn hàng
   ["t-bc", "t-mon", "t-km", "t-sp", "t-cd", "chpin"].forEach(id => $(id).hidden = role === "bep");
   $("nav").hidden = role !== "owner" || r === "khach";
@@ -1753,6 +1757,10 @@ function route() {
     if (m === "chu" ? r.startsWith("chu") : m === r) $(id).setAttribute("aria-current", "page"); else $(id).removeAttribute("aria-current");
   });
   $("owner-tabs").hidden = !r.startsWith("chu");
+  // Link nhân viên quán: chỉ xem đơn, soạn đơn, bàn giao shipper
+  const nv = r === "nhanvien";
+  $("chu-h1").textContent = nv ? "Nhân viên quán" : "Quản lý quán";
+  $("nv-help").hidden = !nv;
   $("t-don").setAttribute("aria-pressed", r === "chu");
   $("t-mon").setAttribute("aria-pressed", r === "chu-mon");
   $("t-sp").setAttribute("aria-pressed", r === "chu-sp");
@@ -1762,10 +1770,11 @@ function route() {
   if (r === "chu-bc" || r === "chu-cd") mode = "chu";
   if (r === "chu-cd" && typeof loadStaff === "function") loadStaff();
   if (r === "chu-bc" && typeof loadFeedback === "function") loadFeedback();
-  $("chu").dataset.tab = r === "chu-bc" ? "bc" : r === "chu-cd" ? "cd" : "don";
-  document.title = r === "shipper" ? "Shipper · Cô Bích" : r.startsWith("chu") ? "Chủ quán · Cô Bích" : "Đặt Cơm Cô Bích";
+  $("chu").dataset.tab = r === "chu-bc" ? "bc" : r === "chu-cd" ? "cd" : nv ? "nv" : "don";
+  if (nv) mode = "chu";
+  document.title = r === "shipper" ? "Shipper · Cô Bích" : nv ? "Nhân viên · Cô Bích" : r.startsWith("chu") ? "Chủ quán · Cô Bích" : "Đặt Cơm Cô Bích";
   show("khach", r === "khach" || !!page);
-  show("chu", r === "chu" || r === "chu-bc" || r === "chu-cd");
+  show("chu", r === "chu" || r === "chu-bc" || r === "chu-cd" || nv);
   show("ship", r === "shipper");
   if (r === "khach" || page) {
     if (ownerPage !== page) setEdit(!!page, page);
@@ -2021,7 +2030,7 @@ function showLogin(r) {
   api("auth").then(d => {
     const setup = !d.ready;
     $("login").dataset.setup = setup ? "1" : "";
-    $("login-title").textContent = setup ? "Tạo mã PIN lần đầu" : r === "shipper" ? "Shipper nhập mã PIN" : "Chủ quán hoặc nhân viên nhập mã PIN";
+    $("login-title").textContent = setup ? "Tạo mã PIN lần đầu" : r === "shipper" ? "Shipper nhập mã PIN" : r === "nhanvien" ? "Nhân viên quán nhập mã PIN" : "Chủ quán hoặc nhân viên nhập mã PIN";
     $("login-sub").textContent = setup ? "Chủ quán đặt 2 mã (6 chữ số trở lên): một mã cho mình, một mã cho shipper. Nhớ kỹ, không gửi cho khách." : "Máy này sẽ nhớ mã, lần sau không phải nhập lại.";
     $("pin1-l").textContent = setup ? "Mã PIN chủ quán" : "Mã PIN";
     $("pin2-w").hidden = !setup;

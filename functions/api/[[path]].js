@@ -546,7 +546,7 @@ export async function onRequest({ request, env, params, waitUntil }) {
       // Đơn khách tự lấy: quán bấm "Khách đã lấy" (soạn xong -> đã giao), shipper không nhận.
       const ok = pickup
         ? { owner: { moi: ["xong", "huy"], xong: ["giao", "moi", "huy"] }, bep: { moi: ["xong"], xong: ["giao", "moi"] }, ship: {} }[role]
-        : { owner: { moi: ["xong", "huy"], xong: ["nau", "moi", "huy"], nau: ["xong"] }, bep: { moi: ["xong"], xong: ["moi"] }, ship: { xong: ["nau"], nau: ["giao"] } }[role];
+        : { owner: { moi: ["xong", "huy"], xong: ["nau", "moi", "huy"], nau: ["xong"] }, bep: { moi: ["xong"], xong: ["nau", "moi"] }, ship: { xong: ["nau"], nau: ["giao"] } }[role];
       if (!ok?.[from]?.includes(st)) return bad("Đơn này vừa được đổi trên máy khác. Trang đã cập nhật lại.", 409);
       data.by = { ...(data.by || {}), [st]: w.name };
       const r = await db.prepare("UPDATE orders SET st = ?, data = ? WHERE id = ? AND st = ?").bind(st, JSON.stringify(data), b, from).run();

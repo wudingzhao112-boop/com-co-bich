@@ -13,8 +13,8 @@ s = ('<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="vie
      '<meta name="theme-color" content="#6b3a1c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">'
      '<link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" href="/icon-192.png">'
      # Mỗi link một app riêng khi "Thêm vào màn hình chính": khách, chủ quán, shipper
-     '<script>(function(){var h=location.hash,k=h.indexOf("#chu")===0?"chu":h==="#shipper"?"ship":"khach",l=document.createElement("link");l.rel="manifest";l.href="/manifest-"+k+".webmanifest";document.head.appendChild(l);'
-     'var t=document.createElement("meta");t.name="apple-mobile-web-app-title";t.content=k==="chu"?"Quán Cô Bích":k==="ship"?"Ship Cô Bích":"Cô Bích";document.head.appendChild(t)})()</script>'
+     '<script>(function(){var h=location.hash,k=h.indexOf("#chu")===0?"chu":h==="#shipper"?"ship":h==="#nhanvien"?"nv":"khach",l=document.createElement("link");l.rel="manifest";l.href="/manifest-"+k+".webmanifest";document.head.appendChild(l);'
+     'var t=document.createElement("meta");t.name="apple-mobile-web-app-title";t.content=k==="chu"?"Quán Cô Bích":k==="ship"?"Ship Cô Bích":k==="nv"?"NV Cô Bích":"Cô Bích";document.head.appendChild(t)})()</script>'
      '<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style></head><body>' + s + '</body></html>')
 
 # Đồng bộ thật
@@ -54,7 +54,7 @@ rep('  <!-- ============ KHÁCH ============ -->', '''  <!-- ============ ĐĂNG
 
 # Định tuyến: trang chủ quán, shipper cần mã PIN
 rep('''  mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";''', '''  mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";
-  const allowed = r === "khach" || role === "owner" || (role === "ship" && r === "shipper") || (role === "bep" && r === "chu");
+  const allowed = r === "khach" || role === "owner" || (role === "ship" && r === "shipper") || (role === "bep" && (r === "chu" || r === "nhanvien")) || (role === "owner" && r === "nhanvien");
   // Nhân viên quán chỉ thấy tab Đơn hàng
   ["t-bc", "t-mon", "t-km", "t-sp", "t-cd", "chpin"].forEach(id => $(id).hidden = role === "bep");
   $("nav").hidden = role !== "owner" || r === "khach";
@@ -164,7 +164,7 @@ function showLogin(r) {
   api("auth").then(d => {
     const setup = !d.ready;
     $("login").dataset.setup = setup ? "1" : "";
-    $("login-title").textContent = setup ? "Tạo mã PIN lần đầu" : r === "shipper" ? "Shipper nhập mã PIN" : "Chủ quán hoặc nhân viên nhập mã PIN";
+    $("login-title").textContent = setup ? "Tạo mã PIN lần đầu" : r === "shipper" ? "Shipper nhập mã PIN" : r === "nhanvien" ? "Nhân viên quán nhập mã PIN" : "Chủ quán hoặc nhân viên nhập mã PIN";
     $("login-sub").textContent = setup ? "Chủ quán đặt 2 mã (6 chữ số trở lên): một mã cho mình, một mã cho shipper. Nhớ kỹ, không gửi cho khách." : "Máy này sẽ nhớ mã, lần sau không phải nhập lại.";
     $("pin1-l").textContent = setup ? "Mã PIN chủ quán" : "Mã PIN";
     $("pin2-w").hidden = !setup;
