@@ -584,11 +584,15 @@ if (new URLSearchParams(location.search).has("don")) showKhach("don");
 // Chủ quán: bán hay tạm nghỉ, giờ nhận đặt cơm, nhân viên
 function renderOpenBar() {
   const P = pausedNow(), ut = untilText();
-  const html = pauseForm ? pauseFormHTML() : P ? `<span>🔴 Đang TẠM NGHỈ BÁN${ut ? ` đến ${ut}` : ""}. Khách không đặt được.${SHOP.msg ? `<br><small>“${esc(SHOP.msg)}”</small>` : ""}</span><button type="button" data-pause="0">Mở bán lại</button>`
+  const html = pauseForm ? pauseFormHTML() : barHTML(P, ut);
+  for (const id of ["open-bar", "open-bar2"]) { const b = $(id); if (!b) continue; const form = pauseForm === id; b.classList.toggle("off", P || form); b.innerHTML = role === "owner" ? (form ? html : barHTML(P, ut)) : `<span>${P ? "🔴 Quán đang tạm nghỉ bán" + (ut ? ` đến ${ut}` : "") : (shopOpen() ? "🟢 Đang nhận đơn · " : "⏸ Ngoài giờ · ") + hoursText()}</span>`; }
+  if (staffName && role !== "owner") $("owner-date").textContent = `Xin chào ${staffName} · ` + $("owner-date").textContent.replace(/^Xin chào [^·]*· /, "");
+}
+window.addEventListener("hashchange", () => { if (pauseForm) { pauseForm = ""; renderOpenBar(); } });
+function barHTML(P, ut) {
+  return P ? `<span>🔴 Đang TẠM NGHỈ BÁN${ut ? ` đến ${ut}` : ""}. Khách không đặt được.${SHOP.msg ? `<br><small>“${esc(SHOP.msg)}”</small>` : ""}</span><button type="button" data-pause="0">Mở bán lại</button>`
     : `<span>${shopOpen() ? "🟢 Đang nhận đơn" : "⏸ Ngoài giờ nhận đơn"} · ${hoursText()}</span><button type="button" data-pause="1">Tạm nghỉ bán</button>
       <div class="slots">${SHOP.hours.map(([a, b], i) => { const on = !(SHOP.off || []).includes(i); return `<button type="button" data-slot="${i}" aria-pressed="${on}"><b>${i === 0 ? "Buổi trưa" : i === 1 ? "Buổi chiều" : "Buổi thêm"} ${a}–${b}</b><span>${on ? "✓ Đang nhận đơn" : "✕ Đã tắt"}</span></button>`; }).join("")}</div>`;
-  for (const id of ["open-bar", "open-bar2"]) { const b = $(id); if (!b) continue; b.classList.toggle("off", P || pauseForm); b.innerHTML = role === "owner" ? (pauseForm && id !== pauseForm ? `<span>🔴 Đang đặt lịch nghỉ…</span>` : html) : `<span>${P ? "🔴 Quán đang tạm nghỉ bán" + (ut ? ` đến ${ut}` : "") : (shopOpen() ? "🟢 Đang nhận đơn · " : "⏸ Ngoài giờ · ") + hoursText()}</span>`; }
-  if (staffName && role !== "owner") $("owner-date").textContent = `Xin chào ${staffName} · ` + $("owner-date").textContent.replace(/^Xin chào [^·]*· /, "");
 }
 async function saveShop(patch) {
   try { const d = await api("shop", { method: "PUT", body: JSON.stringify({ ...SHOP, ...patch }) }); SHOP = d.shop; } catch (e) { alert(e.message); }
