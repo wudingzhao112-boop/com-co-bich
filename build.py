@@ -111,8 +111,8 @@ rep('.price-tag b { font-family: var(--font-display); font-size: 22px; white-spa
 .mem-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .mem-row .pts { color: var(--leaf); }
 .linkish { font: inherit; font-size: 14px; background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 4px; }""")
-rep("""      <div class="price-tag"><b id="set-price-k">40k</b><span id="set-rule">1 suất, chọn 5 món</span></div>
-    </header>""", """      <div class="price-tag"><b id="set-price-k">40k</b><span id="set-rule">1 suất, chọn 5 món</span></div>
+rep("""      <div class="price-tag" hidden><b id="set-price-k">40k</b><span id="set-rule">1 suất, chọn 5 món</span></div>
+    </header>""", """      <div class="price-tag" hidden><b id="set-price-k">40k</b><span id="set-rule">1 suất, chọn 5 món</span></div>
     </header>
     <button type="button" class="mem-top" id="mem-top" hidden><span id="mem-top-hi"></span><b class="pts" id="mem-top-pts"></b></button>""")
 rep("""      <div class="total"><span>Tổng cộng</span><span id="total-co"></span></div>

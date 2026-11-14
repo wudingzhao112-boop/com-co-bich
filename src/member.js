@@ -16,7 +16,7 @@ async function renderMember() {
   $("mem-in").hidden = !on; $("member").hidden = !on;
   $("mem-top").hidden = mode !== "khach" || editMode;
   $("mem-top").classList.toggle("join", !on);
-  if (!on) { $("mem-top-hi").innerHTML = "⭐ <b class=\"blink-soft\">ĐĂNG KÝ / ĐĂNG NHẬP</b> để tích điểm"; $("mem-top-pts").textContent = "Bấm vào đây ›"; return; }
+  if (!on) { $("mem-top-hi").innerHTML = "⭐ Nhập số điện thoại để <b>tích điểm</b> đổi cơm miễn phí"; $("mem-top-pts").textContent = "Đăng ký"; return; }
   $("mem-hi").textContent = $("mem-top-hi").textContent = `Chào ${k.name || "bạn"}`;
   $("mem-sub").textContent = n ? `Đơn này được +${n} điểm khi giao xong.` : "Mỗi suất cơm = 1 điểm, dùng đổi quà tri ân của quán.";
   try {
