@@ -585,7 +585,8 @@ if (new URLSearchParams(location.search).has("don")) showKhach("don");
 function renderOpenBar() {
   const P = pausedNow(), ut = untilText();
   const html = pauseForm ? pauseFormHTML() : P ? `<span>🔴 Đang TẠM NGHỈ BÁN${ut ? ` đến ${ut}` : ""}. Khách không đặt được.${SHOP.msg ? `<br><small>“${esc(SHOP.msg)}”</small>` : ""}</span><button type="button" data-pause="0">Mở bán lại</button>`
-    : `<span>${shopOpen() ? "🟢 Đang nhận đơn" : "⏸ Ngoài giờ nhận đơn"} · ${hoursText()}</span><button type="button" data-pause="1">Tạm nghỉ bán</button>`;
+    : `<span>${shopOpen() ? "🟢 Đang nhận đơn" : "⏸ Ngoài giờ nhận đơn"} · ${hoursText()}</span><button type="button" data-pause="1">Tạm nghỉ bán</button>
+      <div class="slots">${SHOP.hours.map(([a, b], i) => { const on = !(SHOP.off || []).includes(i); return `<button type="button" data-slot="${i}" aria-pressed="${on}"><b>${i === 0 ? "Buổi trưa" : i === 1 ? "Buổi chiều" : "Buổi thêm"} ${a}–${b}</b><span>${on ? "✓ Đang nhận đơn" : "✕ Đã tắt"}</span></button>`; }).join("")}</div>`;
   for (const id of ["open-bar", "open-bar2"]) { const b = $(id); if (!b) continue; b.classList.toggle("off", P || pauseForm); b.innerHTML = role === "owner" ? (pauseForm && id !== pauseForm ? `<span>🔴 Đang đặt lịch nghỉ…</span>` : html) : `<span>${P ? "🔴 Quán đang tạm nghỉ bán" + (ut ? ` đến ${ut}` : "") : (shopOpen() ? "🟢 Đang nhận đơn · " : "⏸ Ngoài giờ · ") + hoursText()}</span>`; }
   if (staffName && role !== "owner") $("owner-date").textContent = `Xin chào ${staffName} · ` + $("owner-date").textContent.replace(/^Xin chào [^·]*· /, "");
 }
@@ -605,6 +606,8 @@ function pauseFormHTML() {
     <div class="row"><button type="button" class="ghost" data-pause="x">Huỷ</button><button type="button" data-pause="ok">Xác nhận nghỉ</button></div></div>`;
 }
 document.addEventListener("click", e => {
+  const sl = e.target.closest("[data-slot]");
+  if (sl && role === "owner") { const i = +sl.dataset.slot, off = new Set(SHOP.off || []); off.has(i) ? off.delete(i) : off.add(i); return saveShop({ off: [...off].sort() }); }
   const p = e.target.closest("[data-pause]"); if (!p || role !== "owner") return;
   const v = p.dataset.pause;
   if (v === "1") { pauseForm = p.closest(".open-bar")?.id || "open-bar"; return renderOpenBar(); }

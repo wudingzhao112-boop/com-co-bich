@@ -57,6 +57,13 @@ h3 { font-size: 17px; font-weight: 600; }
 .sub { margin: 0; color: var(--muted); }
 .hours { display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: var(--muted); }
 .hours span + span::before { content: "·"; margin-right: 8px; }
+.open-bar { flex-wrap: wrap; }
+.slots { flex-basis: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.open-bar .slots button, #open-bar .slots button { display: grid; gap: 2px; justify-items: start; text-align: left; min-height: 56px; padding: 8px 12px; border-radius: 12px; background: var(--surface); color: var(--muted); border: 1.5px dashed var(--line); font-weight: 600; white-space: normal; }
+.open-bar .slots button b { font-size: 16px; color: var(--fg); }
+.open-bar .slots button[aria-pressed="true"], #open-bar .slots button[aria-pressed="true"] { border: 1.5px solid #1F7A14; color: #1F7A14; background: #E7F4E4; }
+.open-bar .slots button[aria-pressed="false"] b { text-decoration: line-through; color: var(--muted); }
+@media (prefers-color-scheme: dark) { .open-bar .slots button[aria-pressed="true"], #open-bar .slots button[aria-pressed="true"] { background: transparent; color: #6CD43A; border-color: #6CD43A; } }
 .call-shop { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; width: fit-content; padding: 0 16px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--fg); font-weight: 600; font-size: 15px; text-decoration: none; }
 [data-catfilter] { min-height: 40px; }
 .ph { background: var(--bg) !important; color: var(--muted) !important; }
@@ -927,7 +934,9 @@ let SHOW_LEFT = false;
 // Giờ nhận đặt cơm và tạm nghỉ (chủ quán chỉnh trong Cài đặt quán)
 let SHOP = { paused: false, hours: [["10:00", "13:00"], ["17:00", "19:00"]] };
 const hmMin = s => { const [h, m] = String(s).split(":").map(Number); return h * 60 + (m || 0); };
-const hoursText = () => SHOP.hours.map(([a, b]) => `${a}–${b}`).join(" và ");
+// Từng buổi bán có công tắc riêng: SHOP.off = các buổi đang tắt
+const onHours = () => SHOP.hours.filter((_, i) => !(SHOP.off || []).includes(i));
+const hoursText = () => onHours().map(([a, b]) => `${a}–${b}`).join(" và ") || "tạm dừng cả hai buổi";
 // Nghỉ bán: until = "YYYY-MM-DDTHH:MM" giờ VN; qua giờ đó tự mở bán lại
 const untilMs = () => SHOP.until ? Date.parse(SHOP.until + ":00+07:00") : 0;
 const pausedNow = () => !!SHOP.paused && !(untilMs() && Date.now() >= untilMs());
@@ -940,11 +949,12 @@ function untilText() {
 function shopOpen() {
   if (pausedNow()) return false;
   const d = new Date(), now = d.getHours() * 60 + d.getMinutes();
-  return SHOP.hours.some(([a, b]) => now >= hmMin(a) && now < hmMin(b));
+  return onHours().some(([a, b]) => now >= hmMin(a) && now < hmMin(b));
 }
 function closedMsg() {
+  if (!onHours().length) return "⏸ Hôm nay quán tạm dừng nhận đặt cơm qua app. Quý khách gọi 035 456 3552 nhé!";
   if (pausedNow()) return `🛑 Quán đang tạm nghỉ bán. ${untilText() ? `Mở bán lại lúc ${untilText()}.` : "Hẹn quý khách hôm sau nhé!"}`;
-  const now = new Date().getHours() * 60 + new Date().getMinutes(), nx = SHOP.hours.find(([a]) => hmMin(a) > now);
+  const now = new Date().getHours() * 60 + new Date().getMinutes(), nx = onHours().find(([a]) => hmMin(a) > now);
   return `⏰ Quán nhận đặt cơm ${hoursText()}. ${nx ? `Mời quý khách quay lại lúc ${nx[0]}.` : "Hôm nay đã hết giờ, hẹn quý khách ngày mai."}`;
 }
 // Đặt mâm (gia đình, công ty): tính theo đĩa. person = cơm + canh mỗi người, man/rau = giá 1 đĩa, per = 1 đĩa trừ mấy phần trong kho
@@ -1482,7 +1492,7 @@ function fillTimes() {
   // Giờ nhận: trưa 10–14 giờ, chiều 17–20 giờ
   const cur = $("f-hour").value, curM = $("f-min").value, hNow = new Date().getHours();
   const soon = new Date(Date.now() + 15 * MIN), mins = h => Array.from({ length: 12 }, (_, i) => i * 5).filter(x => h > soon.getHours() || (h === soon.getHours() && x >= soon.getMinutes()) || soon.getDate() !== new Date().getDate());
-  const HOURS = [...new Set(SHOP.hours.flatMap(([a, b]) => { const r = []; for (let h = Math.floor(hmMin(a) / 60); h <= Math.floor(hmMin(b) / 60); h++) r.push(h); return r; }))].sort((x, y) => x - y);
+  const HOURS = [...new Set(onHours().flatMap(([a, b]) => { const r = []; for (let h = Math.floor(hmMin(a) / 60); h <= Math.floor(hmMin(b) / 60); h++) r.push(h); return r; }))].sort((x, y) => x - y);
   const hours = HOURS.filter(x => x >= hNow && mins(x).length);
   $("f-hour").innerHTML = `<option value="">Sớm nhất</option>` + hours.map(x => `<option value="${x}"${String(x) === cur ? " selected" : ""}>${String(x).padStart(2, "0")} giờ</option>`).join("");
   const ms = $("f-hour").value ? mins(+$("f-hour").value) : Array.from({ length: 12 }, (_, i) => i * 5);
@@ -1520,7 +1530,7 @@ function renderShopBar() {
   document.body.classList.toggle("shop-paused", pausedNow() && mode === "khach");
   if (pausedNow() && mode === "khach" && !pauseShown) showPauseSign();
   if (!pausedNow()) { pauseShown = false; $("pause-sign").hidden = true; }
-  $("open-hours").textContent = `Nhận đặt ${SHOP.hours.map(([a, c]) => `${a}–${c}`).join(", ")}`;
+  $("open-hours").textContent = onHours().length ? `Nhận đặt ${onHours().map(([a, c]) => `${a}–${c}`).join(", ")}` : "Tạm dừng nhận đặt qua app";
 }
 function showKhach(view) {
   renderShopBar();
