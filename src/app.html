@@ -1137,11 +1137,12 @@ for (const m of MENU) if (stock[m.id] === undefined) stock[m.id] = ["Bắp cải
 const STATUS = { moi: "Mới, chưa soạn", xong: "Soạn xong, chờ shipper", nau: "Đang giao", giao: "Đã giao" };
 // Chủ quán chỉ chuyển tới "đang giao"; "đã giao" do shipper bấm
 const NEXT = { moi: "xong", xong: "nau" };
-const NEXT_LABEL = { moi: "✓ Soạn xong", xong: "Shipper đã lấy" };
+const NEXT_LABEL = { moi: "✓ Soạn xong", xong: "Shipper đã lấy", nau: "✓ Đã giao xong" };
 const PILL = { moi: "Mới", xong: "Đã soạn", nau: "Đang giao", giao: "Đã giao", huy: "Đã huỷ" };
 const NV_LABEL = { moi: "✓ Đã soạn xong", xong: "🛵 Đã bàn giao shipper" };
 // Đơn khách tự lấy: soạn xong rồi quán bấm "Khách đã lấy" là xong đơn
-const nextOf = o => o.pickup && o.st === "xong" ? "giao" : NEXT[o.st];
+// Chủ quán tự bấm "Đã giao xong" cho đơn giao bằng shipper ngoài (không dùng app)
+const nextOf = o => o.pickup && o.st === "xong" ? "giao" : o.st === "nau" && role === "owner" && $("chu").dataset.tab !== "nv" ? "giao" : NEXT[o.st];
 // Giờ mẫu tính theo giờ hiện tại để demo luôn có đơn gấp, đơn trễ
 const NOW0 = Date.now(), MIN = 60000;
 const hm = t => { const d = new Date(Math.round(t / (5 * MIN)) * 5 * MIN); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
