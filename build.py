@@ -32,8 +32,8 @@ rep("const sold = id => orders.reduce((s, o) => s + usedBy(o, id), 0);",
 # Ghi chú demo -> dòng báo kết nối; thanh 3 link chỉ chủ quán thấy
 s = re.sub(r'<p class="demo-note" id="demo-note">.*?</p>', '<p class="demo-note" id="demo-note" hidden><b id="sync-note"></b></p>', s, count=1, flags=re.S)
 rep('<nav class="mode three" aria-label="Ba link của quán">', '<nav class="mode three" id="nav" aria-label="Ba link của quán" hidden>')
-rep('<a class="tab" href="#chu-cd" id="t-cd">Cài đặt quán</a>',
-    '<a class="tab" href="#chu-cd" id="t-cd">Cài đặt quán</a>\n    <button type="button" class="tab" id="chpin" style="margin-left:auto">Đổi mã</button>\n    <button type="button" class="tab" id="logout">Thoát</button>')
+rep('<a class="tab" href="#chu-cd" id="t-cd"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><span>Cài đặt</span></a>',
+    '<a class="tab" href="#chu-cd" id="t-cd"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><span>Cài đặt</span></a>\n    <button type="button" class="tab" id="chpin" style="margin-left:auto">Đổi mã</button>\n    <button type="button" class="tab" id="logout">Thoát</button>')
 rep('<a class="btn-ghost" href="#chu" id="see-owner" style="text-decoration:none">Xem bên chủ quán (demo)</a>', '')
 rep('<h1>Đơn cần giao</h1>', '<div class="order-head"><h1>Đơn cần giao</h1><button type="button" class="tab" id="logout2">Thoát</button></div>')
 
@@ -57,7 +57,7 @@ rep('''  mode = r === "chu" ? "chu" : r === "shipper" ? "shipper" : "khach";''',
   const allowed = r === "khach" || role === "owner" || (role === "ship" && r === "shipper") || (role === "bep" && (r === "chu" || r === "nhanvien")) || (role === "owner" && r === "nhanvien");
   // Nhân viên quán chỉ thấy tab Đơn hàng
   ["t-bc", "t-mon", "t-km", "t-sp", "t-cd", "chpin"].forEach(id => $(id).hidden = role === "bep");
-  $("nav").hidden = role !== "owner" || r === "khach";
+  $("nav").hidden = true;
   if (!allowed) { showLogin(r); return; }
   $("login").hidden = true;
   $("mem-top").hidden = r !== "khach";''')
