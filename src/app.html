@@ -254,11 +254,15 @@ details.order[data-urg="tre"] { --st: var(--red); background: color-mix(in srgb,
 .sorder .who { font-family: var(--font-display); font-size: 20px; font-weight: 600; line-height: 1.2; }
 .s-addr { font-size: 16px; overflow-wrap: anywhere; }
 .s-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.s-btns a { text-align: center; text-decoration: none; font-weight: 600; border: 1.5px solid var(--leaf); color: var(--leaf); border-radius: 10px; padding: 9px 6px; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s-btns a { display: grid; place-items: center; min-height: 44px; text-align: center; text-decoration: none; font-weight: 600; border: 1.5px solid var(--leaf); color: var(--leaf); border-radius: 10px; padding: 9px 6px; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .s-money { font-size: 15px; font-weight: 600; }
 .sorder details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
 .sorder .btn-main { width: 100%; }
 .sorder .s-ready { font-size: 13px; color: var(--muted); }
+details.sorder[data-st="moi"] > summary { opacity: .65; }
+details.sorder[data-st="moi"] .pill { background: var(--bg) !important; color: var(--muted) !important; border-color: var(--line) !important; }
+.chips button { min-height: 44px; }
+.bnav button span svg { display: block; }
 
 .order-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
 .order-head b { font-size: 16px; }
@@ -857,11 +861,11 @@ details.sorder { border-left-color: var(--st); }
 
 <nav class="bnav" id="bnav" hidden aria-label="Menu khách">
   <div class="in">
-    <button type="button" data-nav="menu"><span>🏠</span>Trang chủ</button>
-    <button type="button" data-nav="don"><span>🧾</span>Đơn hàng</button>
+    <button type="button" data-nav="menu"><span><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/></svg></span>Trang chủ</button>
+    <button type="button" data-nav="don"><span><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l3-2 3 2 2-2 2 2 3-2 3 2V2l-3 2-3-2-2 2-2-2-3 2z"/><path d="M8 9h8M8 13h8"/></svg></span>Đơn hàng</button>
     <button type="button" data-nav="mon" class="plus"><span>+</span>Chọn món</button>
-    <button type="button" data-nav="pts"><span>⭐</span>Tích điểm</button>
-    <button type="button" data-nav="cai"><span>⚙️</span>Cài đặt</button>
+    <button type="button" data-nav="pts"><span><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2-6.2 3.2L7 14.2 2 9.3l6.9-1z"/></svg></span>Tích điểm</button>
+    <button type="button" data-nav="cai"><span><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span>Cài đặt</button>
   </div>
 </nav>
 
@@ -1666,19 +1670,19 @@ function shipCard(o) {
     : o.st === "xong" ? `<button type="button" class="btn-main" data-ship="${o.no}">Đã nhận đơn, đi giao</button>` : "";
   return `<details class="order sorder" data-st="${o.st}" data-grp="${o.st === "giao" ? "xanh" : o.st === "nau" ? "vang" : "do"}" data-ono="${o.no}"${openOrders.has(o.no) ? " open" : ""}>
     <summary>
-    <div class="s-top"><span class="s-time">${/^\d/.test(o.time) ? esc(o.time) : "Sớm nhất"}</span>${gone ? "" : `<span class="flag ${u.lv}">${u.text}</span>`}<span class="pill">${STATUS[o.st]}</span></div>
+    <div class="s-top"><span class="s-time">${/^\d/.test(o.time) ? esc(o.time) : "Sớm nhất"}</span>${gone || u.lv === "thuong" ? "" : `<span class="flag ${u.lv}">${u.lv === "tre" ? "⚠ " : ""}${u.text}</span>`}<span class="pill">${o.st === "moi" ? "Chờ quán soạn" : PILL[o.st]}</span></div>
     <div class="who">#${o.no} · ${esc(o.name)}</div>
-    <div class="sum-who"><a class="tel tel-link" href="tel:${tel}">📞 ${esc(o.phone)}</a></div>
-    <div class="s-addr">📍 ${esc(o.addr)}</div>
+    <div class="sum-who sub">${esc(o.phone)}</div>
+    <div class="s-addr">${esc(o.addr)}</div>
     <div class="s-money">${cash ? `<span class="collect">Thu tiền mặt ${fmt(orderTotal(o))}</span>` : `<span class="paid">Đã thu tiền (chuyển khoản)</span>`}</div>
-    <div class="sum-money"><span>${o.tray ? `Mâm ${o.tray.people} người · ` : ""}${setCount(o)} hộp cơm${extrasCount(o) ? ` · ${extrasCount(o)} đồ uống` : ""}</span><span class="more">Xem chi tiết ▾</span></div>
-    </summary>
+    <div class="sum-money"><span>${o.tray ? `Mâm ${o.tray.people} người · ` : ""}${setCount(o)} hộp cơm${extrasCount(o) ? ` · ${extrasCount(o)} đồ uống` : ""}</span><span class="more">Chi tiết ▾</span></div>
     ${gone ? "" : `<div class="s-btns"><a href="tel:${tel}">Gọi khách</a><a href="${map}" target="_blank" rel="noopener">Chỉ đường</a></div>`}
+    ${gone ? `<span class="done-ok">✓ Đã giao xong</span>` : btn}
+    </summary>
       <div class="dishes-list" style="margin-top:6px">${o.tray ? `<div class="set"><div class="set-h">🍲 Mâm ${o.tray.people} người</div><ul>${Object.entries(o.tray.items).map(([id, q]) => `<li>${esc(byId[id]?.name ?? "?")} × ${q} đĩa</li>`).join("")}</ul></div>` : ""}${o.sets.map((x, i) => `<div class="set"><div class="set-h">Suất ${i + 1} (${k(setPrice(x))})${x.qty > 1 ? ` <span class="x">× ${x.qty} hộp</span>` : ""}</div><ul>${allPicks(x).map(id => `<li>${esc(byId[id]?.name ?? "?")}</li>`).join("")}${o.canh ? `<li>🍲 ${esc(o.canh)}</li>` : ""}${drinkLines(x.drinks, (id, q) => `<li>🥤 ${q} × ${esc(byId[id]?.name ?? "?")}</li>`)}</ul>${x.note ? `<div class="snote-v">📝 ${esc(x.note)}</div>` : ""}</div>`).join("")}
       ${ex.length ? `<div class="set"><div class="set-h">Gọi thêm</div><ul>${ex.map(([id, q]) => `<li>${q} × ${esc(byId[id]?.name ?? "?")}</li>`).join("")}</ul></div>` : ""}</div>
     ${o.note ? `<div class="meta"><b>Ghi chú:</b> ${esc(o.note)}</div>` : ""}
     ${o.st === "moi" ? `<div class="s-ready">Bếp đang soạn, chờ chủ quán bấm “Soạn xong” rồi lấy.</div>` : ""}
-    ${gone ? `<span class="done-ok">✓ Đã giao xong</span>` : btn}
   </details>`;
 }
 let shipFilter = "chua";
